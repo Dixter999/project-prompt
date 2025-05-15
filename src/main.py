@@ -903,7 +903,7 @@ def connections(
     """Analiza las conexiones entre archivos de un proyecto."""
     import os
     from src.ui import analysis_view
-from src.ui.analysis_view import AnalysisView, analyze_connections
+    from src.ui.analysis_view import AnalysisView, analyze_connections
     
     project_path = os.path.abspath(path)
     
