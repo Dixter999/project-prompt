@@ -594,12 +594,18 @@ def generate_prompts(
     path: str = typer.Argument(".", help="Ruta al proyecto para generar prompts"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar los prompts en formato JSON"),
     premium: bool = typer.Option(False, "--premium", "-p", help="Usar características premium"),
-    show: bool = typer.Option(True, "--show/--no-show", help="Mostrar prompts generados")
+    show: bool = typer.Option(True, "--show/--no-show", help="Mostrar prompts generados"),
+    enhanced: bool = typer.Option(False, "--enhanced", "-e", help="Usar generador de prompts mejorado")
 ):
     """Generar prompts contextuales basados en el análisis del proyecto."""
-    from src.generators.prompt_generator import get_prompt_generator
     import json
     import os
+    
+    # Elegir el generador apropiado según los parámetros
+    if enhanced:
+        from src.generators.contextual_prompt_generator import get_contextual_prompt_generator as get_generator
+    else:
+        from src.generators.prompt_generator import get_prompt_generator as get_generator
     
     project_path = os.path.abspath(path)
     
@@ -609,6 +615,10 @@ def generate_prompts(
         
     cli.print_header("Generación de Prompts Contextuales")
     
+    # Mostrar información sobre generador mejorado
+    if enhanced:
+        cli.print_info("Utilizando generador de prompts contextuales mejorado")
+    
     # Mostrar advertencia si se intenta usar premium en versión gratuita
     if premium:
         cli.print_warning("Las funciones premium no están disponibles en esta versión")
@@ -617,8 +627,8 @@ def generate_prompts(
     cli.print_info(f"Analizando proyecto en: {project_path}")
     
     try:
-        # Crear generador de prompts
-        generator = get_prompt_generator(is_premium=premium)
+        # Crear generador de prompts (básico o mejorado según la opción)
+        generator = get_generator(is_premium=premium)
         
         # Mostrar progreso
         with cli.status("Analizando proyecto y generando prompts..."):

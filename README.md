@@ -1,4 +1,4 @@
-# ProjectPrompt
+# Projec# Generación de prompts contextuales (Básico y Mejorado)Prompt
 
 Asistente inteligente para análisis y documentación de proyectos que utiliza IA para generar prompts contextuales y guiar el desarrollo.
 
@@ -29,6 +29,12 @@ project-prompt init
 # Analizar un proyecto
 project-prompt analyze
 
+# Generar prompts básicos
+project-prompt generate_prompts
+
+# Generar prompts contextuales mejorados
+project-prompt generate_prompts --enhanced
+
 # Ver ayuda
 project-prompt --help
 ```
@@ -38,6 +44,17 @@ project-prompt --help
 - OpenAI GPT (API key requerida)
 - Anthropic Claude (API key requerida)
 - Funcionalidad básica sin API keys
+
+## Generador de Prompts Contextuales Mejorados
+
+El generador de prompts contextuales mejorado (`--enhanced`) ofrece capacidades avanzadas:
+
+- Inclusión automática de contexto específico del proyecto en los prompts
+- Referencias directas a archivos relevantes para cada funcionalidad
+- Sugerencias basadas en patrones detectados en el código
+- Sistema de preguntas guiadas para clarificar aspectos poco claros
+- Análisis de arquitectura basado en grafos de dependencias
+- Generación de prompts específicos para completado de código
 
 ## Modelo Freemium
 

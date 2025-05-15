@@ -30,9 +30,18 @@
     - Filtrado basado en patrones y extensiones de archivo
     - Métricas sobre archivos excluidos e incluidos en el análisis
 
-### 3.3 Generación de prompts contextuales mejorados 📝
+### 3.3 Generación de prompts contextuales mejorados ✅
 - **Branch**: `feature/enhanced-prompts`
-- **Estado**: Pendiente
+- **Estado**: Completado
+- **Funcionalidades implementadas**:
+  - Generador de prompts contextual extendido (`ContextualPromptGenerator`)
+  - Inclusión de contexto específico del proyecto en los prompts
+  - Referencias directas a archivos relevantes
+  - Sugerencias basadas en patrones detectados en el código
+  - Sistema de preguntas guiadas para clarificar aspectos poco claros
+  - Análisis de arquitectura basado en grafos de dependencias
+  - Generación de prompts para completado de código
+  - Flag `--enhanced` en CLI para uso del generador mejorado
 
 ### 3.4 Implementación de la estructura de archivos del proyecto 📝
 - **Branch**: `feature/project-files-structure`
