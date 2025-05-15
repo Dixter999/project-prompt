@@ -13,9 +13,17 @@
   - Sistema centralizado de documentación (`DocumentationSystem`)
   - Comandos CLI para gestión de documentación (`docs`, `docs_list`, `docs_view`)
 
-### 3.2 Análisis de conexiones entre archivos 📝
+### 3.2 Análisis de conexiones entre archivos ✅
 - **Branch**: `feature/file-connections-analyzer`
-- **Estado**: Pendiente
+- **Estado**: Completado
+- **Funcionalidades implementadas**:
+  - Análisis de conexiones entre archivos (`ConnectionAnalyzer`)
+  - Detección de importaciones en múltiples lenguajes (Python, JavaScript, TypeScript, etc.)
+  - Generación de grafo de dependencias (`DependencyGraph`)
+  - Identificación de componentes conectados y desconectados
+  - Detección de ciclos de dependencias
+  - Visualización en texto y markdown del grafo
+  - Comandos CLI para análisis de conexiones (`connections`, `dependency_graph`)
 
 ### 3.3 Generación de prompts contextuales mejorados 📝
 - **Branch**: `feature/enhanced-prompts`

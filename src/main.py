@@ -883,6 +883,86 @@ def docs_view(
         logger.error(f"Error en docs_view: {e}", exc_info=True)
 
 
+@app.command()
+def connections(
+    path: str = typer.Argument(".", help="Ruta al proyecto para analizar conexiones"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(5000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    detailed: bool = typer.Option(False, "--detailed/--simple", "-d/-s", help="Mostrar información detallada")
+):
+    """Analiza las conexiones entre archivos de un proyecto."""
+    import os
+    from src.ui import analysis_view
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Análisis de Conexiones Entre Archivos")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Analizar conexiones
+        with cli.status("Analizando conexiones entre archivos..."):
+            connections_data = analysis_view.analyze_connections(
+                project_path, max_files=max_files, output=output
+            )
+        
+        # Mostrar resultados
+        analysis_view.show_connections_analysis(connections_data, detailed=detailed)
+        
+        if output:
+            cli.print_success(f"Análisis de conexiones guardado en: {output}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante el análisis de conexiones: {e}")
+        logger.error(f"Error en connections: {e}", exc_info=True)
+
+
+@app.command()
+def dependency_graph(
+    path: str = typer.Argument(".", help="Ruta al proyecto para generar grafo"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el grafo en formato JSON"),
+    markdown: Optional[str] = typer.Option(None, "--markdown", "-md", help="Ruta para guardar visualización en markdown"),
+    max_files: int = typer.Option(5000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    detailed: bool = typer.Option(False, "--detailed/--simple", "-d/-s", help="Mostrar información detallada")
+):
+    """Genera un grafo de dependencias entre archivos de un proyecto."""
+    import os
+    from src.ui import analysis_view
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Generación de Grafo de Dependencias")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Generar grafo
+        with cli.status("Generando grafo de dependencias..."):
+            graph_data = analysis_view.generate_dependency_graph(
+                project_path, max_files=max_files, output=output, markdown_output=markdown
+            )
+        
+        # Mostrar resultados
+        analysis_view.show_dependency_graph(graph_data, detailed=detailed)
+        
+        if output:
+            cli.print_success(f"Grafo de dependencias guardado en: {output}")
+            
+        if markdown:
+            cli.print_success(f"Visualización markdown guardada en: {markdown}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante la generación del grafo: {e}")
+        logger.error(f"Error en dependency_graph: {e}", exc_info=True)
+
+
 @app.callback()
 def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo debug")):
     """

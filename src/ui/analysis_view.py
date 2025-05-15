@@ -266,5 +266,215 @@ class AnalysisView:
             cli.print_error(f"Error al analizar el proyecto: {e}")
             return {}
 
+    @staticmethod
+    def show_connections_analysis(connections_data: Dict[str, Any], detailed: bool = False) -> None:
+        """
+        Muestra el análisis de conexiones entre archivos.
+        
+        Args:
+            connections_data: Datos de conexiones
+            detailed: Si se debe mostrar información detallada
+        """
+        cli.print_header("Análisis de Conexiones Entre Archivos")
+        
+        # Información general
+        cli.print_info(f"Proyecto: {os.path.basename(connections_data['project_path'])}")
+        cli.print_info(f"Archivos analizados: {connections_data['files_analyzed']}")
+        
+        # Estadísticas de lenguajes
+        langs_table = Table(title="Lenguajes Detectados")
+        langs_table.add_column("Lenguaje", style="cyan")
+        langs_table.add_column("Archivos", style="green")
+        
+        for lang, count in connections_data['language_stats'].items():
+            langs_table.add_row(lang, str(count))
+        console.print(langs_table)
+        
+        # Componentes conectados
+        connected_components = connections_data['connected_components']
+        cli.print_info(f"Componentes conectados: {len(connected_components)}")
+        
+        if connected_components and detailed:
+            comp_table = Table(title="Principales Componentes Conectados")
+            comp_table.add_column("Componente", style="cyan")
+            comp_table.add_column("Archivos", style="green")
+            comp_table.add_column("Ejemplo", style="yellow")
+            
+            for i, component in enumerate(connected_components[:5]):
+                example = component[0] if component else "N/A"
+                comp_table.add_row(f"Comp. {i+1}", str(len(component)), example)
+            console.print(comp_table)
+        
+        # Archivos desconectados
+        disconnected = connections_data['disconnected_files']
+        cli.print_info(f"Archivos desconectados: {len(disconnected)}")
+        
+        if disconnected and detailed and len(disconnected) > 0:
+            disc_panel = Panel(
+                "\n".join(disconnected[:10] + (["..."] if len(disconnected) > 10 else [])),
+                title="Archivos Desconectados (10 primeros)",
+                border_style="yellow"
+            )
+            console.print(disc_panel)
+        
+        # Mostrar algunos archivos y sus importaciones
+        if detailed:
+            imports_table = Table(title="Importaciones por Archivo (10 primeros)")
+            imports_table.add_column("Archivo", style="cyan")
+            imports_table.add_column("Lenguaje", style="green")
+            imports_table.add_column("Importaciones", style="yellow")
+            
+            count = 0
+            for file_path, file_data in connections_data['file_imports'].items():
+                if count >= 10:
+                    break
+                    
+                imports = ", ".join(file_data['imports'][:5])
+                if len(file_data['imports']) > 5:
+                    imports += f" ... (+{len(file_data['imports']) - 5})"
+                
+                imports_table.add_row(
+                    file_path, 
+                    file_data['language'],
+                    imports or "N/A"
+                )
+                count += 1
+                
+            console.print(imports_table)
+    
+    @staticmethod
+    def show_dependency_graph(graph_data: Dict[str, Any], detailed: bool = False) -> None:
+        """
+        Muestra el grafo de dependencias entre archivos.
+        
+        Args:
+            graph_data: Datos del grafo
+            detailed: Si se debe mostrar información detallada
+        """
+        cli.print_header("Grafo de Dependencias Entre Archivos")
+        
+        # Métricas del grafo
+        metrics_table = Table(title="Métricas del Grafo")
+        metrics_table.add_column("Métrica", style="cyan")
+        metrics_table.add_column("Valor", style="green")
+        
+        metrics = graph_data['metrics']
+        for metric, value in metrics.items():
+            if isinstance(value, float):
+                metrics_table.add_row(metric.replace('_', ' ').title(), f"{value:.2f}")
+            else:
+                metrics_table.add_row(metric.replace('_', ' ').title(), str(value))
+                
+        console.print(metrics_table)
+        
+        # Archivos centrales
+        central_files = graph_data['central_files'][:10]  # Top 10
+        
+        if central_files:
+            central_table = Table(title="Archivos Centrales (10 primeros)")
+            central_table.add_column("Archivo", style="cyan")
+            central_table.add_column("Conexiones", style="green")
+            central_table.add_column("Entrantes", style="yellow")
+            central_table.add_column("Salientes", style="magenta")
+            
+            for file_info in central_files:
+                central_table.add_row(
+                    file_info['file'],
+                    str(file_info['total']),
+                    str(file_info['in_degree']),
+                    str(file_info['out_degree'])
+                )
+                
+            console.print(central_table)
+        
+        # Ciclos de dependencias
+        cycles = graph_data['file_cycles']
+        if cycles:
+            cli.print_info(f"Ciclos de dependencias: {len(cycles)}")
+            
+            if detailed and cycles:
+                cycles_table = Table(title="Ciclos de Dependencias (5 primeros)")
+                cycles_table.add_column("Ciclo", style="red")
+                cycles_table.add_column("Longitud", style="green")
+                
+                for i, cycle in enumerate(cycles[:5]):
+                    cycle_str = " → ".join([os.path.basename(f) for f in cycle])
+                    cycles_table.add_row(f"{i+1}. {cycle_str} → ...", str(len(cycle)))
+                    
+                console.print(cycles_table)
+
+def analyze_connections(
+    project_path: str, 
+    max_files: int = 5000, 
+    output: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Analiza las conexiones entre archivos de un proyecto.
+    
+    Args:
+        project_path: Ruta al proyecto
+        max_files: Número máximo de archivos a analizar
+        output: Ruta para guardar el resultado (opcional)
+        
+    Returns:
+        Diccionario con información de conexiones
+    """
+    from src.analyzers.connection_analyzer import get_connection_analyzer
+    
+    # Analizar conexiones
+    analyzer = get_connection_analyzer()
+    connections = analyzer.analyze_connections(project_path, max_files)
+    
+    # Guardar resultado si se especificó output
+    if output:
+        analyzer.export_connections_json(connections, output)
+        logger.info(f"Datos de conexiones guardados en: {output}")
+    
+    return connections
+
+def generate_dependency_graph(
+    project_path: str, 
+    max_files: int = 5000, 
+    output: Optional[str] = None,
+    markdown_output: Optional[str] = None
+) -> Dict[str, Any]:
+    """
+    Genera un grafo de dependencias entre archivos.
+    
+    Args:
+        project_path: Ruta al proyecto
+        max_files: Número máximo de archivos a analizar
+        output: Ruta para guardar el resultado JSON (opcional)
+        markdown_output: Ruta para guardar la visualización en markdown (opcional)
+        
+    Returns:
+        Diccionario con grafo de dependencias
+    """
+    from src.analyzers.dependency_graph import get_dependency_graph
+    
+    # Generar grafo de dependencias
+    graph_generator = get_dependency_graph()
+    graph = graph_generator.build_dependency_graph(project_path, max_files)
+    
+    # Guardar resultado como JSON si se especificó output
+    if output:
+        graph_generator.export_graph_json(graph, output)
+        logger.info(f"Grafo de dependencias guardado en: {output}")
+    
+    # Generar y guardar visualización en markdown si se solicitó
+    if markdown_output:
+        markdown = graph_generator.generate_markdown_visualization(graph)
+        
+        # Asegurar que el directorio existe
+        os.makedirs(os.path.dirname(os.path.abspath(markdown_output)), exist_ok=True)
+        
+        # Guardar markdown
+        with open(markdown_output, 'w', encoding='utf-8') as f:
+            f.write(markdown)
+            
+        logger.info(f"Visualización markdown guardada en: {markdown_output}")
+    
+    return graph
+
 # Instancia global para uso directo
 analysis_view = AnalysisView()
