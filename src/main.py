@@ -691,6 +691,198 @@ def generate_prompts(
         logger.error(f"Error en generate_prompts: {e}", exc_info=True)
 
 
+@app.command()
+def docs(
+    path: str = typer.Argument(".", help="Ruta al proyecto para generar documentación"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar la documentación"),
+    update: bool = typer.Option(False, "--update", "-u", help="Actualizar documentación existente"),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Sobrescribir documentación existente"),
+):
+    """Generar documentación en markdown para el proyecto analizado."""
+    import os
+    from src.utils.documentation_system import get_documentation_system
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    # Determinar directorio de documentación
+    output_dir = output
+    if not output_dir:
+        output_dir = os.path.join(project_path, '.project-prompt')
+    
+    cli.print_header("Sistema de Documentación")
+    cli.print_info(f"Generando documentación para proyecto en: {project_path}")
+    
+    # Verificar si ya existe documentación
+    if os.path.exists(output_dir) and not update and not overwrite:
+        cli.print_warning(f"Ya existe documentación en: {output_dir}")
+        cli.print_info("Use --update para actualizar o --overwrite para sobrescribir")
+        
+        # Mostrar información básica
+        try:
+            doc_system = get_documentation_system()
+            info = doc_system.get_documentation_info(output_dir)
+            
+            cli.print_panel(
+                "Documentación Existente",
+                f"Última actualización: {info.get('last_updated', 'Desconocida')}\n"
+                f"Documentos: {info.get('document_count', 0)}\n"
+                f"Funcionalidades: {len(info.get('functionalities', []))}"
+            )
+        except Exception as e:
+            logger.error(f"Error al obtener info de documentación: {e}", exc_info=True)
+            
+        return
+    
+    try:
+        with cli.status("Generando documentación..."):
+            doc_system = get_documentation_system()
+            
+            if update and os.path.exists(output_dir):
+                result = doc_system.update_documentation(project_path, output_dir)
+                action = "actualizada"
+            else:
+                result = doc_system.generate_project_documentation(
+                    project_path, output_dir, overwrite=overwrite
+                )
+                action = "generada"
+        
+        # Mostrar resultados
+        cli.print_success(f"Documentación {action} exitosamente")
+        cli.print_info(f"Directorio de documentación: {result['docs_dir']}")
+        
+        # Mostrar contenido generado
+        cli.print_panel(
+            "Documentos Generados",
+            f"Análisis general: {os.path.basename(result['project_analysis'])}\n"
+            f"Funcionalidades: {len(result['functionalities'])}\n"
+            f"Configuración: {os.path.basename(result['config'])}"
+        )
+            
+    except Exception as e:
+        cli.print_error(f"Error al generar documentación: {e}")
+        logger.error(f"Error en docs: {e}", exc_info=True)
+
+
+@app.command()
+def docs_list(
+    path: str = typer.Argument(".", help="Ruta al proyecto con documentación"),
+    pattern: str = typer.Option("**/*.md", "--pattern", "-p", help="Patrón para filtrar documentos")
+):
+    """Listar documentos de la documentación generada."""
+    import os
+    from tabulate import tabulate
+    from src.utils.markdown_manager import get_markdown_manager
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    # Determinar directorio de documentación
+    docs_dir = os.path.join(project_path, '.project-prompt')
+    if not os.path.exists(docs_dir):
+        cli.print_error(f"No se encontró documentación en: {docs_dir}")
+        cli.print_info(f"Genere documentación primero con: project-prompt docs {project_path}")
+        return
+    
+    cli.print_header("Listado de Documentación")
+    
+    try:
+        # Obtener listado de documentos
+        markdown_manager = get_markdown_manager()
+        docs = markdown_manager.list_documents(docs_dir, pattern)
+        
+        if not docs:
+            cli.print_warning(f"No se encontraron documentos con el patrón: {pattern}")
+            return
+            
+        # Preparar tabla para mostrar
+        table_data = []
+        for doc in docs:
+            rel_path = doc.get('relative_path', '')
+            updated = doc.get('updated', doc.get('modified', 'Desconocido'))
+            version = doc.get('version', '-')
+            word_count = doc.get('word_count', 0)
+            
+            table_data.append([
+                rel_path,
+                version,
+                word_count,
+                updated
+            ])
+                
+        # Mostrar tabla
+        table = tabulate(
+            table_data,
+            headers=["Documento", "Versión", "Palabras", "Actualizado"],
+            tablefmt="fancy_grid"
+        )
+        console.print(table)
+        cli.print_info(f"Total de documentos: {len(docs)}")
+            
+    except Exception as e:
+        cli.print_error(f"Error al listar documentación: {e}")
+        logger.error(f"Error en docs_list: {e}", exc_info=True)
+
+
+@app.command()
+def docs_view(
+    doc_path: str = typer.Argument(..., help="Ruta relativa al documento dentro de .project-prompt"),
+    project: str = typer.Option(".", "--project", "-p", help="Ruta al proyecto con documentación")
+):
+    """Ver un documento específico de la documentación."""
+    import os
+    import re
+    from rich.markdown import Markdown
+    from src.utils.markdown_manager import get_markdown_manager
+    
+    project_path = os.path.abspath(project)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta del proyecto no es válida: {project_path}")
+        return
+    
+    # Determinar ruta completa al documento
+    docs_dir = os.path.join(project_path, '.project-prompt')
+    if not os.path.exists(docs_dir):
+        cli.print_error(f"No se encontró documentación en: {docs_dir}")
+        return
+    
+    # Asegurar que la extensión sea .md
+    if not doc_path.endswith('.md'):
+        doc_path = f"{doc_path}.md"
+        
+    # Construir ruta completa
+    full_path = os.path.join(docs_dir, doc_path)
+    if not os.path.exists(full_path):
+        cli.print_error(f"No se encontró el documento: {doc_path}")
+        cli.print_info(f"Use 'project-prompt docs_list' para ver documentos disponibles")
+        return
+    
+    try:
+        # Leer contenido del documento
+        with open(full_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Extraer frontmatter si existe
+        frontmatter_match = re.match(r'---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
+        if frontmatter_match:
+            content = content[len(frontmatter_match.group(0)):]
+        
+        # Mostrar documento
+        cli.print_header(f"Documento: {doc_path}")
+        console.print(Markdown(content))
+        
+    except Exception as e:
+        cli.print_error(f"Error al mostrar documento: {e}")
+        logger.error(f"Error en docs_view: {e}", exc_info=True)
+
+
 @app.callback()
 def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo debug")):
     """

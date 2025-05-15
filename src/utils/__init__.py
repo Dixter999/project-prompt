@@ -29,9 +29,17 @@ from src.utils.config import (
 # Importar validador de APIs
 from src.utils.api_validator import APIValidator, get_api_validator
 
+# Importar gestor de markdown
+from src.utils.markdown_manager import MarkdownManager, get_markdown_manager
+
+# Importar sistema de documentación
+from src.utils.documentation_system import DocumentationSystem, get_documentation_system
+
 __all__ = [
     'logger', 'debug', 'info', 'warning', 'error', 'critical', 'set_level', 'LogLevel',
     'config_manager', 'get_config', 'set_config', 'save_config',
     'get_api_key', 'set_api_key', 'delete_api_key', 'is_premium', 'set_premium',
+    'MarkdownManager', 'get_markdown_manager',
+    'DocumentationSystem', 'get_documentation_system',
     'APIValidator', 'get_api_validator',
 ]
