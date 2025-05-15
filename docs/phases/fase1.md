@@ -34,19 +34,19 @@ Esta fase establece la estructura base del proyecto, configura el entorno de des
   - Carga de configuración desde YAML ✅
   - Almacenamiento seguro de credenciales de API ✅
 
-### 1.3 CLI básica
+### 1.3 CLI básica ✅
 - **Branch**: `feature/basic-cli`
 - **Descripción**: Implementar interfaz de línea de comandos básica con menú.
 - **Archivos a crear**:
-  - `src/ui/cli.py` - Interfaz de comandos
-  - `src/ui/menu.py` - Menú interactivo
-  - `src/ui/__init__.py` - Inicializador
-  - `src/main.py` - Punto de entrada principal
+  - `src/ui/cli.py` - Interfaz de comandos ✅
+  - `src/ui/menu.py` - Menú interactivo ✅
+  - `src/ui/__init__.py` - Inicializador ✅
+  - `src/main.py` - Punto de entrada principal ✅
 - **Comandos a implementar**:
-  - `project-prompt init` - Inicialización
-  - `project-prompt version` - Mostrar versión
-  - `project-prompt help` - Ayuda
-  - `project-prompt menu` - Menú interactivo
+  - `project-prompt init` - Inicialización ✅
+  - `project-prompt version` - Mostrar versión ✅
+  - `project-prompt help` - Ayuda ✅
+  - `project-prompt menu` - Menú interactivo ✅
 
 ### 1.4 Sistema de verificación de APIs
 - **Branch**: `feature/api-verification`

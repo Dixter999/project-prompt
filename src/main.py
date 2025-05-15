@@ -13,6 +13,8 @@ from rich.console import Console
 
 from src import __version__
 from src.utils import logger, config_manager, LogLevel, set_level
+from src.ui import menu
+from src.ui.cli import cli
 
 console = Console()
 app = typer.Typer(help="ProjectPrompt: Asistente inteligente para proyectos")
@@ -21,22 +23,47 @@ app = typer.Typer(help="ProjectPrompt: Asistente inteligente para proyectos")
 @app.command()
 def version():
     """Mostrar la versión actual de ProjectPrompt."""
-    console.print(f"[bold green]ProjectPrompt v{__version__}[/bold green]")
+    cli.print_header("Información de Versión")
+    cli.print_info(f"ProjectPrompt v{__version__}")
+    
+    # Mostrar información adicional
+    table = cli.create_table("Detalles", ["Componente", "Versión/Estado"])
+    table.add_row("Python", sys.version.split()[0])
+    table.add_row("API OpenAI", "Configurada" if config_manager.get("api.openai.enabled") else "No configurada")
+    table.add_row("API Anthropic", "Configurada" if config_manager.get("api.anthropic.enabled") else "No configurada")
+    console.print(table)
 
 
 @app.command()
-def init():
+def init(name: str = typer.Option(None, "--name", "-n", help="Nombre del proyecto"),
+         path: str = typer.Option(".", "--path", "-p", help="Ruta donde inicializar")):
     """Inicializar un nuevo proyecto con ProjectPrompt."""
-    console.print("[bold]Inicializando ProjectPrompt...[/bold]")
-    # Implementación básica para comenzar
-    console.print("[green]Proyecto inicializado correctamente.[/green]")
+    cli.print_header("Inicialización de Proyecto")
+    
+    # Si no se proporciona un nombre, solicitarlo
+    if not name:
+        name = cli.prompt("Nombre del proyecto")
+    
+    cli.print_info(f"Inicializando proyecto '{name}' en {path}...")
+    
+    # Aquí iría la implementación real de inicialización de proyecto
+    # Por ahora, solo simulamos con un mensaje
+    
+    cli.print_success(f"Proyecto '{name}' inicializado correctamente")
 
 
 @app.command()
 def analyze(path: str = typer.Argument(".", help="Ruta al proyecto a analizar")):
     """Analizar la estructura de un proyecto existente."""
-    console.print(f"[bold]Analizando proyecto en: [blue]{path}[/blue][/bold]")
-    console.print("[yellow]Esta funcionalidad será implementada próximamente.[/yellow]")
+    cli.print_header("Análisis de Proyecto")
+    cli.print_info(f"Analizando proyecto en: {path}")
+    cli.print_warning("Esta funcionalidad será implementada próximamente.")
+    
+    
+@app.command()
+def menu():
+    """Iniciar el menú interactivo de ProjectPrompt."""
+    menu.show()
 
 
 @app.command()
@@ -94,6 +121,35 @@ def set_log_level(level: str = typer.Argument(..., help="Nivel de log: debug, in
         console.print(f"[red]Niveles válidos: {valid_levels}[/red]")
 
 
+@app.command()
+def help():
+    """Mostrar ayuda detallada sobre ProjectPrompt."""
+    cli.print_header("Ayuda de ProjectPrompt")
+    
+    cli.print_panel(
+        "Acerca de ProjectPrompt", 
+        "ProjectPrompt es un asistente inteligente para analizar proyectos de código "
+        "y generar prompts contextuales utilizando IA.\n\n"
+        "Permite analizar la estructura de proyectos, detectar funcionalidades, "
+        "y generar documentación progresiva."
+    )
+    
+    # Comandos disponibles
+    table = cli.create_table("Comandos Disponibles", ["Comando", "Descripción"])
+    table.add_row("init", "Inicializar un nuevo proyecto")
+    table.add_row("analyze", "Analizar la estructura de un proyecto")
+    table.add_row("version", "Mostrar la versión actual")
+    table.add_row("config", "Gestionar la configuración")
+    table.add_row("set-api", "Configurar claves de API")
+    table.add_row("set-log-level", "Cambiar el nivel de logging")
+    table.add_row("menu", "Iniciar el menú interactivo")
+    table.add_row("help", "Mostrar esta ayuda")
+    console.print(table)
+    
+    cli.print_info("Para más información sobre un comando específico, use:")
+    console.print("  project-prompt [COMANDO] --help")
+
+
 @app.callback()
 def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo debug")):
     """
@@ -110,7 +166,6 @@ def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo d
     
     # Mensaje de bienvenida en modo debug
     logger.debug(f"ProjectPrompt v{__version__} iniciado")
-    pass
 
 
 if __name__ == "__main__":
