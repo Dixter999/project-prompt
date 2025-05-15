@@ -53,15 +53,25 @@
   - Actualizado `src/templates/__init__.py`
   - Añadido `tests/test_functionality_detector.py`
 
-### 2.4 Integración en CLI y comando de análisis 🔄
+### 2.4 Integración en CLI y comando de análisis ✅
 - **Branch**: `feature/analyze-command`
-- **Estado**: Parcialmente completado
+- **Estado**: Completado
 - **Funcionalidades implementadas**:
-  - Comando `project-prompt analyze` para análisis completo
-  - Integración parcial de visualización de resultados
-- **Pendiente**:
-  - Comando `project-prompt list` para listar funcionalidades
-  - Mejorar la visualización de resultados en CLI
+  - Comando `project-prompt analyze` con opciones mejoradas:
+    - Detección de estructura de proyecto (--structure)
+    - Detección de funcionalidades (--functionalities)
+    - Guardar resultados en formato JSON (--output)
+  - Comando `project-prompt list` para listar funcionalidades:
+    - Versión simple y detallada (--detailed)
+    - Visualización optimizada en tablas y paneles
+  - Vista de análisis mejorada con representación visual
+    - Tablas de funcionalidades con niveles de confianza
+    - Visualización de lenguajes con gráficas simples
+    - Estructura de directorios en forma de árbol
+- **Archivos creados**:
+  - `src/ui/analysis_view.py`
+  - Actualizado `src/ui/__init__.py`
+  - Actualizado `src/main.py`
 
 ### 2.5 Creación de prompts contextuales básicos 📝
 - **Branch**: `feature/basic-prompts`

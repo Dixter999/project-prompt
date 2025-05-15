@@ -16,6 +16,7 @@ from src.utils import logger, config_manager, LogLevel, set_level
 from src.utils.api_validator import get_api_validator
 from src.ui import menu
 from src.ui.cli import cli
+from src.ui.analysis_view import analysis_view
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
 
 console = Console()
@@ -64,9 +65,14 @@ def analyze(
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
     max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
     max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+    functionalities: bool = typer.Option(True, "--functionalities/--no-functionalities", "-f/-nf", 
+                                       help="Detectar funcionalidades del proyecto"),
+    structure: bool = typer.Option(False, "--structure/--no-structure", "-st/-nst", 
+                                 help="Mostrar estructura del proyecto"),
 ):
-    """Analizar la estructura de un proyecto existente."""
+    """Analizar la estructura y funcionalidades de un proyecto existente."""
     from src.analyzers.project_scanner import get_project_scanner
+    from src.analyzers.functionality_detector import get_functionality_detector
     import json
     import os
     from datetime import datetime
@@ -77,89 +83,50 @@ def analyze(
         cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
         return
         
-    cli.print_header("Análisis de Proyecto")
+    cli.print_header("Análisis Completo de Proyecto")
     cli.print_info(f"Analizando proyecto en: {project_path}")
     
     try:
         # Crear escáner de proyectos
         scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
         
-        # Mostrar progreso
+        # Realizar análisis de estructura
         with cli.status("Escaneando archivos y directorios..."):
-            # Realizar análisis
-            result = scanner.scan_project(project_path)
+            project_data = scanner.scan_project(project_path)
         
-        # Mostrar resumen
-        cli.print_success(f"Análisis completado en {result.get('scan_time', 0)} segundos")
+        # Mostrar resumen general
+        cli.print_success(f"Análisis completado en {project_data.get('scan_time', 0)} segundos")
         
-        # Estadísticas
-        stats = result.get('stats', {})
-        cli.print_info("Estadísticas del proyecto:")
-        
-        # Crear tabla de estadísticas
+        # Estadísticas básicas
+        stats = project_data.get('stats', {})
         stats_table = cli.create_table("Estadísticas", ["Métrica", "Valor"])
         stats_table.add_row("Total de archivos", str(stats.get('total_files', 0)))
         stats_table.add_row("Total de directorios", str(stats.get('total_dirs', 0)))
         stats_table.add_row("Archivos analizados", str(stats.get('analyzed_files', 0)))
         stats_table.add_row("Archivos binarios", str(stats.get('binary_files', 0)))
-        stats_table.add_row("Archivos omitidos", str(stats.get('skipped_files', 0)))
         stats_table.add_row("Tamaño total", f"{stats.get('total_size_kb', 0):,} KB")
         console.print(stats_table)
         
-        # Lenguajes principales
-        languages = result.get('languages', {})
-        if languages:
-            main_languages = languages.get('_main', [])
-            secondary_languages = languages.get('_secondary', [])
-            
-            if main_languages:
-                cli.print_info(f"Lenguajes principales: {', '.join(main_languages)}")
-            if secondary_languages:
-                cli.print_info(f"Lenguajes secundarios: {', '.join(secondary_languages)}")
-            
-            # Tabla de lenguajes
-            lang_table = cli.create_table("Lenguajes", ["Lenguaje", "Archivos", "% del proyecto", "Tamaño (KB)"])
-            
-            for lang, data in languages.items():
-                if lang.startswith('_'):  # Skip meta entries
-                    continue
-                    
-                lang_table.add_row(
-                    lang,
-                    str(data.get('files', 0)),
-                    f"{data.get('percentage', 0)}%",
-                    f"{data.get('size_kb', 0):,}"
-                )
-            
-            console.print(lang_table)
+        # Mostrar lenguajes principales
+        analysis_view.show_languages(project_data)
         
-        # Archivos importantes
-        important_files = result.get('important_files', {})
-        if important_files:
-            cli.print_info("Archivos importantes detectados:")
-            
-            # Limitar número de archivos por categoría para la visualización
-            for category, files in important_files.items():
-                if category.startswith('_'):  # Skip meta entries
-                    continue
-                
-                # Mostrar categoría con hasta 5 archivos
-                cli.print_info(f"[bold]{category.capitalize()}[/bold]:")
-                for i, file_path in enumerate(files[:5]):
-                    console.print(f"  {i+1}. {file_path}")
-                
-                # Si hay más archivos, indicarlo
-                if len(files) > 5:
-                    console.print(f"  ... y {len(files) - 5} más")
+        # Mostrar estructura del proyecto si se solicitó
+        if structure:
+            analysis_view.show_project_structure(project_data)
         
-        # Dependencias principales
-        dependencies = result.get('dependencies', {})
-        if dependencies and '_main' in dependencies:
-            main_deps = dependencies.get('_main', [])
-            if main_deps:
-                cli.print_info(f"Dependencias principales: {', '.join(main_deps[:10])}")
-                if len(main_deps) > 10:
-                    console.print(f"  ... y {len(main_deps) - 10} más")
+        # Detectar funcionalidades si se solicitó
+        functionality_data = {}
+        if functionalities:
+            # Crear detector de funcionalidades
+            detector = get_functionality_detector(scanner=scanner)
+            
+            # Mostrar progreso
+            with cli.status("Detectando funcionalidades en el proyecto..."):
+                # Realizar análisis
+                functionality_data = detector.detect_functionalities(project_path)
+            
+            # Mostrar funcionalidades
+            analysis_view.show_functionalities(functionality_data)
         
         # Guardar resultados si se especificó un archivo de salida
         if output:
@@ -173,20 +140,36 @@ def analyze(
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
                 
             # Simplificar datos para JSON
-            simple_result = {
-                'project_path': result.get('project_path', ''),
-                'scan_time': result.get('scan_time', 0),
-                'stats': result.get('stats', {}),
-                'languages': result.get('languages', {}),
-                'important_files': result.get('important_files', {}),
-                'dependencies': result.get('dependencies', {}),
+            combined_result = {
+                'project_path': project_data.get('project_path', ''),
+                'scan_time': project_data.get('scan_time', 0),
+                'stats': project_data.get('stats', {}),
+                'languages': project_data.get('languages', {}),
+                'important_files': project_data.get('important_files', {}),
+                'dependencies': project_data.get('dependencies', {}),
             }
             
+            # Añadir funcionalidades si se detectaron
+            if functionality_data:
+                combined_result['functionalities'] = functionality_data
+                
             # Guardar en formato JSON
             with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(simple_result, f, indent=2)
+                json.dump(combined_result, f, indent=2)
                 
             cli.print_success(f"Análisis guardado en: {output_path}")
+        
+        # Sugerir siguientes pasos    
+        cli.print_info("Sugerencias:")
+        
+        if not structure:
+            console.print("  - Ejecutar con --structure para ver la estructura del proyecto")
+            
+        if not functionalities:
+            console.print("  - Ejecutar con --functionalities para detectar funcionalidades")
+        
+        console.print("  - Usar 'report' para generar un informe detallado en Markdown")
+        console.print("  - Usar 'list' para ver solo las funcionalidades del proyecto")
             
     except Exception as e:
         cli.print_error(f"Error durante el análisis: {e}")
@@ -511,6 +494,99 @@ def detect_functionalities(
     except Exception as e:
         cli.print_error(f"Error durante la detección de funcionalidades: {e}")
         logger.error(f"Error en detect_functionalities: {e}", exc_info=True)
+
+
+@app.command()
+def list(
+    path: str = typer.Argument(".", help="Ruta al proyecto para listar funcionalidades"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(5000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(3.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+    detailed: bool = typer.Option(False, "--detailed/--simple", "-d/-s", 
+                               help="Mostrar información detallada de cada funcionalidad")
+):
+    """Listar las funcionalidades detectadas en un proyecto."""
+    import json
+    import os
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Listado de Funcionalidades")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Obtener funcionalidades
+        functionality_data = analysis_view.list_functionalities(
+            project_path, max_files=max_files, max_size=max_size
+        )
+        
+        if not functionality_data:
+            cli.print_error("No se pudieron detectar funcionalidades en el proyecto")
+            return
+        
+        # Obtener funcionalidades principales
+        main_functionalities = functionality_data.get('main_functionalities', [])
+        detected = functionality_data.get('detected', {})
+        
+        if not main_functionalities:
+            cli.print_warning("No se detectaron funcionalidades principales en el proyecto")
+            low_confidence = [
+                name for name, data in detected.items()
+                if not data.get('present', False) and data.get('confidence', 0) > 30
+            ]
+            
+            if low_confidence:
+                cli.print_info("Posibles funcionalidades con baja confianza:")
+                for func in low_confidence:
+                    confidence = detected[func].get('confidence', 0)
+                    console.print(f"  - {func.capitalize()}: {confidence}%")
+            return
+        
+        # Mostrar funcionalidades detectadas
+        if detailed:
+            # Mostrar con todos los detalles
+            analysis_view.show_functionalities(functionality_data)
+        else:
+            # Mostrar versión simplificada
+            cli.print_success(f"Se detectaron {len(main_functionalities)} funcionalidades principales")
+            
+            # Crear tabla simple
+            func_table = cli.create_table("Funcionalidades Detectadas", ["Funcionalidad", "Confianza"])
+            
+            for func_name in main_functionalities:
+                func_data = detected.get(func_name, {})
+                confidence = func_data.get('confidence', 0)
+                func_table.add_row(func_name.capitalize(), f"{confidence}%")
+            
+            console.print(func_table)
+            
+            # Sugerir ver más detalles
+            cli.print_info("Usa --detailed para ver información detallada de cada funcionalidad")
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(functionality_data, f, indent=2)
+                
+            cli.print_success(f"Listado de funcionalidades guardado en: {output_path}")
+            
+    except Exception as e:
+        cli.print_error(f"Error al listar funcionalidades: {e}")
+        logger.error(f"Error en list: {e}", exc_info=True)
 
 
 @app.callback()

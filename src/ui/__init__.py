@@ -6,9 +6,10 @@ from src.ui.cli import (
     confirm, prompt,
 )
 from src.ui.menu import Menu, menu
+from src.ui.analysis_view import analysis_view, AnalysisView
 
 __all__ = [
     'cli', 'print_header', 'print_success', 'print_error', 
     'print_warning', 'print_info', 'print_panel', 'create_table',
-    'confirm', 'prompt', 'Menu', 'menu',
+    'confirm', 'prompt', 'Menu', 'menu', 'analysis_view', 'AnalysisView',
 ]
