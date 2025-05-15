@@ -1,0 +1,17 @@
+feat(prompts): Complete task 3.3 - Enhanced Contextual Prompt Generator
+
+This commit completes Task 3.3 "Generación de prompts contextuales mejorados" from Phase 3:
+
+- Added unit tests for the ContextualPromptGenerator
+- Updated CLI tests to verify the --enhanced flag functionality
+- Updated README.md with information about the enhanced prompt generator
+- Created a demonstration script to showcase the enhanced prompt capabilities
+- Updated fase3_progress.md to mark task 3.3 as completed
+
+The enhanced prompt generator now includes:
+- Project-specific contextual information
+- Direct references to relevant files
+- Suggestions based on code patterns
+- Guided questions for clarification
+- Architecture analysis based on dependency graphs
+- Code completion prompt generation
