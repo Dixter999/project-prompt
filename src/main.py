@@ -339,6 +339,49 @@ def help():
     console.print("  project-prompt [COMANDO] --help")
 
 
+@app.command()
+def report(
+    path: str = typer.Argument(".", help="Ruta al proyecto para analizar y generar el reporte"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta personalizada para guardar el reporte"),
+    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+):
+    """Generar un reporte en Markdown sobre la estructura del proyecto."""
+    from src.generators.markdown_generator import get_markdown_generator
+    import os
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("Generación de Reporte en Markdown")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Crear generador de markdown
+        generator = get_markdown_generator()
+        
+        # Mostrar progreso
+        with cli.status("Escaneando proyecto y generando reporte..."):
+            # Generar reporte
+            report_path = generator.save_project_report(project_path, output)
+        
+        # Mostrar resultado
+        cli.print_success(f"Reporte generado correctamente en: {report_path}")
+        cli.print_info("El reporte contiene información sobre la estructura del proyecto, lenguajes, archivos importantes y dependencias.")
+        
+        # Sugerir siguientes pasos
+        cli.print_info("Para ver el reporte puedes:")
+        console.print("  - Abrirlo en un editor compatible con Markdown")
+        console.print(f"  - Ejecutar: [bold]cat {report_path}[/bold] para ver el contenido en la terminal")
+        
+    except Exception as e:
+        cli.print_error(f"Error al generar el reporte: {e}")
+        logger.error(f"Error en report: {e}", exc_info=True)
+
+
 @app.callback()
 def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo debug")):
     """

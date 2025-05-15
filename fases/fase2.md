@@ -18,18 +18,18 @@ Esta fase implementa la funcionalidad básica de análisis de proyectos, disponi
   - Reconocimiento de lenguajes de programación ✅
   - Mapa de dependencias básico ✅
 
-### 2.2 Generación de reportes en Markdown
+### 2.2 Generación de reportes en Markdown ✅
 - **Branch**: `feature/markdown-reports`
 - **Descripción**: Implementar generación de reportes en formato Markdown.
 - **Archivos a crear**:
-  - `src/generators/markdown_generator.py` - Generador de MD
-  - `src/generators/templates/project_report.md` - Plantilla de reporte
-  - `src/generators/__init__.py` - Inicializador
+  - `src/generators/markdown_generator.py` - Generador de MD ✅
+  - `src/generators/templates/project_report.md` - Plantilla de reporte ✅
+  - `src/generators/__init__.py` - Inicializador ✅
 - **Funcionalidades**:
-  - Creación de documentos MD con estructura del proyecto
-  - Visualización de archivos clave
-  - Inclusión de estadísticas básicas
-  - Almacenamiento en directorio `.project-prompt` del proyecto
+  - Creación de documentos MD con estructura del proyecto ✅
+  - Visualización de archivos clave ✅
+  - Inclusión de estadísticas básicas ✅
+  - Almacenamiento en directorio `.project-prompt` del proyecto ✅
 
 ### 2.3 Identificación básica de funcionalidades
 - **Branch**: `feature/basic-functionality-detector`

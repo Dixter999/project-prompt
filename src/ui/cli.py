@@ -103,6 +103,23 @@ class CLI:
             El valor ingresado por el usuario
         """
         return typer.prompt(prompt_text, default=default, hide_input=hide_input)
+    
+    @staticmethod
+    def status(message: str):
+        """
+        Muestra un mensaje de estado con un spinner que indica actividad.
+        
+        Args:
+            message: Mensaje a mostrar
+            
+        Returns:
+            Context manager para usar con 'with'
+        """
+        from rich.live import Live
+        from rich.spinner import Spinner
+        
+        spinner = Spinner("dots", text=message)
+        return Live(spinner, refresh_per_second=10)
 
 
 # Exportar una instancia global para uso directo
@@ -118,3 +135,4 @@ print_panel = cli.print_panel
 create_table = cli.create_table
 confirm = cli.confirm
 prompt = cli.prompt
+status = cli.status
