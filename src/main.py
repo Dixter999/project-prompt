@@ -382,6 +382,137 @@ def report(
         logger.error(f"Error en report: {e}", exc_info=True)
 
 
+@app.command()
+def detect_functionalities(
+    path: str = typer.Argument(".", help="Ruta al proyecto para analizar y detectar funcionalidades"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+):
+    """Detectar funcionalidades básicas en el proyecto."""
+    from src.analyzers.project_scanner import get_project_scanner
+    from src.analyzers.functionality_detector import get_functionality_detector
+    import json
+    import os
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("Detección de Funcionalidades")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Crear escáner de proyectos
+        scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
+        
+        # Crear detector de funcionalidades
+        detector = get_functionality_detector(scanner=scanner)
+        
+        # Mostrar progreso
+        with cli.status("Detectando funcionalidades en el proyecto..."):
+            # Realizar análisis
+            result = detector.detect_functionalities(project_path)
+        
+        # Mostrar resumen
+        main_functionalities = result.get('main_functionalities', [])
+        detected = result.get('detected', {})
+        
+        if main_functionalities:
+            cli.print_success(f"Se detectaron {len(main_functionalities)} funcionalidades principales")
+            
+            # Crear tabla de funcionalidades
+            func_table = cli.create_table("Funcionalidades Detectadas", ["Funcionalidad", "Confianza", "Evidencia"])
+            
+            for func_name in main_functionalities:
+                func_data = detected.get(func_name, {})
+                confidence = func_data.get('confidence', 0)
+                
+                # Obtener evidencia más significativa
+                evidence = []
+                if func_data.get('evidence', {}).get('imports'):
+                    imports = func_data.get('evidence', {}).get('imports', [])[:2]
+                    evidence.extend(imports)
+                    
+                if func_data.get('evidence', {}).get('files'):
+                    files = [os.path.basename(file) for file in func_data.get('evidence', {}).get('files', [])[:2]]
+                    evidence.extend(files)
+                
+                # Añadir a la tabla
+                func_table.add_row(
+                    func_name.capitalize(),
+                    f"{confidence}%",
+                    ", ".join(evidence[:3]) if evidence else "N/A"
+                )
+                
+            # Mostrar tabla
+            console.print(func_table)
+            
+            # Mostrar detalles adicionales para cada funcionalidad
+            for func_name in main_functionalities:
+                func_data = detected.get(func_name, {})
+                evidence = func_data.get('evidence', {})
+                
+                cli.print_info(f"[bold]{func_name.capitalize()}[/bold] (Confianza: {func_data.get('confidence', 0)}%)")
+                
+                # Mostrar archivos relevantes
+                files = evidence.get('files', [])
+                if files:
+                    console.print(f"  [dim]Archivos relevantes:[/dim]")
+                    for i, file in enumerate(files[:5]):
+                        console.print(f"    - {file}")
+                    if len(files) > 5:
+                        console.print(f"    ... y {len(files) - 5} más")
+                
+                # Mostrar importaciones detectadas
+                imports = evidence.get('imports', [])
+                if imports:
+                    console.print(f"  [dim]Importaciones detectadas:[/dim]")
+                    for i, imp in enumerate(imports[:5]):
+                        console.print(f"    - {imp}")
+                    if len(imports) > 5:
+                        console.print(f"    ... y {len(imports) - 5} más")
+                        
+                console.print("")
+        else:
+            cli.print_warning("No se detectaron funcionalidades principales en el proyecto")
+            
+        # Mostrar funcionalidades con baja confianza
+        low_confidence = [
+            name for name, data in detected.items()
+            if not data.get('present', False) and data.get('confidence', 0) > 30
+        ]
+        
+        if low_confidence:
+            cli.print_info("Funcionalidades con baja confianza de detección:")
+            for func in low_confidence:
+                confidence = detected[func].get('confidence', 0)
+                console.print(f"  - {func.capitalize()}: {confidence}%")
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+                
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2)
+                
+            cli.print_success(f"Resultados guardados en: {output_path}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante la detección de funcionalidades: {e}")
+        logger.error(f"Error en detect_functionalities: {e}", exc_info=True)
+
+
 @app.callback()
 def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo debug")):
     """

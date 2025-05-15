@@ -7,8 +7,10 @@ detectar sus características principales y generar informes detallados.
 
 from src.analyzers.project_scanner import ProjectScanner, get_project_scanner
 from src.analyzers.file_analyzer import FileAnalyzer, get_file_analyzer
+from src.analyzers.functionality_detector import FunctionalityDetector, get_functionality_detector
 
 __all__ = [
     'ProjectScanner', 'get_project_scanner',
     'FileAnalyzer', 'get_file_analyzer',
+    'FunctionalityDetector', 'get_functionality_detector',
 ]
