@@ -73,16 +73,36 @@
   - Actualizado `src/ui/__init__.py`
   - Actualizado `src/main.py`
 
-### 2.5 Creación de prompts contextuales básicos 📝
+### 2.5 Creación de prompts contextuales básicos ✅
 - **Branch**: `feature/basic-prompts`
-- **Estado**: Pendiente
-- **Pendiente**:
-  - Generación de prompts basados en el análisis
-  - Implementación de plantillas de prompts
-  - Integración con el flujo de análisis
+- **Estado**: Completado
+- **Funcionalidades implementadas**:
+  - Generación de tres tipos de prompts contextuales:
+    - Descripción general del proyecto
+    - Sugerencias de mejora
+    - Identificación de posibles problemas
+  - Implementación de plantillas de prompts personalizables
+  - Integración con los datos de análisis de estructura y funcionalidades
+  - Soporte para límites en versión freemium (máximo 3 prompts)
+  - Guardado de prompts en formato JSON para su uso posterior
+- **Archivos creados**:
+  - `src/generators/prompt_generator.py` - Generador de prompts
+  - `src/templates/prompt_templates.py` - Plantillas de prompts
+  - Actualizado `src/templates/__init__.py`
+  - Actualizado `src/generators/__init__.py`
+  - Actualizado `src/main.py` con comando `generate-prompts`
+
+## Fase 2 Completada ✅
+
+Todas las tareas planificadas para la fase 2 han sido completadas exitosamente:
+
+1. ✅ Detección de estructura de proyectos
+2. ✅ Generación de reportes en Markdown
+3. ✅ Identificación básica de funcionalidades
+4. ✅ Integración en CLI y comandos de análisis
+5. ✅ Creación de prompts contextuales básicos
 
 ## Próximos Pasos
-1. Completar pruebas para el detector de funcionalidades
-2. Terminar la integración en CLI para todos los comandos
-3. Implementar la generación de prompts contextuales básicos
-4. Revisar y mejorar la documentación general
+1. Revisar y mejorar la documentación general
+2. Añadir más tests para las nuevas funcionalidades
+3. Preparar el terreno para la siguiente fase

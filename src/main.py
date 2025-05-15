@@ -589,6 +589,108 @@ def list(
         logger.error(f"Error en list: {e}", exc_info=True)
 
 
+@app.command()
+def generate_prompts(
+    path: str = typer.Argument(".", help="Ruta al proyecto para generar prompts"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar los prompts en formato JSON"),
+    premium: bool = typer.Option(False, "--premium", "-p", help="Usar características premium"),
+    show: bool = typer.Option(True, "--show/--no-show", help="Mostrar prompts generados")
+):
+    """Generar prompts contextuales basados en el análisis del proyecto."""
+    from src.generators.prompt_generator import get_prompt_generator
+    import json
+    import os
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("Generación de Prompts Contextuales")
+    
+    # Mostrar advertencia si se intenta usar premium en versión gratuita
+    if premium:
+        cli.print_warning("Las funciones premium no están disponibles en esta versión")
+        premium = False
+    
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Crear generador de prompts
+        generator = get_prompt_generator(is_premium=premium)
+        
+        # Mostrar progreso
+        with cli.status("Analizando proyecto y generando prompts..."):
+            # Si se especificó output, guardar directamente
+            if output:
+                prompt_path = generator.save_prompts(project_path, output)
+                result = None
+            else:
+                # Generar prompts en memoria
+                result = generator.generate_prompts(project_path)
+                
+                # Si se solicitó almacenamiento, guardar en directorio por defecto
+                prompt_path = generator.save_prompts(project_path)
+        
+        # Mostrar resultado
+        cli.print_success(f"Prompts generados correctamente y guardados en: {prompt_path}")
+        
+        # Si se solicitó mostrar y hay resultado disponible
+        if show and (result or output):
+            prompts = result.get('prompts', {}) if result else {}
+            
+            # Si no hay resultado en memoria pero sí hay ruta de salida, cargar desde archivo
+            if not prompts and output:
+                try:
+                    with open(prompt_path, 'r', encoding='utf-8') as f:
+                        prompts = json.load(f).get('prompts', {})
+                except Exception as e:
+                    logger.error(f"Error al cargar prompts desde archivo: {e}", exc_info=True)
+            
+            # Mostrar cada prompt en un panel
+            if prompts:
+                cli.print_info("Prompts generados:")
+                
+                # Mostrar prompt de descripción
+                if 'description' in prompts:
+                    cli.print_panel(
+                        "Prompt: Descripción del Proyecto",
+                        prompts['description'],
+                        "blue"
+                    )
+                
+                # Mostrar prompt de mejoras
+                if 'improvements' in prompts:
+                    cli.print_panel(
+                        "Prompt: Sugerencias de Mejora",
+                        prompts['improvements'],
+                        "cyan"
+                    )
+                
+                # Mostrar prompt de problemas
+                if 'issues' in prompts:
+                    cli.print_panel(
+                        "Prompt: Problemas Potenciales",
+                        prompts['issues'],
+                        "yellow"
+                    )
+                
+                # Mostrar advertencia de límite freemium
+                if not premium:
+                    cli.print_info("Nota: Versión gratuita limitada a 3 prompts contextuales básicos")
+        
+        # Sugerir siguientes pasos
+        cli.print_info("Para utilizar estos prompts:")
+        console.print("  1. Copia el contenido del archivo de prompts")
+        console.print("  2. Pégalo en tu asistente de IA favorito")
+        console.print("  3. Añade tu pregunta específica al final del prompt")
+            
+    except Exception as e:
+        cli.print_error(f"Error al generar prompts: {e}")
+        logger.error(f"Error en generate_prompts: {e}", exc_info=True)
+
+
 @app.callback()
 def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo debug")):
     """
