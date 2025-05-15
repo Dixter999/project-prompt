@@ -14,13 +14,13 @@ import keyring
 from typing import Dict, List, Optional, Tuple, Union
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from src.utils.config import Config
+from src.utils.config import ConfigManager
 from src.utils.logger import get_logger
 from src.integrations.anthropic import AnthropicAPI, get_anthropic_client
 from src.integrations.copilot import CopilotAPI, get_copilot_client
 
 # Configurar logger
-logger = get_logger(__name__)
+logger = get_logger()
 
 # Para pruebas en entornos sin keyring
 try:
@@ -35,14 +35,14 @@ except ImportError:
 class APIValidator:
     """Validador de claves de API para diferentes servicios."""
 
-    def __init__(self, config: Optional[Config] = None):
+    def __init__(self, config: Optional[ConfigManager] = None):
         """
         Inicializar el validador de APIs.
         
         Args:
             config: Objeto de configuración opcional
         """
-        self.config = config or Config()
+        self.config = config or ConfigManager()
         self.available_apis = {
             "anthropic": self._check_anthropic,
             "github": self._check_github,
@@ -217,7 +217,7 @@ class APIValidator:
         return summary
         
 
-def get_api_validator(config: Optional[Config] = None) -> APIValidator:
+def get_api_validator(config: Optional[ConfigManager] = None) -> APIValidator:
     """
     Obtener una instancia del validador de APIs.
     

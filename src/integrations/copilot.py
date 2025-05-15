@@ -12,11 +12,11 @@ import os
 import json
 from typing import Dict, Optional, Tuple, Union
 import requests
-from src.utils.config import Config
+from src.utils.config import ConfigManager
 from src.utils.logger import get_logger
 
 # Configurar logger
-logger = get_logger(__name__)
+logger = get_logger()
 
 # URL base para la API de GitHub Copilot
 GITHUB_API_URL = "https://api.github.com"
@@ -26,7 +26,7 @@ COPILOT_API_URL = "https://api.githubcopilot.com"
 class CopilotAPI:
     """Cliente para la API de GitHub Copilot."""
 
-    def __init__(self, api_token: Optional[str] = None, config: Optional[Config] = None):
+    def __init__(self, api_token: Optional[str] = None, config: Optional[ConfigManager] = None):
         """
         Inicializar cliente de GitHub Copilot.
         
@@ -34,7 +34,7 @@ class CopilotAPI:
             api_token: Token de GitHub opcional. Si no se proporciona, se intentará leer desde la configuración.
             config: Objeto de configuración opcional. Si no se proporciona, se creará uno nuevo.
         """
-        self.config = config or Config()
+        self.config = config or ConfigManager()
         self.api_token = api_token or self.config.get("api.github.token")
         
         # Variables para control de uso y estado
@@ -135,7 +135,7 @@ class CopilotAPI:
         return True
 
 
-def get_copilot_client(config: Optional[Config] = None) -> CopilotAPI:
+def get_copilot_client(config: Optional[ConfigManager] = None) -> CopilotAPI:
     """
     Obtener una instancia configurada del cliente de GitHub Copilot.
     

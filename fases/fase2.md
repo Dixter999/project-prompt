@@ -5,18 +5,18 @@ Esta fase implementa la funcionalidad básica de análisis de proyectos, disponi
 
 ## Tareas
 
-### 2.1 Detección de estructura de proyectos
+### 2.1 Detección de estructura de proyectos ✅
 - **Branch**: `feature/project-structure-detector`
 - **Descripción**: Crear un sistema para detectar la estructura de un proyecto VSCode.
 - **Archivos a crear**:
-  - `src/analyzers/project_scanner.py` - Escaneo de estructura
-  - `src/analyzers/file_analyzer.py` - Análisis básico de archivos
-  - `src/analyzers/__init__.py` - Inicializador
+  - `src/analyzers/project_scanner.py` - Escaneo de estructura ✅
+  - `src/analyzers/file_analyzer.py` - Análisis básico de archivos ✅
+  - `src/analyzers/__init__.py` - Inicializador ✅
 - **Funcionalidades**:
-  - Detección recursiva de archivos y directorios
-  - Identificación de archivos importantes (main, index, etc.)
-  - Reconocimiento de lenguajes de programación
-  - Mapa de dependencias básico
+  - Detección recursiva de archivos y directorios ✅
+  - Identificación de archivos importantes (main, index, etc.) ✅
+  - Reconocimiento de lenguajes de programación ✅
+  - Mapa de dependencias básico ✅
 
 ### 2.2 Generación de reportes en Markdown
 - **Branch**: `feature/markdown-reports`

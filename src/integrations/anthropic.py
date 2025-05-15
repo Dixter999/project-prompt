@@ -12,11 +12,11 @@ import os
 from typing import Dict, Optional, Tuple, Union
 import logging
 import requests
-from src.utils.config import Config
+from src.utils.config import ConfigManager
 from src.utils.logger import get_logger
 
 # Configurar logger
-logger = get_logger(__name__)
+logger = get_logger()
 
 # URL base de la API de Anthropic
 ANTHROPIC_API_BASE_URL = "https://api.anthropic.com"
@@ -26,7 +26,7 @@ ANTHROPIC_API_VERSION = "2023-06-01"
 class AnthropicAPI:
     """Cliente para la API de Anthropic (Claude)."""
 
-    def __init__(self, api_key: Optional[str] = None, config: Optional[Config] = None):
+    def __init__(self, api_key: Optional[str] = None, config: Optional[ConfigManager] = None):
         """
         Inicializar cliente de Anthropic.
         
@@ -34,7 +34,7 @@ class AnthropicAPI:
             api_key: Clave API opcional. Si no se proporciona, se intentará leer desde la configuración.
             config: Objeto de configuración opcional. Si no se proporciona, se creará uno nuevo.
         """
-        self.config = config or Config()
+        self.config = config or ConfigManager()
         self.api_key = api_key or self.config.get("api.anthropic.key")
         self.max_tokens = self.config.get("api.anthropic.max_tokens", 4000)
         self.model = self.config.get("api.anthropic.model", "claude-3-haiku-20240307")
@@ -129,7 +129,7 @@ class AnthropicAPI:
         return True
 
 
-def get_anthropic_client(config: Optional[Config] = None) -> AnthropicAPI:
+def get_anthropic_client(config: Optional[ConfigManager] = None) -> AnthropicAPI:
     """
     Obtener una instancia configurada del cliente Anthropic.
     

@@ -16,6 +16,7 @@ from src.utils import logger, config_manager, LogLevel, set_level
 from src.utils.api_validator import get_api_validator
 from src.ui import menu
 from src.ui.cli import cli
+# Importamos los analizadores bajo demanda para evitar carga innecesaria
 
 console = Console()
 app = typer.Typer(help="ProjectPrompt: Asistente inteligente para proyectos")
@@ -58,11 +59,138 @@ def init(name: str = typer.Option(None, "--name", "-n", help="Nombre del proyect
 
 
 @app.command()
-def analyze(path: str = typer.Argument(".", help="Ruta al proyecto a analizar")):
+def analyze(
+    path: str = typer.Argument(".", help="Ruta al proyecto a analizar"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+):
     """Analizar la estructura de un proyecto existente."""
+    from src.analyzers.project_scanner import get_project_scanner
+    import json
+    import os
+    from datetime import datetime
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
     cli.print_header("Análisis de Proyecto")
-    cli.print_info(f"Analizando proyecto en: {path}")
-    cli.print_warning("Esta funcionalidad será implementada próximamente.")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Crear escáner de proyectos
+        scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
+        
+        # Mostrar progreso
+        with cli.status("Escaneando archivos y directorios..."):
+            # Realizar análisis
+            result = scanner.scan_project(project_path)
+        
+        # Mostrar resumen
+        cli.print_success(f"Análisis completado en {result.get('scan_time', 0)} segundos")
+        
+        # Estadísticas
+        stats = result.get('stats', {})
+        cli.print_info("Estadísticas del proyecto:")
+        
+        # Crear tabla de estadísticas
+        stats_table = cli.create_table("Estadísticas", ["Métrica", "Valor"])
+        stats_table.add_row("Total de archivos", str(stats.get('total_files', 0)))
+        stats_table.add_row("Total de directorios", str(stats.get('total_dirs', 0)))
+        stats_table.add_row("Archivos analizados", str(stats.get('analyzed_files', 0)))
+        stats_table.add_row("Archivos binarios", str(stats.get('binary_files', 0)))
+        stats_table.add_row("Archivos omitidos", str(stats.get('skipped_files', 0)))
+        stats_table.add_row("Tamaño total", f"{stats.get('total_size_kb', 0):,} KB")
+        console.print(stats_table)
+        
+        # Lenguajes principales
+        languages = result.get('languages', {})
+        if languages:
+            main_languages = languages.get('_main', [])
+            secondary_languages = languages.get('_secondary', [])
+            
+            if main_languages:
+                cli.print_info(f"Lenguajes principales: {', '.join(main_languages)}")
+            if secondary_languages:
+                cli.print_info(f"Lenguajes secundarios: {', '.join(secondary_languages)}")
+            
+            # Tabla de lenguajes
+            lang_table = cli.create_table("Lenguajes", ["Lenguaje", "Archivos", "% del proyecto", "Tamaño (KB)"])
+            
+            for lang, data in languages.items():
+                if lang.startswith('_'):  # Skip meta entries
+                    continue
+                    
+                lang_table.add_row(
+                    lang,
+                    str(data.get('files', 0)),
+                    f"{data.get('percentage', 0)}%",
+                    f"{data.get('size_kb', 0):,}"
+                )
+            
+            console.print(lang_table)
+        
+        # Archivos importantes
+        important_files = result.get('important_files', {})
+        if important_files:
+            cli.print_info("Archivos importantes detectados:")
+            
+            # Limitar número de archivos por categoría para la visualización
+            for category, files in important_files.items():
+                if category.startswith('_'):  # Skip meta entries
+                    continue
+                
+                # Mostrar categoría con hasta 5 archivos
+                cli.print_info(f"[bold]{category.capitalize()}[/bold]:")
+                for i, file_path in enumerate(files[:5]):
+                    console.print(f"  {i+1}. {file_path}")
+                
+                # Si hay más archivos, indicarlo
+                if len(files) > 5:
+                    console.print(f"  ... y {len(files) - 5} más")
+        
+        # Dependencias principales
+        dependencies = result.get('dependencies', {})
+        if dependencies and '_main' in dependencies:
+            main_deps = dependencies.get('_main', [])
+            if main_deps:
+                cli.print_info(f"Dependencias principales: {', '.join(main_deps[:10])}")
+                if len(main_deps) > 10:
+                    console.print(f"  ... y {len(main_deps) - 10} más")
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+                
+            # Simplificar datos para JSON
+            simple_result = {
+                'project_path': result.get('project_path', ''),
+                'scan_time': result.get('scan_time', 0),
+                'stats': result.get('stats', {}),
+                'languages': result.get('languages', {}),
+                'important_files': result.get('important_files', {}),
+                'dependencies': result.get('dependencies', {}),
+            }
+            
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(simple_result, f, indent=2)
+                
+            cli.print_success(f"Análisis guardado en: {output_path}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante el análisis: {e}")
+        logger.error(f"Error en analyze: {e}", exc_info=True)
     
     
 @app.command()
