@@ -65,7 +65,8 @@ class DependencyGraph:
             'disconnected_files': connections['disconnected_files'],
             'central_files': self._identify_central_files(graph),
             'language_stats': connections['language_stats'],
-            'file_cycles': self._detect_cycles(graph)
+            'file_cycles': self._detect_cycles(graph),
+            'files_excluded': connections.get('files_excluded', {})
         }
         
         logger.info(f"Grafo de dependencias construido: {len(dependency_graph['nodes'])} nodos, {len(dependency_graph['edges'])} enlaces")
@@ -112,7 +113,18 @@ class DependencyGraph:
             markdown.append("# Grafo de Dependencias del Proyecto")
             markdown.append(f"\nProyecto: {os.path.basename(graph_data['project_path'])}")
             markdown.append(f"Ruta: {graph_data['project_path']}")
-            markdown.append(f"Total de archivos: {len(graph_data['nodes'])}")
+            markdown.append(f"Total de archivos analizados: {len(graph_data['nodes'])}")
+            
+            # Información sobre archivos excluidos
+            if 'files_excluded' in graph_data:
+                excluded = graph_data['files_excluded']
+                markdown.append(f"Total de archivos excluidos: {excluded.get('total_excluded', 0)}")
+                markdown.append("\n## Archivos Excluidos")
+                markdown.append("| Tipo de exclusión | Cantidad |")
+                markdown.append("|---|---|")
+                markdown.append(f"| Por extensión (multimedia, binarios, etc.) | {excluded.get('by_extension', 0)} |")
+                markdown.append(f"| Por patrón (directorios/archivos no relevantes) | {excluded.get('by_pattern', 0)} |")
+                markdown.append(f"| HTML puramente presentacional | {excluded.get('html_presentational', 0)} |")
             
             # Métricas
             markdown.append("\n## Métricas del Grafo")

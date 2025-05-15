@@ -32,6 +32,57 @@ class ConnectionAnalyzer:
     def __init__(self):
         """Inicializar el analizador de conexiones."""
         self.file_analyzer = get_file_analyzer()
+        
+        # Patrones de exclusión de archivos no relevantes
+        self.excluded_extensions = {
+            # Archivos de imagen
+            '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.webp', '.bmp', '.tif', '.tiff',
+            # Archivos de video
+            '.mp4', '.webm', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.m4v',
+            # Archivos de audio
+            '.mp3', '.wav', '.ogg', '.flac', '.aac', '.m4a',
+            # Archivos de documentos
+            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+            # Archivos binarios y compilados
+            '.exe', '.dll', '.so', '.dylib', '.class', '.pyc', '.pyd',
+            # Archivos de recursos
+            '.ttf', '.woff', '.woff2', '.eot', '.otf',
+            # Archivos de datos
+            '.csv', '.json', '.xml', '.yaml', '.yml', '.toml', 
+            # Excepciones para JSON/XML/YAML de configuración que serán analizados selectivamente
+        }
+        
+        # Patrones de nombres de archivos/directorios a excluir
+        self.excluded_patterns = [
+            # Directorios comunes de dependencias y generados
+            r'^node_modules/', r'^venv/', r'^__pycache__/', r'^\.git/',
+            r'^\.svn/', r'^\.idea/', r'^\.vscode/', r'^dist/', r'^build/',
+            # Archivos específicos
+            r'package-lock\.json$', r'yarn\.lock$', r'\.DS_Store$',
+            # Archivos generados o temporales
+            r'.*\.min\.js$', r'.*\.min\.css$', r'.*\.map$',
+            # Archivos de respaldo o temporales
+            r'.*~$', r'.*\.bak$', r'.*\.swp$', r'.*\.tmp$'
+        ]
+        
+        # Reglas especiales para HTML puramente presentacional
+        self.html_content_patterns = {
+            'presentational': [
+                # Patrones que indican HTML puramente presentacional
+                r'<!DOCTYPE\s+html>', 
+                r'<html[^>]*>\s*<head[^>]*>', 
+                r'<meta[^>]*>', 
+                r'<link[^>]*rel=["\']stylesheet["\']'
+            ],
+            'functional': [
+                # Patrones que indican HTML con lógica o funcionalidad
+                r'<script[^>]*src=', 
+                r'<script[^>]*>\s*.+?\s*</script>', 
+                r'(?:ng|v)[-:](?:if|for|model|bind|on)', 
+                r'data-[\w\-]+='
+            ]
+        }
+        
         self.import_patterns = {
             # Patrones para diferentes lenguajes
             'python': [
@@ -112,16 +163,45 @@ class ConnectionAnalyzer:
         
         # Obtener todos los archivos del proyecto
         all_files = []
+        excluded_count = {'extensions': 0, 'patterns': 0, 'html_presentational': 0}
+        included_count = 0
+        
         for root, dirs, files in os.walk(project_path):
-            # Evitar directorios ocultos y de dependencias
-            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ('node_modules', 'venv', '__pycache__')]
+            # Filtrar directorios según los patrones excluidos
+            dirs[:] = [d for d in dirs if not any(re.match(pattern, os.path.join(root, d).replace(project_path + os.path.sep, '')) 
+                                              for pattern in self.excluded_patterns)]
             
             for file in files:
                 if len(all_files) >= max_files:
                     break
-                    
+                
                 file_path = os.path.join(root, file)
+                rel_file_path = os.path.relpath(file_path, project_path)
+                
+                # Comprobar si debe excluirse por extensión
+                _, extension = os.path.splitext(file)
+                if extension.lower() in self.excluded_extensions:
+                    excluded_count['extensions'] += 1
+                    continue
+                
+                # Comprobar si debe excluirse por patrón de nombre
+                if any(re.match(pattern, rel_file_path) for pattern in self.excluded_patterns):
+                    excluded_count['patterns'] += 1
+                    continue
+                
+                # Si es un archivo HTML, comprobar si es puramente presentacional
+                if extension.lower() in ['.html', '.htm', '.xhtml']:
+                    is_functional = self._is_functional_html(file_path)
+                    if not is_functional:
+                        excluded_count['html_presentational'] += 1
+                        continue
+                
                 all_files.append(file_path)
+                included_count += 1
+        
+        logger.debug(f"Archivos incluidos: {included_count}, excluidos por extensión: {excluded_count['extensions']}, " +
+                   f"excluidos por patrón: {excluded_count['patterns']}, " +
+                   f"HTML presentacional: {excluded_count['html_presentational']}")
                 
         # Analizar importaciones en cada archivo
         for file_path in all_files:
@@ -153,6 +233,12 @@ class ConnectionAnalyzer:
         result = {
             'project_path': project_path,
             'files_analyzed': len(file_imports),
+            'files_excluded': {
+                'by_extension': excluded_count['extensions'],
+                'by_pattern': excluded_count['patterns'],
+                'html_presentational': excluded_count['html_presentational'],
+                'total_excluded': sum(excluded_count.values())
+            },
             'language_stats': dict(lang_stats),
             'file_imports': file_imports,
             'file_connections': file_connections,
@@ -450,6 +536,45 @@ class ConnectionAnalyzer:
         
         # Encontrar archivos que no están en el conjunto conectado
         return list(all_files - connected_files)
+    
+    def _is_functional_html(self, file_path: str) -> bool:
+        """
+        Determina si un archivo HTML contiene lógica o es puramente presentacional.
+        
+        Args:
+            file_path: Ruta al archivo HTML
+            
+        Returns:
+            True si el HTML contiene lógica o funcionalidad, False si es puramente presentacional
+        """
+        try:
+            # Leer el contenido del archivo
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            
+            # Verificar si contiene elementos funcionales
+            for pattern in self.html_content_patterns['functional']:
+                if re.search(pattern, content, re.IGNORECASE | re.DOTALL):
+                    # Contiene scripts, frameworks o elementos interactivos
+                    return True
+            
+            # Si no contiene elementos funcionales pero tiene estructura básica, es presentacional
+            presentational_matches = 0
+            for pattern in self.html_content_patterns['presentational']:
+                if re.search(pattern, content, re.IGNORECASE):
+                    presentational_matches += 1
+            
+            # Si tiene varios elementos presentacionales pero ninguno funcional, es presentacional
+            if presentational_matches >= 2:
+                return False
+            
+            # Por defecto, incluimos archivos HTML a menos que estemos seguros de que son presentacionales
+            return True
+            
+        except Exception as e:
+            logger.debug(f"Error al analizar HTML {file_path}: {e}")
+            # En caso de error, asumimos que es funcional para no perder conexiones potenciales
+            return True
 
 
 def get_connection_analyzer() -> ConnectionAnalyzer:

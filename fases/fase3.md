@@ -21,7 +21,7 @@ Esta fase implementa el sistema de documentación progresiva y la generación de
 
 ### 3.2 Análisis de conexiones entre archivos
 - **Branch**: `feature/file-connections-analyzer`
-- **Descripción**: Detectar conexiones entre archivos (imports, dependencias).
+- **Descripción**: Detectar conexiones entre archivos (imports, dependencias) excluyendo archivos no relevantes.
 - **Archivos a crear**:
   - `src/analyzers/connection_analyzer.py` - Análisis de conexiones
   - `src/analyzers/dependency_graph.py` - Generación de grafo de dependencias
@@ -30,6 +30,13 @@ Esta fase implementa el sistema de documentación progresiva y la generación de
   - Análisis de dependencias entre archivos
   - Visualización de grafo (texto en markdown)
   - Identificación de componentes desconectados
+- **Exclusiones importantes**:
+  - Imágenes (jpg, png, gif, svg, etc.)
+  - Videos (mp4, webm, etc.)
+  - Archivos multimedia en general
+  - HTML puramente presentacionales (sin lógica)
+  - Archivos de recursos y binarios
+  - Cualquier otro archivo que no contribuya a la estructura de dependencias del código
 
 ### 3.3 Generación de prompts contextuales mejorados
 - **Branch**: `feature/enhanced-prompts`

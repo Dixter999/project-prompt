@@ -281,6 +281,23 @@ class AnalysisView:
         cli.print_info(f"Proyecto: {os.path.basename(connections_data['project_path'])}")
         cli.print_info(f"Archivos analizados: {connections_data['files_analyzed']}")
         
+        # Información sobre exclusiones
+        if 'files_excluded' in connections_data:
+            excluded = connections_data['files_excluded']
+            cli.print_info(f"Archivos excluidos: {excluded.get('total_excluded', 0)}")
+            
+            if detailed:
+                exclude_table = Table(title="Archivos Excluidos")
+                exclude_table.add_column("Tipo de exclusión", style="cyan")
+                exclude_table.add_column("Cantidad", style="green")
+                
+                exclude_table.add_row("Por extensión (multimedia, binarios)", str(excluded.get('by_extension', 0)))
+                exclude_table.add_row("Por patrón (dir/archivos no relevantes)", str(excluded.get('by_pattern', 0)))
+                exclude_table.add_row("HTML puramente presentacional", str(excluded.get('html_presentational', 0)))
+                exclude_table.add_row("Total excluidos", str(excluded.get('total_excluded', 0)))
+                
+                console.print(exclude_table)
+        
         # Estadísticas de lenguajes
         langs_table = Table(title="Lenguajes Detectados")
         langs_table.add_column("Lenguaje", style="cyan")

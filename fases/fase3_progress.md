@@ -14,8 +14,8 @@
   - Comandos CLI para gestión de documentación (`docs`, `docs_list`, `docs_view`)
 
 ### 3.2 Análisis de conexiones entre archivos ✅
-- **Branch**: `feature/file-connections-analyzer`
-- **Estado**: Completado
+- **Branch**: `feature/file-connections-analyzer` 
+- **Estado**: Reimplementado
 - **Funcionalidades implementadas**:
   - Análisis de conexiones entre archivos (`ConnectionAnalyzer`)
   - Detección de importaciones en múltiples lenguajes (Python, JavaScript, TypeScript, etc.)
@@ -24,6 +24,11 @@
   - Detección de ciclos de dependencias
   - Visualización en texto y markdown del grafo
   - Comandos CLI para análisis de conexiones (`connections`, `dependency_graph`)
+  - **Mejoras en reimplementación**:
+    - Exclusión de archivos no relevantes (imágenes, videos, multimedia)
+    - Detección de HTML puramente presentacional vs. funcional
+    - Filtrado basado en patrones y extensiones de archivo
+    - Métricas sobre archivos excluidos e incluidos en el análisis
 
 ### 3.3 Generación de prompts contextuales mejorados 📝
 - **Branch**: `feature/enhanced-prompts`

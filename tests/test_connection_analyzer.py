@@ -48,6 +48,12 @@ class TestConnectionAnalysis(unittest.TestCase):
         # Check if some example files in connections
         file_imports = connections['file_imports']
         self.assertGreater(len(file_imports), 0)
+        
+        # Verificar que se registran exclusiones
+        self.assertIn('files_excluded', connections)
+        excluded = connections['files_excluded']
+        self.assertIsInstance(excluded, dict)
+        self.assertIn('total_excluded', excluded)
     
     def test_dependency_graph_generation(self):
         """Test dependency graph generation."""
@@ -78,6 +84,76 @@ class TestConnectionAnalysis(unittest.TestCase):
         self.assertIsNotNone(markdown)
         self.assertGreater(len(markdown), 100)  # Should be reasonably sized
         self.assertIn("# Grafo de Dependencias", markdown)
+    
+    def test_file_exclusion(self):
+        """Test that non-relevant files are properly excluded."""
+        # Crear algunos archivos que deberían ser excluidos
+        multimedia_dir = self.test_dir / "assets"
+        multimedia_dir.mkdir()
+        
+        # Archivos multimedia
+        (multimedia_dir / "image.jpg").write_text("dummy image content")
+        (multimedia_dir / "video.mp4").write_text("dummy video content")
+        
+        # HTML puramente presentacional
+        html_file = multimedia_dir / "presentational.html"
+        html_file.write_text("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Presentational HTML</title>
+            <meta charset="utf-8">
+            <link rel="stylesheet" href="styles.css">
+        </head>
+        <body>
+            <h1>This is a static HTML</h1>
+            <p>With no functional code</p>
+        </body>
+        </html>
+        """)
+        
+        # HTML funcional
+        functional_html = multimedia_dir / "functional.html"
+        functional_html.write_text("""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Functional HTML</title>
+            <script src="app.js"></script>
+        </head>
+        <body>
+            <h1>This has JavaScript</h1>
+            <button onclick="doSomething()">Click me</button>
+            <script>
+                function doSomething() {
+                    console.log("Hello world");
+                }
+            </script>
+        </body>
+        </html>
+        """)
+        
+        # Realizar análisis
+        connections = self.connection_analyzer.analyze_connections(self.test_dir)
+        
+        # Verificar que se excluyeron archivos
+        self.assertIn('files_excluded', connections)
+        excluded = connections['files_excluded']
+        self.assertGreater(excluded['by_extension'], 0)  # Debería excluir jpg y mp4
+        
+        # Verificar que el HTML funcional no se excluyó pero el presentacional sí
+        functional_path = os.path.relpath(functional_html, self.test_dir)
+        presentational_path = os.path.relpath(html_file, self.test_dir)
+        
+        # El HTML funcional debería estar en file_imports
+        file_imports = connections['file_imports']
+        html_files_found = [f for f in file_imports.keys() if f.endswith('.html')]
+        
+        # Al menos un HTML funcional debe estar incluido
+        self.assertGreaterEqual(len(html_files_found), 1)
+        # El HTML presentacional no debe estar incluido
+        for html_file in html_files_found:
+            self.assertNotEqual(html_file, presentational_path)
     
     def _create_test_project(self):
         """Create a simple test project structure for analysis."""
