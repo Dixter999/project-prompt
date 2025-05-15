@@ -893,6 +893,7 @@ def connections(
     """Analiza las conexiones entre archivos de un proyecto."""
     import os
     from src.ui import analysis_view
+from src.ui.analysis_view import AnalysisView, analyze_connections
     
     project_path = os.path.abspath(path)
     
@@ -906,7 +907,7 @@ def connections(
     try:
         # Analizar conexiones
         with cli.status("Analizando conexiones entre archivos..."):
-            connections_data = analysis_view.analyze_connections(
+            connections_data = analyze_connections(
                 project_path, max_files=max_files, output=output
             )
         

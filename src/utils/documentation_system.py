@@ -16,8 +16,9 @@ from typing import Dict, List, Optional, Union, Any, Tuple
 
 from src.utils.logger import get_logger
 from src.utils.markdown_manager import get_markdown_manager
-from src.analyzers.project_scanner import get_project_scanner
-from src.analyzers.functionality_detector import get_functionality_detector
+# Evitamos importación circular
+# from src.analyzers.project_scanner import get_project_scanner
+# from src.analyzers.functionality_detector import get_functionality_detector
 from src.generators.markdown_generator import get_markdown_generator
 
 logger = get_logger()
@@ -405,6 +406,40 @@ class DocumentationSystem:
             
         except Exception as e:
             logger.error(f"Error al generar archivo de configuración: {e}", exc_info=True)
+            raise
+
+    def _analyze_project(self, project_path: str, options: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analiza un proyecto para generar documentación.
+        
+        Args:
+            project_path: Ruta al proyecto
+            options: Opciones de análisis
+            
+        Returns:
+            Datos del análisis
+        """
+        try:
+            # Importamos aquí para evitar importación circular
+            from src.analyzers.project_scanner import get_project_scanner
+            from src.analyzers.functionality_detector import get_functionality_detector
+            
+            logger.info(f"Analizando proyecto en: {project_path}")
+            
+            # Escanear estructura del proyecto
+            scanner = get_project_scanner()
+            project_data = scanner.scan_project(project_path)
+            
+            # Detectar funcionalidades
+            if options.get('detect_functionalities', True):
+                detector = get_functionality_detector()
+                functionalities = detector.detect_functionalities(project_path, project_data)
+                project_data['functionalities'] = functionalities
+            
+            return project_data
+            
+        except Exception as e:
+            logger.error(f"Error al analizar proyecto: {e}", exc_info=True)
             raise
 
 
