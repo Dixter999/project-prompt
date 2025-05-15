@@ -13,6 +13,7 @@ from rich.console import Console
 
 from src import __version__
 from src.utils import logger, config_manager, LogLevel, set_level
+from src.utils.api_validator import get_api_validator
 from src.ui import menu
 from src.ui.cli import cli
 
@@ -26,11 +27,15 @@ def version():
     cli.print_header("Información de Versión")
     cli.print_info(f"ProjectPrompt v{__version__}")
     
+    # Verificar estado de las APIs
+    validator = get_api_validator()
+    status = validator.get_status_summary()
+    
     # Mostrar información adicional
     table = cli.create_table("Detalles", ["Componente", "Versión/Estado"])
     table.add_row("Python", sys.version.split()[0])
-    table.add_row("API OpenAI", "Configurada" if config_manager.get("api.openai.enabled") else "No configurada")
-    table.add_row("API Anthropic", "Configurada" if config_manager.get("api.anthropic.enabled") else "No configurada")
+    table.add_row("API Anthropic", "Configurada ✅" if status.get("anthropic", False) else "No configurada ❌")
+    table.add_row("API GitHub", "Configurada ✅" if status.get("github", False) else "No configurada ❌")
     console.print(table)
 
 
@@ -90,20 +95,32 @@ def config(key: Optional[str] = None, value: Optional[str] = None, list_all: boo
 
 
 @app.command()
-def set_api(service: str = typer.Argument(..., help="Servicio (anthropic, openai)"),
-           key: str = typer.Argument(..., help="Clave API")):
+def set_api(
+    api_name: str = typer.Argument(..., help="Nombre de la API (anthropic, github)"),
+    api_key: Optional[str] = typer.Option(None, "--key", "-k", help="Clave o token de API"),
+):
     """Configurar una clave API para servicios."""
-    if service.lower() not in ["anthropic", "openai"]:
-        logger.error(f"Servicio no soportado: {service}")
-        console.print("[red]Servicios soportados: anthropic, openai[/red]")
-        return
-
-    if config_manager.set_api_key(service.lower(), key):
-        logger.info(f"Clave API para {service} configurada correctamente")
-        console.print(f"[green]Clave API para {service} configurada correctamente[/green]")
+    validator = get_api_validator()
+    cli.print_header("Configuración de API")
+    
+    # Si no se proporciona clave, pedirla de forma segura
+    if not api_key:
+        api_key = typer.prompt(f"Introduce la clave para {api_name}", hide_input=True)
+        
+    # Guardar y validar la clave
+    success, message = validator.set_api_key(api_name, api_key)
+    
+    if success:
+        cli.print_success(message)
+        
+        # Verificar que la clave funciona
+        result = validator.validate_api(api_name)
+        if result.get("valid", False):
+            cli.print_success(f"✅ Verificación exitosa para {api_name}")
+        else:
+            cli.print_warning(f"⚠️ La clave se guardó pero no pasó la verificación: {result.get('message')}")
     else:
-        logger.error(f"Error al configurar la clave API para {service}")
-        console.print("[red]Error al configurar la clave API[/red]")
+        cli.print_error(f"❌ Error: {message}")
 
 
 @app.command()
@@ -119,6 +136,49 @@ def set_log_level(level: str = typer.Argument(..., help="Nivel de log: debug, in
         valid_levels = ", ".join([l.value for l in LogLevel])
         logger.error(f"Nivel de log no válido: {level}")
         console.print(f"[red]Niveles válidos: {valid_levels}[/red]")
+
+
+@app.command()
+def verify_api(
+    api_name: Optional[str] = typer.Argument(
+        None, help="Nombre de la API a verificar (anthropic, github). Si no se especifica, se verifican todas."
+    )
+):
+    """Verificar el estado de configuración de APIs."""
+    validator = get_api_validator()
+    cli.print_header("Verificación de APIs")
+    
+    if api_name:
+        # Verificar una API específica
+        cli.print_info(f"Verificando configuración de API: {api_name}")
+        result = validator.validate_api(api_name)
+        
+        if result.get("valid", False):
+            cli.print_success(f"✅ {api_name}: {result.get('message', 'Configuración válida')}")
+        else:
+            cli.print_error(f"❌ {api_name}: {result.get('message', 'Configuración inválida')}")
+            
+        if "usage" in result:
+            cli.print_info("Información de uso:")
+            for key, value in result["usage"].items():
+                console.print(f"  - {key}: {value}")
+    else:
+        # Verificar todas las APIs
+        cli.print_info("Verificando todas las APIs configuradas...")
+        results = validator.validate_all_apis()
+        
+        # Crear una tabla con los resultados
+        table = cli.create_table("Estado de APIs", ["API", "Estado", "Mensaje"])
+        
+        for api, status in results.items():
+            icon = "✅" if status.get("valid", False) else "❌"
+            table.add_row(
+                api,
+                f"{icon} {'Válida' if status.get('valid', False) else 'Inválida'}",
+                status.get("message", "")
+            )
+            
+        console.print(table)
 
 
 @app.command()
@@ -141,6 +201,7 @@ def help():
     table.add_row("version", "Mostrar la versión actual")
     table.add_row("config", "Gestionar la configuración")
     table.add_row("set-api", "Configurar claves de API")
+    table.add_row("verify-api", "Verificar estado de APIs")
     table.add_row("set-log-level", "Cambiar el nivel de logging")
     table.add_row("menu", "Iniciar el menú interactivo")
     table.add_row("help", "Mostrar esta ayuda")

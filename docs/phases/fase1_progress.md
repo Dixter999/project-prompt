@@ -35,6 +35,19 @@
   - `project-prompt help` - Ayuda detallada
   - `project-prompt menu` - Menú interactivo
 
+## 1.4 Sistema de verificación de APIs
+- **Estado**: ✅ Done
+- **Fecha**: 2025-05-15
+- **Archivos creados**:
+  - `src/integrations/anthropic.py` - Cliente para la API de Claude (Anthropic)
+  - `src/integrations/copilot.py` - Cliente para la API de GitHub Copilot
+  - `src/integrations/__init__.py` - Inicializador con exportación de clientes
+  - `src/utils/api_validator.py` - Sistema de validación de credenciales de APIs
+  - `tests/test_api_validator.py` - Tests unitarios para el validador de APIs
+- **Comandos implementados**:
+  - `project-prompt set-api` - Configurar claves de API con validación
+  - `project-prompt verify-api` - Verificar estado de las APIs configuradas
+
 ## Notas
 - La estructura base del proyecto ha sido configurada siguiendo las mejores prácticas de Python
 - Se han establecido las dependencias iniciales necesarias según los requisitos
@@ -43,4 +56,9 @@
 - Se ha desarrollado una CLI completa con comandos básicos y avanzados
 - Se ha implementado un sistema de menú interactivo para facilitar el uso
 - La interfaz de usuario es consistente, colorida y fácil de utilizar
-- Se han añadido tests unitarios para verificar la funcionalidad de todos los componentes
+- Se ha implementado un sistema de verificación de APIs que:
+  - Valida credenciales para Anthropic (Claude) y GitHub Copilot
+  - Almacena las claves de forma segura usando keyring
+  - Proporciona información detallada sobre el estado de las APIs
+  - Incluye manejo de errores y mensajes informativos
+- Se han añadido tests unitarios completos para verificar la funcionalidad de todos los componentes

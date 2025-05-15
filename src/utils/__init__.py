@@ -12,6 +12,8 @@ warning = logger.warning
 error = logger.error
 critical = logger.critical
 set_level = logger.set_level
+
+# Importar configuración
 from src.utils.config import (
     config_manager,
     get_config,
@@ -24,8 +26,12 @@ from src.utils.config import (
     set_premium,
 )
 
+# Importar validador de APIs
+from src.utils.api_validator import APIValidator, get_api_validator
+
 __all__ = [
     'logger', 'debug', 'info', 'warning', 'error', 'critical', 'set_level', 'LogLevel',
     'config_manager', 'get_config', 'set_config', 'save_config',
     'get_api_key', 'set_api_key', 'delete_api_key', 'is_premium', 'set_premium',
+    'APIValidator', 'get_api_validator',
 ]
