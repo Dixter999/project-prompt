@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "project-prompt"
+version = "0.1.0"
+description = "Asistente inteligente para análisis y documentación de proyectos"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+typer = "^0.9.0"
+rich = "^13.5.0"
+openai = "^1.0.0"
+anthropic = "^0.5.0"
+pyyaml = "^6.0.1"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.4.0"
+black = "^23.7.0"
+isort = "^5.12.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+project-prompt = "src.main:app"
