@@ -222,12 +222,21 @@ class ProjectStructure:
         # Combinar con metadata proporcionada
         file_metadata = {**default_metadata, **(metadata or {})}
         
-        # Guardar usando el markdown manager
-        # Verificar si el archivo ya existe
-        if os.path.exists(file_path):
-            return self.markdown_manager.update_document(file_path, content, file_metadata)
-        else:
-            return self.markdown_manager.create_document(file_path, content, file_metadata)
+        # Asegurar que el directorio existe
+        os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
+        
+        # Guardar archivo
+        with open(file_path, 'w', encoding='utf-8') as f:
+            # Añadir frontmatter si hay metadata
+            if file_metadata:
+                f.write('---\n')
+                yaml.dump(file_metadata, f, default_flow_style=False)
+                f.write('---\n\n')
+            
+            # Escribir contenido
+            f.write(content)
+        
+        return file_path
     
     def save_functionality_analysis(self, functionality: str, content: str, 
                                   metadata: Optional[Dict[str, Any]] = None) -> str:
@@ -255,12 +264,21 @@ class ProjectStructure:
         # Combinar con metadata proporcionada
         file_metadata = {**default_metadata, **(metadata or {})}
         
-        # Guardar usando el markdown manager
-        # Verificar si el archivo ya existe
-        if os.path.exists(file_path):
-            return self.markdown_manager.update_document(file_path, content, file_metadata)
-        else:
-            return self.markdown_manager.create_document(file_path, content, file_metadata)
+        # Asegurar que el directorio existe
+        os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
+        
+        # Guardar archivo
+        with open(file_path, 'w', encoding='utf-8') as f:
+            # Añadir frontmatter si hay metadata
+            if file_metadata:
+                f.write('---\n')
+                yaml.dump(file_metadata, f, default_flow_style=False)
+                f.write('---\n\n')
+            
+            # Escribir contenido
+            f.write(content)
+        
+        return file_path
     
     def save_prompt(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
@@ -286,12 +304,21 @@ class ProjectStructure:
         # Combinar con metadata proporcionada
         file_metadata = {**default_metadata, **(metadata or {})}
         
-        # Guardar usando el markdown manager
-        # Verificar si el archivo ya existe
-        if os.path.exists(file_path):
-            return self.markdown_manager.update_document(file_path, content, file_metadata)
-        else:
-            return self.markdown_manager.create_document(file_path, content, file_metadata)
+        # Asegurar que el directorio existe
+        os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
+        
+        # Guardar archivo
+        with open(file_path, 'w', encoding='utf-8') as f:
+            # Añadir frontmatter si hay metadata
+            if file_metadata:
+                f.write('---\n')
+                yaml.dump(file_metadata, f, default_flow_style=False)
+                f.write('---\n\n')
+            
+            # Escribir contenido
+            f.write(content)
+        
+        return file_path
     
     def save_functionality_prompt(self, functionality: str, content: str, 
                                 metadata: Optional[Dict[str, Any]] = None) -> str:
@@ -320,12 +347,21 @@ class ProjectStructure:
         # Combinar con metadata proporcionada
         file_metadata = {**default_metadata, **(metadata or {})}
         
-        # Guardar usando el markdown manager
-        # Verificar si el archivo ya existe
-        if os.path.exists(file_path):
-            return self.markdown_manager.update_document(file_path, content, file_metadata)
-        else:
-            return self.markdown_manager.create_document(file_path, content, file_metadata)
+        # Asegurar que el directorio existe
+        os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
+        
+        # Guardar archivo
+        with open(file_path, 'w', encoding='utf-8') as f:
+            # Añadir frontmatter si hay metadata
+            if file_metadata:
+                f.write('---\n')
+                yaml.dump(file_metadata, f, default_flow_style=False)
+                f.write('---\n\n')
+            
+            # Escribir contenido
+            f.write(content)
+        
+        return file_path
     
     def clear_structure(self, confirm: bool = False) -> bool:
         """
