@@ -75,10 +75,11 @@ class PromptGenerator:
         prompts['issues'] = self._generate_issues_prompt(project_data, functionality_data)
         
         # Añadir metadata
+        import datetime
         result = {
             'prompts': prompts,
             'project_path': project_path,
-            'timestamp': self.scanner.get_timestamp(),
+            'timestamp': datetime.datetime.now().isoformat(),
             'is_premium': self.is_premium,
             'prompt_count': len(prompts)
         }
