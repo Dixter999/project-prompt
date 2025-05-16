@@ -15,3 +15,15 @@ The enhanced prompt generator now includes:
 - Guided questions for clarification
 - Architecture analysis based on dependency graphs
 - Code completion prompt generation
+
+feat(fase4): Detector avanzado de funcionalidades
+
+- Implementa `AdvancedFunctionalityDetector` en `src/analyzers/advanced_functionality_detector.py`.
+- Añade patrones avanzados para autenticación y bases de datos en `src/templates/functionality_patterns/`.
+- Detecta arquitecturas comunes (MVC, MVVM, Clean Architecture, etc.).
+- Reconoce frameworks y bibliotecas por lenguaje.
+- Realiza análisis semántico básico y evalúa seguridad en autenticación.
+- Analiza tipos y operaciones de bases de datos.
+- Actualiza `fases/fase4_progress.md` con el avance de la tarea 4.1.
+
+Refs: fase4, tarea 4.1
