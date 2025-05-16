@@ -10,6 +10,7 @@ de archivos para almacenar análisis y prompts contextuales.
 
 import os
 import yaml
+import datetime
 from typing import Dict, List, Optional, Any, Union
 import shutil
 
@@ -59,6 +60,15 @@ class ProjectStructure:
         )
         
         self.markdown_manager = get_markdown_manager(self.config)
+        
+    def get_current_date(self) -> str:
+        """
+        Obtener la fecha actual en formato ISO.
+        
+        Returns:
+            Fecha actual en formato ISO
+        """
+        return datetime.datetime.now().isoformat()
     
     def create_structure(self, overwrite: bool = False) -> Dict[str, Any]:
         """
@@ -205,7 +215,7 @@ class ProjectStructure:
         # Metadata por defecto
         default_metadata = {
             'title': f"Análisis del proyecto: {self.config['project_name']}",
-            'date': self.markdown_manager.get_current_date(),
+            'date': self.get_current_date(),
             'version': self.config.get('version', '0.1.0')
         }
         
@@ -234,7 +244,7 @@ class ProjectStructure:
         default_metadata = {
             'title': f"Análisis de funcionalidad: {functionality}",
             'functionality': functionality,
-            'date': self.markdown_manager.get_current_date(),
+            'date': self.get_current_date(),
             'version': self.config.get('version', '0.1.0')
         }
         
@@ -260,7 +270,7 @@ class ProjectStructure:
         # Metadata por defecto
         default_metadata = {
             'title': f"Prompt general para {self.config['project_name']}",
-            'date': self.markdown_manager.get_current_date(),
+            'date': self.get_current_date(),
             'version': self.config.get('version', '0.1.0'),
             'type': 'general'
         }
@@ -290,7 +300,7 @@ class ProjectStructure:
         default_metadata = {
             'title': f"Prompt para funcionalidad: {functionality}",
             'functionality': functionality,
-            'date': self.markdown_manager.get_current_date(),
+            'date': self.get_current_date(),
             'version': self.config.get('version', '0.1.0'),
             'type': 'functionality'
         }
@@ -395,7 +405,7 @@ class ProjectStructure:
             'project_name': self.config['project_name'],
             'version': self.config['version'],
             'language': self.config['language'],
-            'last_updated': self.markdown_manager.get_current_date(),
+            'last_updated': self.get_current_date(),
             'structure_version': '0.1.0'
         }
         
