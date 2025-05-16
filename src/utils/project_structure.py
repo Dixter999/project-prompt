@@ -223,7 +223,11 @@ class ProjectStructure:
         file_metadata = {**default_metadata, **(metadata or {})}
         
         # Guardar usando el markdown manager
-        return self.markdown_manager.create_or_update_document(file_path, content, file_metadata)
+        # Verificar si el archivo ya existe
+        if os.path.exists(file_path):
+            return self.markdown_manager.update_document(file_path, content, file_metadata)
+        else:
+            return self.markdown_manager.create_document(file_path, content, file_metadata)
     
     def save_functionality_analysis(self, functionality: str, content: str, 
                                   metadata: Optional[Dict[str, Any]] = None) -> str:
@@ -252,7 +256,11 @@ class ProjectStructure:
         file_metadata = {**default_metadata, **(metadata or {})}
         
         # Guardar usando el markdown manager
-        return self.markdown_manager.create_or_update_document(file_path, content, file_metadata)
+        # Verificar si el archivo ya existe
+        if os.path.exists(file_path):
+            return self.markdown_manager.update_document(file_path, content, file_metadata)
+        else:
+            return self.markdown_manager.create_document(file_path, content, file_metadata)
     
     def save_prompt(self, content: str, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
@@ -279,7 +287,11 @@ class ProjectStructure:
         file_metadata = {**default_metadata, **(metadata or {})}
         
         # Guardar usando el markdown manager
-        return self.markdown_manager.create_or_update_document(file_path, content, file_metadata)
+        # Verificar si el archivo ya existe
+        if os.path.exists(file_path):
+            return self.markdown_manager.update_document(file_path, content, file_metadata)
+        else:
+            return self.markdown_manager.create_document(file_path, content, file_metadata)
     
     def save_functionality_prompt(self, functionality: str, content: str, 
                                 metadata: Optional[Dict[str, Any]] = None) -> str:
@@ -309,7 +321,11 @@ class ProjectStructure:
         file_metadata = {**default_metadata, **(metadata or {})}
         
         # Guardar usando el markdown manager
-        return self.markdown_manager.create_or_update_document(file_path, content, file_metadata)
+        # Verificar si el archivo ya existe
+        if os.path.exists(file_path):
+            return self.markdown_manager.update_document(file_path, content, file_metadata)
+        else:
+            return self.markdown_manager.create_document(file_path, content, file_metadata)
     
     def clear_structure(self, confirm: bool = False) -> bool:
         """
