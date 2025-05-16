@@ -103,6 +103,35 @@ class CLI:
             El valor ingresado por el usuario
         """
         return typer.prompt(prompt_text, default=default, hide_input=hide_input)
+        
+    @staticmethod
+    def check_premium_feature(feature_name: str) -> bool:
+        """
+        Verifica si una característica premium está disponible y muestra un mensaje apropiado.
+        
+        Args:
+            feature_name: Nombre de la característica a verificar
+            
+        Returns:
+            True si la característica está disponible, False en caso contrario
+        """
+        # Importar aquí para evitar dependencias circulares
+        from src.utils.subscription_manager import get_subscription_manager
+        
+        subscription_manager = get_subscription_manager()
+        is_available = subscription_manager.can_use_feature(feature_name)
+        
+        if not is_available:
+            console.print(Panel(
+                f"La característica '[bold]{feature_name}[/bold]' requiere una suscripción premium.\n"
+                f"Tu suscripción actual es: [bold]{subscription_manager.get_subscription_type().upper()}[/bold]\n\n"
+                f"Ejecuta '[bold]project-prompt subscription plans[/bold]' para ver los planes disponibles\n"
+                f"o '[bold]project-prompt subscription activate[/bold]' para activar una licencia.",
+                title="[bold red]Característica Premium[/bold red]",
+                border_style="red"
+            ))
+            
+        return is_available
     
     @staticmethod
     def status(message: str):
@@ -202,3 +231,4 @@ status = cli.status
 analyze_feature = cli.analyze_feature
 interview_functionality = cli.interview_functionality
 suggest_branch_strategy = cli.suggest_branch_strategy
+check_premium_feature = cli.check_premium_feature

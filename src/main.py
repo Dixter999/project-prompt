@@ -18,6 +18,7 @@ from src.ui import menu
 from src.ui.cli import cli
 from src.ui.analysis_view import analysis_view
 from src.ui.documentation_navigator import get_documentation_navigator
+from src.ui.subscription_view import show_subscription, activate_license, deactivate_license, show_plans
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
 
 console = Console()
@@ -199,6 +200,35 @@ def config(key: Optional[str] = None, value: Optional[str] = None, list_all: boo
     if key and value:
         config_manager.set(key, value)
         config_manager.save_config()
+
+
+# Submenu para comandos de suscripción
+subscription_app = typer.Typer(help="Gestión de suscripción premium")
+app.add_typer(subscription_app, name="subscription")
+
+
+@subscription_app.command("info")
+def subscription_info():
+    """Muestra información sobre la suscripción actual."""
+    show_subscription()
+    
+    
+@subscription_app.command("activate")
+def subscription_activate(license_key: str = typer.Argument(..., help="Clave de licencia a activar")):
+    """Activa una licencia para acceso premium."""
+    activate_license(license_key)
+    
+    
+@subscription_app.command("deactivate")
+def subscription_deactivate():
+    """Desactiva la licencia actual y revierte a la versión gratuita."""
+    deactivate_license()
+    
+    
+@subscription_app.command("plans")
+def subscription_plans():
+    """Muestra información sobre los planes de suscripción disponibles."""
+    show_plans()
         logger.info(f"Configuración actualizada: {key}={value}")
     elif key:
         value = config_manager.get(key)
