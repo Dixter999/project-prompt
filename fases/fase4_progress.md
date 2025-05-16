@@ -33,8 +33,21 @@
   - ✅ Identificación de componentes faltantes
   - ✅ Generación de reportes de análisis
 
-### 4.3 Sistema de entrevistas guiadas
-- Pendiente de implementación
+### 4.3 Sistema de entrevistas guiadas ✅
+- ✅ Creado branch `feature/guided-interviews`
+- ✅ Implementado sistema de entrevistas en `src/ui/interview_system.py`:
+  - ✅ Clase `InterviewSystem` para realizar entrevistas guiadas
+  - ✅ Carga de plantillas de preguntas desde `src/templates/interviews/`
+  - ✅ Sistema adaptativo de preguntas basado en respuestas previas
+  - ✅ Generación de resúmenes y recomendaciones
+  - ✅ Guardado de entrevistas en formato JSON y Markdown
+  - ✅ Funciones para listar y cargar entrevistas existentes
+- ✅ Creadas plantillas de entrevistas:
+  - ✅ Plantilla genérica en `src/templates/interviews/generic.py` 
+  - ✅ Plantilla específica para APIs en `src/templates/interviews/api_integration.py`
+- ✅ Integrados comandos CLI:
+  - ✅ `project-prompt interview [funcionalidad]` - Iniciar entrevista
+  - ✅ `project-prompt list-interviews` - Listar entrevistas guardadas
 
 ### 4.4 Generación de propuestas de implementación
 - Pendiente de implementación

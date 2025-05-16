@@ -318,9 +318,6 @@ def help():
     table.add_row("config", "Gestionar la configuración")
     table.add_row("set-api", "Configurar claves de API")
     table.add_row("verify-api", "Verificar estado de APIs")
-    table.add_row("interview", "Realizar entrevista guiada sobre una funcionalidad")
-    table.add_row("analyze-feature", "Analizar funcionalidad específica")
-    table.add_row("list-interviews", "Listar entrevistas existentes")
     table.add_row("set-log-level", "Cambiar el nivel de logging")
     table.add_row("menu", "Iniciar el menú interactivo")
     table.add_row("help", "Mostrar esta ayuda")
@@ -795,7 +792,7 @@ def docs(
         with cli.status("Generando documentación..."):
             doc_system = get_documentation_system()
             
-            if update and os.path.exists(output_dir):
+            if update && os.path.exists(output_dir):
                 result = doc_system.update_documentation(project_path, output_dir)
                 action = "actualizada"
             else:
@@ -1216,16 +1213,9 @@ def analyze_feature(
     """
     import json
     import os
+    from src.analyzers.functionality_analyzer import get_functionality_analyzer
+    from src.analyzers.project_scanner import get_project_scanner
     import datetime
-    
-    # Importar el analizador de funcionalidades
-    try:
-        from src.analyzers.functionality_analyzer import get_functionality_analyzer
-        from src.analyzers.project_scanner import get_project_scanner
-    except ImportError as e:
-        cli.print_error(f"Error al importar analizadores: {e}")
-        logger.error(f"Error al importar en analyze_feature: {e}", exc_info=True)
-        return
     
     project_path = os.path.abspath(path)
     
@@ -1399,144 +1389,6 @@ def docs_tree(
     
     navigator = get_documentation_navigator()
     navigator.show_documentation_tree(navigator.get_documentation_dir(path))
-
-
-@app.command()
-def interview(
-    functionality: str = typer.Argument(..., help="Nombre de la funcionalidad a entrevistar"),
-    path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta personalizada para guardar la entrevista"),
-    list_interviews: bool = typer.Option(False, "--list", "-l", help="Listar entrevistas existentes"),
-):
-    """
-    Realizar una entrevista guiada sobre una funcionalidad específica.
-    
-    Esta herramienta permite obtener información detallada sobre una funcionalidad
-    a través de un sistema de preguntas adaptativas. Las respuestas se guardan
-    como documentación y pueden utilizarse para generar informes y planes.
-    """
-    from src.ui import get_interview_system
-    import os
-    
-    project_path = os.path.abspath(path)
-    
-    if not os.path.isdir(project_path):
-        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
-        return
-        
-    # Inicializar sistema de entrevistas
-    interview_system = get_interview_system()
-    
-    # Si se solicita listar entrevistas existentes
-    if list_interviews:
-        cli.print_header("Entrevistas Existentes")
-        
-        interviews = interview_system.list_interviews(project_path)
-        
-        if not interviews:
-            cli.print_info("No hay entrevistas guardadas para este proyecto")
-            return
-            
-        # Crear tabla con las entrevistas
-        table = cli.create_table("Entrevistas Guardadas", ["Funcionalidad", "Fecha", "Preguntas", "Archivo"])
-        
-        for i, interview_data in enumerate(interviews):
-            table.add_row(
-                interview_data['functionality'].capitalize(),
-                interview_data['started_at'],
-                f"{interview_data['answers_count']}/{interview_data['questions_count']}",
-                interview_data['file_name']
-            )
-            
-        console.print(table)
-        return
-    
-    cli.print_header(f"Entrevista sobre {functionality.capitalize()}")
-    cli.print_info(f"Proyecto: {project_path}")
-    
-    try:
-        # Verificar primero si la funcionalidad está detectada
-        from src.analyzers.functionality_detector import get_functionality_detector
-        from src.analyzers.project_scanner import get_project_scanner
-        
-        with cli.status(f"Verificando funcionalidad '{functionality}' en el proyecto..."):
-            scanner = get_project_scanner()
-            detector = get_functionality_detector(scanner)
-            functionality_data = detector.detect_functionalities(project_path)
-        
-        # Verificar si la funcionalidad existe
-        detected = functionality_data.get('detected', {})
-        functionality_exists = False
-        
-        # Buscar coincidencias exactas o parciales
-        for func_name in detected:
-            if func_name.lower() == functionality.lower() or functionality.lower() in func_name.lower():
-                functionality_exists = True
-                if func_name != functionality:
-                    # Si encontramos un nombre más específico, usar ese
-                    functionality = func_name
-                break
-        
-        if not functionality_exists:
-            cli.print_warning(f"La funcionalidad '{functionality}' no fue detectada automáticamente en el proyecto")
-            if not cli.confirm(f"¿Desea continuar con la entrevista para '{functionality}' de todas formas?", default=True):
-                cli.print_info("Entrevista cancelada")
-                return
-        
-        # Realizar la entrevista
-        cli.print_info(f"Iniciando entrevista guiada para la funcionalidad '{functionality}'...")
-        result = interview_system.start_interview(project_path, functionality)
-        
-        # Mostrar confirmación y resumen
-        cli.print_success(f"Entrevista sobre '{functionality}' completada y guardada")
-        
-        # Mostrar ruta a la documentación generada
-        docs_dir = os.path.join(project_path, '.project-prompt', 'interviews')
-        cli.print_info(f"Los resultados están disponibles en: {docs_dir}")
-            
-    except Exception as e:
-        cli.print_error(f"Error durante la entrevista: {e}")
-        logger.error(f"Error en interview: {e}", exc_info=True)
-
-
-@app.command("list-interviews")
-def list_interviews(
-    path: str = typer.Argument(".", help="Ruta al proyecto"),
-):
-    """Listar todas las entrevistas guardadas para un proyecto."""
-    from src.ui import get_interview_system
-    import os
-    
-    project_path = os.path.abspath(path)
-    
-    if not os.path.isdir(project_path):
-        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
-        return
-    
-    cli.print_header("Entrevistas Existentes")
-    
-    # Inicializar sistema de entrevistas
-    interview_system = get_interview_system()
-    
-    # Listar entrevistas
-    interviews = interview_system.list_interviews(project_path)
-    
-    if not interviews:
-        cli.print_info("No hay entrevistas guardadas para este proyecto")
-        return
-        
-    # Crear tabla con las entrevistas
-    table = cli.create_table("Entrevistas Guardadas", ["Funcionalidad", "Fecha", "Preguntas", "Archivo"])
-    
-    for i, interview_data in enumerate(interviews):
-        table.add_row(
-            interview_data['functionality'].capitalize(),
-            interview_data['started_at'],
-            f"{interview_data['answers_count']}/{interview_data['questions_count']}",
-            interview_data['file_name']
-        )
-        
-    console.print(table)
 
 
 @app.callback()
