@@ -321,6 +321,7 @@ def help():
     table.add_row("interview", "Realizar entrevista guiada sobre una funcionalidad")
     table.add_row("analyze-feature", "Analizar funcionalidad específica")
     table.add_row("list-interviews", "Listar entrevistas existentes")
+    table.add_row("implementation-proposal", "Generar propuesta de implementación")
     table.add_row("set-log-level", "Cambiar el nivel de logging")
     table.add_row("menu", "Iniciar el menú interactivo")
     table.add_row("help", "Mostrar esta ayuda")
@@ -795,7 +796,7 @@ def docs(
         with cli.status("Generando documentación..."):
             doc_system = get_documentation_system()
             
-            if update and os.path.exists(output_dir):
+            if update && os.path.exists(output_dir):
                 result = doc_system.update_documentation(project_path, output_dir)
                 action = "actualizada"
             else:
@@ -926,7 +927,7 @@ def docs_view(
         # Extraer frontmatter si existe
         frontmatter_match = re.match(r'---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
         if frontmatter_match:
-            content = content[len(frontmatter_match.group(0)):]
+            content = content.len(frontmatter_match.group(0))
         
         # Mostrar documento
         cli.print_header(f"Documento: {doc_path}")
@@ -1537,6 +1538,144 @@ def list_interviews(
         )
         
     console.print(table)
+
+
+@app.command()
+def implementation_proposal(
+    functionality: str = typer.Argument(..., help="Nombre de la funcionalidad para la propuesta"),
+    path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto"),
+    description: str = typer.Option("", "--description", "-d", help="Descripción corta de la funcionalidad"),
+    files: str = typer.Option("", "--files", "-f", help="Archivos a crear/modificar, separados por coma"),
+    structure: str = typer.Option("", "--structure", "-s", help="Estructura sugerida (texto libre o JSON)"),
+    patterns: str = typer.Option("", "--patterns", help="Patrones y buenas prácticas sugeridas"),
+    complexity: str = typer.Option("", "--complexity", help="Estimación de complejidad"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar la propuesta en Markdown")
+):
+    """
+    Generar una propuesta de implementación para una funcionalidad específica.
+    """
+    from src.generators.implementation_proposal_generator import get_implementation_proposal_generator
+    import os
+
+    cli.print_header(f"Propuesta de Implementación: {functionality}")
+    project_path = os.path.abspath(path)
+
+    # Preparar contexto para la plantilla
+    files_section = files if files else "*No especificado*"
+    structure_section = structure if structure else "*No especificado*"
+    patterns_section = patterns if patterns else "*No especificado*"
+    complexity_section = complexity if complexity else "*No especificado*"
+    context = {
+        "description": description or "*No especificada*",
+        "files_section": files_section,
+        "structure_section": structure_section,
+        "patterns_section": patterns_section,
+        "complexity_section": complexity_section,
+    }
+
+    generator = get_implementation_proposal_generator()
+    proposal_md = generator.generate_proposal(functionality, context)
+
+    # Mostrar resumen en consola
+    cli.print_panel(f"Propuesta para '{functionality}'", proposal_md, style="cyan")
+
+    # Guardar si se solicita
+    if output:
+        output_path = output if output.endswith(".md") else f"{output}.md"
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(proposal_md)
+        cli.print_success(f"Propuesta guardada en: {output_path}")
+
+
+@app.command("suggest-branches")
+def suggest_branches(
+    functionality: str = typer.Argument(..., help="Nombre de la funcionalidad para sugerir branches"),
+    proposal: Optional[str] = typer.Option(None, "--proposal", "-p", 
+                                          help="Ruta al archivo markdown con la propuesta de implementación"),
+    branch_type: str = typer.Option("feature", "--type", "-t", 
+                                   help="Tipo de branch (feature, bugfix, hotfix, refactor)"),
+    description: str = typer.Option("", "--description", "-d", 
+                                   help="Descripción corta de la funcionalidad"),
+    files: str = typer.Option("", "--files", "-f", 
+                             help="Archivos a crear/modificar, separados por coma"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", 
+                                        help="Ruta para guardar la estrategia en Markdown")
+):
+    """
+    Sugerir una estructura de branches de Git para implementar una funcionalidad.
+    
+    Este comando genera recomendaciones de nombres de branches y una estrategia
+    para implementar cambios de forma modular, siguiendo buenas prácticas de Git.
+    """
+    from src.generators.branch_strategy_generator import get_branch_strategy_generator
+    import os
+    import json
+
+    cli.print_header(f"Estrategia de Branches para: {functionality}")
+    
+    # Inicializar el generador
+    generator = get_branch_strategy_generator()
+    
+    # Preparar el contexto
+    proposal_data = {
+        'name': functionality,
+        'description': description or f"Implementación de {functionality}",
+        'files_section': files
+    }
+    
+    # Si se proporciona un archivo de propuesta, leer su contenido
+    if proposal and os.path.exists(proposal):
+        try:
+            with open(proposal, 'r', encoding='utf-8') as f:
+                proposal_content = f.read()
+            
+            # Extraer información básica de la propuesta
+            if "## Descripción" in proposal_content:
+                description_section = proposal_content.split("## Descripción")[1].split("##")[0].strip()
+                proposal_data['description'] = description_section
+            
+            if "## Archivos a crear/modificar" in proposal_content:
+                files_section = proposal_content.split("## Archivos a crear/modificar")[1].split("##")[0].strip()
+                proposal_data['files_section'] = files_section
+            
+            cli.print_info(f"Propuesta cargada desde: {proposal}")
+        except Exception as e:
+            cli.print_error(f"Error al leer archivo de propuesta: {e}")
+    
+    # Generar la estrategia
+    with cli.status("Generando estrategia de branches..."):
+        strategy = generator.generate_branch_strategy(functionality, proposal_data)
+        strategy_md = generator.format_branch_strategy_markdown(strategy)
+    
+    # Mostrar resultado
+    cli.print_success(f"Branch principal sugerido: [bold cyan]{strategy['main_branch']}[/bold cyan]")
+    
+    # Mostrar estructura modular si existe
+    if strategy['modular_structure']:
+        table = cli.create_table("Estructura Modular", ["Branch", "Componente", "Descripción"])
+        for module in strategy['modular_structure']:
+            table.add_row(
+                module['branch'],
+                module['component'],
+                module['description']
+            )
+        console.print(table)
+    
+    # Mostrar dependencias si existen
+    if strategy['dependencies']:
+        deps_str = ", ".join(d.capitalize() for d in strategy['dependencies'])
+        cli.print_info(f"Dependencias detectadas: {deps_str}")
+    
+    # Guardar a archivo si se solicita
+    if output:
+        output_path = output if output.endswith(".md") else f"{output}.md"
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(strategy_md)
+        cli.print_success(f"Estrategia guardada en: {output_path}")
+    
+    # Mostrar el markdown completo
+    cli.print_panel("Estrategia de Branches Completa", strategy_md[:500] + "...", style="cyan")
+    cli.print_info("Para ver la estrategia completa, use la opción --output")
 
 
 @app.callback()
