@@ -182,96 +182,6 @@ def analyze(
     
     
 @app.command()
-def advanced_features(
-    path: str = typer.Argument(".", help="Ruta al proyecto a analizar"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
-    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
-    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
-    quiet: bool = typer.Option(False, "--quiet", "-q", help="Modo silencioso (solo salida mínima)"),
-):
-    """Realizar un análisis avanzado de funcionalidades, arquitecturas y frameworks en un proyecto."""
-    from src.analyzers.project_scanner import get_project_scanner
-    from src.analyzers.functionality_detector import get_functionality_detector
-    from src.analyzers.advanced_functionality_detector import get_advanced_functionality_detector
-    import json
-    import os
-    from datetime import datetime
-    
-    project_path = os.path.abspath(path)
-    
-    if not os.path.isdir(project_path):
-        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
-        return
-        
-    cli.print_header("Análisis Avanzado de Funcionalidades")
-    cli.print_info(f"Analizando proyecto en: {project_path}")
-    
-    try:
-        # Crear escáner de proyectos
-        scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
-        
-        # Crear detectores
-        basic_detector = get_functionality_detector(scanner=scanner) 
-        advanced_detector = get_advanced_functionality_detector(scanner=scanner, basic_detector=basic_detector)
-        
-        # Mostrar progreso
-        with cli.status("Realizando análisis avanzado de funcionalidades..."):
-            # Realizar análisis
-            advanced_data = advanced_detector.detect_functionalities(project_path)
-        
-        if not quiet:
-            # Mostrar resumen
-            cli.print_panel("Resumen de Análisis Avanzado", 
-                           advanced_detector.summarize_advanced_findings(), 
-                           style="green")
-            
-            # Mostrar información de arquitecturas detectadas
-            if advanced_data.get('architectures'):
-                table = cli.create_table("Arquitecturas Detectadas", ["Arquitectura", "Confianza", "Descripción"])
-                for arch_name, arch_data in advanced_data.get('architectures', {}).items():
-                    confidence = f"{arch_data.get('confidence', 0)}%"
-                    description = arch_data.get('description', arch_name)
-                    table.add_row(arch_name, confidence, description)
-                console.print(table)
-            
-            # Mostrar información de frameworks detectados
-            if advanced_data.get('frameworks'):
-                table = cli.create_table("Frameworks Detectados", ["Framework", "Confianza"])
-                for fw_name, fw_data in advanced_data.get('frameworks', {}).items():
-                    confidence = f"{fw_data.get('confidence', 0)}%"
-                    table.add_row(fw_name, confidence)
-                console.print(table)
-            
-            # Mostrar información de autenticación
-            if advanced_data.get('advanced_features', {}).get('authentication', {}).get('security_level'):
-                security = advanced_data['advanced_features']['authentication']['security_level']
-                cli.print_panel("Seguridad de Autenticación", 
-                               f"Nivel: {security.get('category', 'desconocido').upper()}\n"
-                               f"Indicadores: {', '.join(security.get('indicators', []))}\n\n"
-                               f"Recomendaciones:\n" + 
-                               "\n".join([f"- {rec}" for rec in security.get('recommendations', [])]),
-                               style="yellow")
-        
-        # Guardar resultados si se especificó un archivo de salida
-        if output:
-            output_path = output
-            
-            # Si no se especificó extensión, añadir .json
-            if not output.endswith('.json'):
-                output_path = f"{output}.json"
-                
-            # Guardar análisis en formato JSON
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(advanced_data, f, indent=2)
-                
-            cli.print_success(f"Análisis guardado en: {output_path}")
-                
-    except Exception as e:
-        cli.print_error(f"Error al realizar el análisis avanzado: {str(e)}")
-        logger.exception(f"Error en advanced_features: {e}")
-
-
-@app.command()
 def menu():
     """Iniciar el menú interactivo de ProjectPrompt."""
     menu.show()
@@ -882,7 +792,7 @@ def docs(
         with cli.status("Generando documentación..."):
             doc_system = get_documentation_system()
             
-            if update && os.path.exists(output_dir):
+            if update and os.path.exists(output_dir):
                 result = doc_system.update_documentation(project_path, output_dir)
                 action = "actualizada"
             else:
@@ -1288,94 +1198,150 @@ def functionality_files(
         logger.error(f"Error en functionality_files: {e}", exc_info=True)
 
 
-@app.command()
-def detect_advanced_features(
-    path: str = typer.Argument(".", help="Ruta al proyecto a analizar"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
-    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
-    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
-    quiet: bool = typer.Option(False, "--quiet", "-q", help="Modo silencioso (solo salida mínima)"),
+@app.command("analyze-feature")
+def analyze_feature(
+    feature: str = typer.Argument(..., help="Nombre de la funcionalidad a analizar en detalle"),
+    path: str = typer.Argument(".", help="Ruta al proyecto que contiene la funcionalidad"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON o Markdown"),
+    format: str = typer.Option("md", "--format", "-f", help="Formato de salida (json o md)")
 ):
-    """Realizar un análisis avanzado de funcionalidades, arquitecturas y frameworks en un proyecto."""
-    from src.analyzers.project_scanner import get_project_scanner
-    from src.analyzers.functionality_detector import get_functionality_detector
-    from src.analyzers.advanced_functionality_detector import get_advanced_functionality_detector
+    """
+    Analizar en profundidad una funcionalidad específica del proyecto.
+    
+    Este comando examina detalladamente una funcionalidad concreta,
+    evaluando su completitud, calidad, y generando recomendaciones específicas.
+    """
     import json
     import os
-    from datetime import datetime
+    from src.analyzers.functionality_analyzer import get_functionality_analyzer
+    from src.analyzers.project_scanner import get_project_scanner
+    import datetime
     
     project_path = os.path.abspath(path)
     
     if not os.path.isdir(project_path):
         cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
         return
+    
+    # Normalizar el nombre de la funcionalidad
+    feature = feature.lower().strip()
+    
+    # Verificar que es una funcionalidad válida
+    valid_features = ['authentication', 'database', 'api', 'frontend', 'tests']
+    
+    if feature not in valid_features:
+        cli.print_error(f"La funcionalidad '{feature}' no está soportada para análisis profundo")
+        cli.print_info("Funcionalidades soportadas: " + ", ".join(valid_features))
+        return
         
-    cli.print_header("Análisis Avanzado de Funcionalidades")
-    cli.print_info(f"Analizando proyecto en: {project_path}")
+    cli.print_header(f"Análisis Profundo de Funcionalidad: {feature}")
+    cli.print_info(f"Analizando en el proyecto: {project_path}")
     
     try:
-        # Crear escáner de proyectos
-        scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
+        # Crear analizador de funcionalidades
+        scanner = get_project_scanner()
+        analyzer = get_functionality_analyzer(scanner=scanner)
         
-        # Crear detectores
-        basic_detector = get_functionality_detector(scanner=scanner) 
-        advanced_detector = get_advanced_functionality_detector(scanner=scanner, basic_detector=basic_detector)
+        # Realizar análisis
+        with cli.status(f"Analizando la funcionalidad '{feature}' en detalle..."):
+            analysis_result = analyzer.analyze_functionality(project_path, feature)
         
-        # Mostrar progreso
-        with cli.status("Realizando análisis avanzado de funcionalidades..."):
-            # Realizar análisis
-            advanced_data = advanced_detector.detect_functionalities(project_path)
-        
-        if not quiet:
-            # Mostrar resumen
-            cli.print_panel("Resumen de Análisis Avanzado", 
-                           advanced_detector.summarize_advanced_findings(), 
-                           style="green")
+        if "error" in analysis_result:
+            cli.print_error(f"Error en el análisis: {analysis_result['error']}")
+            if "suggestion" in analysis_result:
+                cli.print_info(analysis_result["suggestion"])
+            return
             
-            # Mostrar información de arquitecturas detectadas
-            if advanced_data.get('architectures'):
-                table = cli.create_table("Arquitecturas Detectadas", ["Arquitectura", "Confianza", "Descripción"])
-                for arch_name, arch_data in advanced_data.get('architectures', {}).items():
-                    confidence = f"{arch_data.get('confidence', 0)}%"
-                    description = arch_data.get('description', arch_name)
-                    table.add_row(arch_name, confidence, description)
-                console.print(table)
-            
-            # Mostrar información de frameworks detectados
-            if advanced_data.get('frameworks'):
-                table = cli.create_table("Frameworks Detectados", ["Framework", "Confianza"])
-                for fw_name, fw_data in advanced_data.get('frameworks', {}).items():
-                    confidence = f"{fw_data.get('confidence', 0)}%"
-                    table.add_row(fw_name, confidence)
-                console.print(table)
-            
-            # Mostrar información de autenticación
-            if advanced_data.get('advanced_features', {}).get('authentication', {}).get('security_level'):
-                security = advanced_data['advanced_features']['authentication']['security_level']
-                cli.print_panel("Seguridad de Autenticación", 
-                               f"Nivel: {security.get('category', 'desconocido').upper()}\n"
-                               f"Indicadores: {', '.join(security.get('indicators', []))}\n\n"
-                               f"Recomendaciones:\n" + 
-                               "\n".join([f"- {rec}" for rec in security.get('recommendations', [])]),
-                               style="yellow")
+        # Mostrar resumen de resultados
+        completeness = analysis_result.get('completeness', {})
+        implementation = analysis_result.get('implementation', {})
         
-        # Guardar resultados si se especificó un archivo de salida
+        # Panel con nivel de completitud
+        level = completeness.get('level', 'desconocido').capitalize()
+        score = completeness.get('implementation_score', 0)
+        justification = completeness.get('justification', 'No disponible')
+        
+        level_color = "green"
+        if level in ["Incompleto", "Inseguro", "Mínimo"]:
+            level_color = "red"
+        elif level in ["Parcial", "Adecuado"]:
+            level_color = "yellow"
+            
+        content = f"Nivel: [bold {level_color}]{level}[/bold {level_color}]\n"
+        content += f"Puntuación: {score}/100\n"
+        content += f"Justificación: {justification}"
+        
+        cli.print_panel(f"Evaluación de completitud", content)
+        
+        # Tabla de componentes esenciales
+        essential_components = implementation.get('components', {}).get('essential', {})
+        if essential_components:
+            table = cli.create_table("Componentes Esenciales", ["Componente", "Estado", "Confianza"])
+            
+            for name, component in essential_components.items():
+                status = "✅" if component.get('present', False) else "❌"
+                confidence = component.get('confidence', 0)
+                table.add_row(
+                    name.capitalize(), 
+                    status, 
+                    f"{confidence}%" if component.get('present', False) else "-"
+                )
+                
+            console.print(table)
+            
+        # Recomendaciones principales
+        recommendations = analysis_result.get('recommendations', [])
+        if recommendations:
+            high_priority = [r for r in recommendations if r.get('priority') == 'alta']
+            
+            if high_priority:
+                cli.print_info("Recomendaciones principales:")
+                for i, rec in enumerate(high_priority[:3], 1):  # Mostrar las 3 más importantes
+                    console.print(f"  {i}. [bold red]{rec.get('title')}[/bold red]: {rec.get('description')}")
+                
+                if len(high_priority) > 3:
+                    console.print(f"  ... y {len(high_priority) - 3} más")
+        
+        # Generar y guardar reporte si se solicitó
         if output:
-            output_path = output
+            if format.lower() == "json":
+                # Guardar en JSON
+                output_path = output if output.endswith('.json') else f"{output}.json"
+                
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(analysis_result, f, indent=2)
+                    
+                cli.print_success(f"Análisis guardado en formato JSON: {output_path}")
+                
+            else:
+                # Guardar reporte en Markdown
+                output_path = output if output.endswith('.md') else f"{output}.md"
+                
+                # Generar reporte
+                report = analyzer.generate_analysis_report(feature)
+                
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(report)
+                    
+                cli.print_success(f"Reporte guardado en Markdown: {output_path}")
+        
+        # Mostrar un extracto del informe completo
+        cli.print_info("Resumen de la evaluación:")
+        console.print(f"  - Componentes esenciales: {implementation.get('score', {}).get('essential', {}).get('present', 0)}/{implementation.get('score', {}).get('essential', {}).get('total', 0)}")
+        console.print(f"  - Componentes avanzados: {implementation.get('score', {}).get('advanced', {}).get('present', 0)}/{implementation.get('score', {}).get('advanced', {}).get('total', 0)}")
+        
+        # Mostrar problemas de seguridad si existen
+        security = analysis_result.get('security', {})
+        if security.get('applicable', False) and security.get('warnings', []):
+            cli.print_warning(f"Se detectaron {len(security['warnings'])} problemas de seguridad")
             
-            # Si no se especificó extensión, añadir .json
-            if not output.endswith('.json'):
-                output_path = f"{output}.json"
-                
-            # Guardar análisis en formato JSON
-            with open(output_path, 'w', encoding='utf-8') as f:
-                json.dump(advanced_data, f, indent=2)
-                
-            cli.print_success(f"Análisis guardado en: {output_path}")
-                
+        # Sugerencia para ver reporte completo
+        if not output:
+            cli.print_info("Para guardar un reporte completo, use la opción --output")
+        
     except Exception as e:
-        cli.print_error(f"Error al realizar el análisis avanzado: {str(e)}")
-        logger.exception(f"Error en detect_advanced_features: {e}")
+        cli.print_error(f"Error durante el análisis: {e}")
+        logger.error(f"Error en analyze_feature: {e}", exc_info=True)
 
 
 @docs_app.callback(invoke_without_command=True)
