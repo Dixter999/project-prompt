@@ -15,6 +15,18 @@
   - ✅ Combinación con resultados del detector básico
   - ✅ Generación de informes detallados con recomendaciones
 
+**Notas de implementación:**
+- El detector avanzado utiliza patrones de alta precisión para cada funcionalidad
+- Puede determinar el nivel de seguridad en sistemas de autenticación
+- Identifica frameworks específicos por lenguaje de programación
+- Detecta patrones de arquitectura comunes como MVC, MVVM, Hexagonal, etc.
+- Provee recomendaciones de seguridad para autenticación
+- Analiza tipos de bases de datos (relacional, documental, clave-valor, etc.)
+- Identifica operaciones de base de datos (CRUD, migraciones, transacciones, etc.)
+
+**Siguiente paso:**
+- Implementar integración con CLI para uso directo desde la línea de comandos
+
 ## Tareas Pendientes
 
 ### 4.2 Análisis profundo por funcionalidad
