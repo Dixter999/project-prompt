@@ -120,6 +120,22 @@ class CLI:
         
         spinner = Spinner("dots", text=message)
         return Live(spinner, refresh_per_second=10)
+    
+    @staticmethod
+    def create_tree(title: str):
+        """
+        Crea un árbol para mostrar estructuras de directorios.
+        
+        Args:
+            title: Título del árbol
+            
+        Returns:
+            Un árbol de Rich configurado
+        """
+        from rich.tree import Tree
+        
+        tree = Tree(f"[bold yellow]{title}[/bold yellow]")
+        return tree
 
 
 # Exportar una instancia global para uso directo
@@ -133,6 +149,7 @@ print_warning = cli.print_warning
 print_info = cli.print_info
 print_panel = cli.print_panel
 create_table = cli.create_table
+create_tree = cli.create_tree
 confirm = cli.confirm
 prompt = cli.prompt
 status = cli.status
