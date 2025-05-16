@@ -136,6 +136,52 @@ class CLI:
         
         tree = Tree(f"[bold yellow]{title}[/bold yellow]")
         return tree
+    
+    @staticmethod
+    def analyze_feature(feature: str, path: str = ".", output: Optional[str] = None, format: str = "md"):
+        """
+        Analizar una funcionalidad específica del proyecto.
+        
+        Args:
+            feature: Nombre de la funcionalidad a analizar
+            path: Ruta al proyecto
+            output: Ruta para guardar el análisis
+            format: Formato del reporte (md o json)
+        """
+        from src.main import analyze_feature as analyze_feature_cmd
+        analyze_feature_cmd(feature=feature, path=path, output=output, format=format)
+    
+    @staticmethod
+    def interview_functionality(functionality: str, path: str = ".", output: Optional[str] = None, list_interviews: bool = False):
+        """
+        Realizar una entrevista guiada sobre una funcionalidad específica.
+        
+        Args:
+            functionality: Nombre de la funcionalidad a entrevistar
+            path: Ruta al proyecto
+            output: Ruta personalizada para guardar la entrevista
+            list_interviews: Si debe listar las entrevistas existentes
+        """
+        from src.main import interview as interview_cmd
+        interview_cmd(functionality=functionality, path=path, output=output, list_interviews=list_interviews)
+    
+    @staticmethod
+    def suggest_branch_strategy(functionality: str, proposal: Optional[str] = None, branch_type: str = "feature",
+                              description: str = "", files: str = "", output: Optional[str] = None):
+        """
+        Sugerir una estrategia de branches de Git para implementar una funcionalidad.
+        
+        Args:
+            functionality: Nombre de la funcionalidad
+            proposal: Ruta al archivo markdown con la propuesta de implementación
+            branch_type: Tipo de branch (feature, bugfix, hotfix, refactor)
+            description: Descripción corta de la funcionalidad
+            files: Archivos a crear/modificar, separados por coma
+            output: Ruta para guardar la estrategia en Markdown
+        """
+        from src.main import suggest_branches as suggest_branches_cmd
+        suggest_branches_cmd(functionality=functionality, proposal=proposal, branch_type=branch_type,
+                          description=description, files=files, output=output)
 
 
 # Exportar una instancia global para uso directo
@@ -153,3 +199,6 @@ create_tree = cli.create_tree
 confirm = cli.confirm
 prompt = cli.prompt
 status = cli.status
+analyze_feature = cli.analyze_feature
+interview_functionality = cli.interview_functionality
+suggest_branch_strategy = cli.suggest_branch_strategy
