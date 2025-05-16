@@ -35,6 +35,9 @@ from src.utils.markdown_manager import MarkdownManager, get_markdown_manager
 # Importar sistema de documentación
 from src.utils.documentation_system import DocumentationSystem, get_documentation_system
 
+# Importar gestor de estructura de proyecto
+from src.utils.project_structure import ProjectStructure, get_project_structure
+
 __all__ = [
     'logger', 'debug', 'info', 'warning', 'error', 'critical', 'set_level', 'LogLevel',
     'config_manager', 'get_config', 'set_config', 'save_config',
@@ -42,4 +45,5 @@ __all__ = [
     'MarkdownManager', 'get_markdown_manager',
     'DocumentationSystem', 'get_documentation_system',
     'APIValidator', 'get_api_validator',
+    'ProjectStructure', 'get_project_structure',
 ]

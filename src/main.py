@@ -595,7 +595,8 @@ def generate_prompts(
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar los prompts en formato JSON"),
     premium: bool = typer.Option(False, "--premium", "-p", help="Usar características premium"),
     show: bool = typer.Option(True, "--show/--no-show", help="Mostrar prompts generados"),
-    enhanced: bool = typer.Option(False, "--enhanced", "-e", help="Usar generador de prompts mejorado")
+    enhanced: bool = typer.Option(False, "--enhanced", "-e", help="Usar generador de prompts mejorado"),
+    store: bool = typer.Option(True, "--store/--no-store", help="Guardar en la estructura del proyecto")
 ):
     """Generar prompts contextuales basados en el análisis del proyecto."""
     import json
@@ -630,21 +631,56 @@ def generate_prompts(
         # Crear generador de prompts (básico o mejorado según la opción)
         generator = get_generator(is_premium=premium)
         
+        # Verificar si queremos usar la estructura de archivos
+        use_structure = store and not output
+        
+        # Obtener configuración del proyecto
+        project_config = config_manager.config.copy() or {}
+        project_config['project_name'] = os.path.basename(project_path)
+        
+        if use_structure:
+            # Si queremos guardar en la estructura de archivos
+            from src.utils.project_structure import get_project_structure
+            structure = get_project_structure(project_path, project_config)
+            
+            # Verificar si existe la estructura
+            structure_info = structure.get_structure_info()
+            if not structure_info['exists']:
+                # Crear la estructura si no existe
+                cli.print_info("Creando estructura de archivos del proyecto...")
+                structure.create_structure()
+        
         # Mostrar progreso
         with cli.status("Analizando proyecto y generando prompts..."):
-            # Si se especificó output, guardar directamente
+            # Generar prompts en memoria
+            result = generator.generate_prompts(project_path)
+            
+            # Determinar dónde guardar los prompts
             if output:
+                # Guardar en una ubicación específica
                 prompt_path = generator.save_prompts(project_path, output)
-                result = None
-            else:
-                # Generar prompts en memoria
-                result = generator.generate_prompts(project_path)
+            elif use_structure:
+                # Guardar en la estructura de archivos
+                prompts_data = result.get('prompts', {})
                 
-                # Si se solicitó almacenamiento, guardar en directorio por defecto
-                prompt_path = generator.save_prompts(project_path)
+                # Guardar prompt general
+                general_prompt = prompts_data.get('general', '')
+                if general_prompt:
+                    prompt_path = structure.save_prompt(general_prompt)
+                    
+                # Guardar prompts por funcionalidad
+                functionality_prompts = prompts_data.get('functionalities', {})
+                for func_name, func_prompt in functionality_prompts.items():
+                    structure.save_functionality_prompt(func_name, func_prompt)
+                
+                prompt_path = os.path.join(structure.structure_root, 'prompts')
+            else:
+                # No guardar
+                prompt_path = None
         
         # Mostrar resultado
-        cli.print_success(f"Prompts generados correctamente y guardados en: {prompt_path}")
+        if prompt_path:
+            cli.print_success(f"Prompts generados correctamente y guardados en: {prompt_path}")
         
         # Si se solicitó mostrar y hay resultado disponible
         if show and (result or output):
@@ -972,6 +1008,189 @@ def dependency_graph(
     except Exception as e:
         cli.print_error(f"Error durante la generación del grafo: {e}")
         logger.error(f"Error en dependency_graph: {e}", exc_info=True)
+
+
+@app.command()
+def project_structure(
+    path: str = typer.Argument(".", help="Ruta al proyecto para crear/gestionar estructura"),
+    init: bool = typer.Option(False, "--init", "-i", help="Inicializar la estructura del proyecto"),
+    info: bool = typer.Option(False, "--info", help="Mostrar información de la estructura existente"),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Sobrescribir estructura existente"),
+    clean: bool = typer.Option(False, "--clean", help="Eliminar la estructura completa"),
+):
+    """Gestionar la estructura de archivos del proyecto."""
+    from src.utils.project_structure import get_project_structure
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Estructura de Archivos del Proyecto")
+    cli.print_info(f"Proyecto: {project_path}")
+    
+    # Obtener configuración del proyecto
+    project_config = config_manager.config.copy() or {}
+    project_config['project_name'] = os.path.basename(project_path)
+    
+    # Inicializar gestor de estructura
+    structure = get_project_structure(project_path, project_config)
+    
+    # Ejecutar acción solicitada
+    try:
+        if clean:
+            with cli.status("Eliminando estructura..."):
+                result = structure.clear_structure(confirm=True)
+            
+            if result:
+                cli.print_success("Estructura eliminada correctamente.")
+            else:
+                cli.print_warning("No había estructura que eliminar.")
+            return
+        
+        if init:
+            with cli.status("Inicializando estructura de proyecto..."):
+                result = structure.create_structure(overwrite=overwrite)
+            
+            # Mostrar resultado de la inicialización
+            cli.print_success(f"Estructura creada en: {result['structure_root']}")
+            cli.print_info(f"Directorios creados: {len(result['directories_created'])}")
+            cli.print_info(f"Archivos creados: {len(result['files_created'])}")
+            
+            # Mostrar la estructura creada
+            structure_tree = cli.create_tree("Estructura del proyecto")
+            root_node = structure_tree.add(".project-prompt")
+            root_node.add("project-analysis.md")
+            root_node.add("config.yaml")
+            func_node = root_node.add("functionalities/")
+            prompts_node = root_node.add("prompts/")
+            prompts_node.add("general.md")
+            prompts_node.add("functionality/")
+            
+            console.print(structure_tree)
+            return
+        
+        # Si no se especificó ninguna acción, mostrar información
+        if info or not (init or clean):
+            with cli.status("Analizando estructura existente..."):
+                structure_info = structure.get_structure_info()
+            
+            if not structure_info['exists']:
+                cli.print_warning("No existe estructura de proyecto ProjectPrompt.")
+                cli.print_info("Use el comando 'project-structure --init' para crear la estructura.")
+                return
+            
+            # Mostrar información de la estructura
+            cli.print_success(f"Estructura encontrada en: {structure_info['structure_root']}")
+            
+            # Crear tabla con información
+            table = cli.create_table("Detalles de la estructura", ["Elemento", "Valor"])
+            table.add_row("Directorios", str(structure_info['directories_count']))
+            table.add_row("Archivos", str(structure_info['files_count']))
+            table.add_row("Análisis de proyecto", "Disponible ✅" if structure_info['has_analysis'] else "No disponible ❌")
+            table.add_row("Configuración", "Disponible ✅" if structure_info['has_config'] else "No disponible ❌")
+            
+            # Funcionalidades
+            func_str = ", ".join(structure_info['functionalities']) if structure_info['functionalities'] else "Ninguna"
+            table.add_row("Funcionalidades", func_str)
+            
+            # Prompts
+            prompts_str = ", ".join(structure_info['prompts']) if structure_info['prompts'] else "Ninguno"
+            table.add_row("Prompts de funcionalidad", prompts_str)
+            
+            console.print(table)
+            return
+    
+    except Exception as e:
+        cli.print_error(f"Error al gestionar la estructura: {e}")
+        logger.error(f"Error en project_structure: {e}", exc_info=True)
+
+
+@app.command()
+def functionality_files(
+    name: str = typer.Argument(..., help="Nombre de la funcionalidad"),
+    path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto"),
+    description: str = typer.Option(None, "--description", "-d", help="Descripción corta de la funcionalidad")
+):
+    """Crear archivos de análisis y prompts para una funcionalidad específica."""
+    from src.utils.project_structure import get_project_structure
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header(f"Creando archivos para funcionalidad: {name}")
+    
+    # Obtener configuración del proyecto
+    project_config = config_manager.config.copy() or {}
+    project_config['project_name'] = os.path.basename(project_path)
+    
+    # Inicializar gestor de estructura
+    structure = get_project_structure(project_path, project_config)
+    
+    # Verificar si existe la estructura
+    structure_info = structure.get_structure_info()
+    
+    if not structure_info['exists']:
+        cli.print_warning("No existe estructura de proyecto ProjectPrompt.")
+        if typer.confirm("¿Desea crear la estructura primero?"):
+            structure.create_structure()
+            cli.print_success("Estructura creada correctamente.")
+        else:
+            return
+    
+    # Descripción por defecto si no se proporciona
+    if not description:
+        description = f"Funcionalidad {name} del proyecto {project_config['project_name']}"
+    
+    try:
+        # Crear contenido para el análisis de la funcionalidad
+        analysis_content = f"""# Análisis de funcionalidad: {name}
+
+## Descripción
+{description}
+
+## Archivos relacionados
+*Este campo se completará al ejecutar el análisis detallado de la funcionalidad.*
+
+## Dependencias
+*Este campo se completará al ejecutar el análisis detallado de la funcionalidad.*
+
+## Notas adicionales
+*Espacio para notas y observaciones sobre la funcionalidad.*
+"""
+
+        # Crear contenido para el prompt de la funcionalidad
+        prompt_content = f"""# Prompt para funcionalidad: {name}
+
+## Descripción de la funcionalidad
+{description}
+
+## Contexto y referencias
+*Este campo se completará al generar los prompts contextuales.*
+
+## Instrucciones específicas
+*Este campo contendrá instrucciones específicas para trabajar con esta funcionalidad.*
+
+## Ejemplos de código relevantes
+*Este campo mostrará ejemplos de código relacionados con la funcionalidad.*
+"""
+
+        # Guardar los archivos
+        with cli.status("Creando archivos..."):
+            analysis_path = structure.save_functionality_analysis(name, analysis_content)
+            prompt_path = structure.save_functionality_prompt(name, prompt_content)
+        
+        cli.print_success("Archivos creados correctamente:")
+        cli.print_info(f"Análisis: {os.path.relpath(analysis_path, project_path)}")
+        cli.print_info(f"Prompt: {os.path.relpath(prompt_path, project_path)}")
+        
+    except Exception as e:
+        cli.print_error(f"Error al crear archivos para la funcionalidad: {e}")
+        logger.error(f"Error en functionality_files: {e}", exc_info=True)
 
 
 @app.callback()
