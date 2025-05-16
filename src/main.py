@@ -17,10 +17,15 @@ from src.utils.api_validator import get_api_validator
 from src.ui import menu
 from src.ui.cli import cli
 from src.ui.analysis_view import analysis_view
+from src.ui.documentation_navigator import get_documentation_navigator
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
 
 console = Console()
 app = typer.Typer(help="ProjectPrompt: Asistente inteligente para proyectos")
+
+# Submenu para comandos de documentación
+docs_app = typer.Typer(help="Comandos de navegación de documentación")
+app.add_typer(docs_app, name="docs")
 
 
 @app.command()
@@ -1191,6 +1196,53 @@ def functionality_files(
     except Exception as e:
         cli.print_error(f"Error al crear archivos para la funcionalidad: {e}")
         logger.error(f"Error en functionality_files: {e}", exc_info=True)
+
+
+@docs_app.callback(invoke_without_command=True)
+def docs_main(ctx: typer.Context):
+    """
+    Navegar por la documentación del proyecto.
+    Si no se especifica un subcomando, muestra el menú de navegación.
+    """
+    if ctx.invoked_subcommand is None:
+        # Si no hay subcomando, mostrar menú de navegación
+        navigator = get_documentation_navigator()
+        navigator.show_menu()
+        
+
+@docs_app.command("list")
+def docs_list(
+    path: str = typer.Argument(".", help="Ruta al proyecto"),
+):
+    """Listar todos los documentos disponibles en el proyecto."""
+    cli.print_header("Listado de Documentación")
+    
+    navigator = get_documentation_navigator()
+    navigator.show_documents_list(navigator.get_documentation_dir(path))
+    
+
+@docs_app.command("view")
+def docs_view(
+    doc_path: str = typer.Argument(..., help="Ruta al documento o nombre"),
+    show_frontmatter: bool = typer.Option(False, "--frontmatter", "-f", help="Mostrar frontmatter"),
+    project_path: str = typer.Option(".", "--project", "-p", help="Ruta al proyecto"),
+):
+    """Ver un documento específico."""
+    cli.print_header("Visor de Documentación")
+    
+    navigator = get_documentation_navigator()
+    navigator.view_document(doc_path, show_frontmatter)
+    
+
+@docs_app.command("tree")
+def docs_tree(
+    path: str = typer.Argument(".", help="Ruta al proyecto"),
+):
+    """Mostrar la estructura de documentación como árbol."""
+    cli.print_header("Estructura de Documentación")
+    
+    navigator = get_documentation_navigator()
+    navigator.show_documentation_tree(navigator.get_documentation_dir(path))
 
 
 @app.callback()
