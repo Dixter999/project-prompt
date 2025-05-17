@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""
+Plantilla para tests de módulos en ProjectPrompt.
+"""
+import pytest
+import importlib
+from datetime import datetime
+
+# {{module_path}}
+
+
+def test_{{module_name}}_exists():
+    """Verificar que el módulo existe y puede ser importado."""
+    try:
+        import {{module_name}}
+        assert True
+    except ImportError:
+        assert False, "El módulo {{module_name}} no puede ser importado"
+
+
+def test_{{module_name}}_functions_are_accessible():
+    """Verificar que las funciones del módulo están accesibles."""
+    # Verificar que las funciones declaradas existen y son accesibles
+    functions_to_test = [{{functions}}]
+    if functions_to_test and functions_to_test[0]:  # Solo si hay funciones definidas
+        try:
+            module = importlib.import_module("{{module_name}}")
+            for func_name in functions_to_test:
+                if not func_name:  # Ignorar strings vacíos
+                    continue
+                assert hasattr(module, func_name), f"La función {func_name} no existe en el módulo {{module_name}}"
+                func = getattr(module, func_name)
+                assert callable(func), f"{func_name} no es callable en el módulo {{module_name}}"
+        except ImportError:
+            assert False, "No se pudo importar el módulo {{module_name}} para verificar funciones"
+
+
+# Casos de prueba generados automáticamente
+{{test_cases}}
+
+
+if __name__ == "__main__":
+    pytest.main(["-xvs", __file__])

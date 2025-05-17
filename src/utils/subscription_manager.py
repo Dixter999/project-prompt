@@ -135,6 +135,28 @@ class SubscriptionManager:
         """
         return self._subscription_type != SUBSCRIPTION_FREE
     
+    def is_premium_feature_available(self, feature_name: str) -> bool:
+        """
+        Verifica si una característica premium está disponible para la suscripción actual.
+        Este método es un alias de can_use_feature para mantener compatibilidad.
+        
+        Args:
+            feature_name: Nombre de la característica premium
+            
+        Returns:
+            True si la característica premium está disponible, False en caso contrario
+        """
+        # Las características premium generalmente requieren suscripción básica o superior
+        if self._subscription_type == SUBSCRIPTION_FREE:
+            return False
+            
+        # Si es una característica específica, verificar si está en la lista
+        if feature_name:
+            return self.can_use_feature(feature_name)
+            
+        # Por defecto, cualquier suscripción no gratuita tiene acceso a características premium básicas
+        return True
+    
     def can_use_feature(self, feature_name: str) -> bool:
         """
         Verifica si la suscripción actual permite usar una característica específica.

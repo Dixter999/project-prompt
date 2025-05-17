@@ -720,7 +720,7 @@ class {feature_name_pascal}{integrated_system.replace(' ', '')}Adapter {{
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
     this.headers = {{
-      'Authorization': 'Bearer ' + apiKey,
+      'Authorization': `Bearer ${{{{apiKey}}}}`,
       'Content-Type': 'application/json'
     }};
   }}
@@ -729,13 +729,13 @@ class {feature_name_pascal}{integrated_system.replace(' ', '')}Adapter {{
     /**
      * Obtiene datos de {feature_name} desde {integrated_system}.
      */
-    const url = this.baseUrl + '/api/{feature_name_snake}s/' + {feature_name_camel}Id;
+    const url = `${{{{this.baseUrl}}}}/api/{feature_name_snake}s/${{{{feature_name_camel}Id}}}}`;
     
     try {{
       const response = await axios.get(url, {{ headers: this.headers }});
       return response.data;
     }} catch (error) {{
-      throw new IntegrationError('Error al obtener datos de {integrated_system}: ' + error.message);
+      throw new IntegrationError(`Error al obtener datos de {integrated_system}: ${{{{error.message}}}}`)
     }}
   }}
   
@@ -743,13 +743,13 @@ class {feature_name_pascal}{integrated_system.replace(' ', '')}Adapter {{
     /**
      * Crea un nuevo {feature_name} en {integrated_system}.
      */
-    const url = this.baseUrl + '/api/{feature_name_snake}s';
+    const url = `${{{{this.baseUrl}}}}/api/{feature_name_snake}s`;
     
     try {{
       const response = await axios.post(url, data, {{ headers: this.headers }});
       return response.data;
     }} catch (error) {{
-      throw new IntegrationError('Error al crear {feature_name} en {integrated_system}: ' + error.message);
+      throw new IntegrationError(`Error al crear {feature_name} en {integrated_system}: ${{{{error.message}}}}`)
     }}
   }}
 }}
