@@ -38,7 +38,22 @@
   - Pruebas unitarias adicionales
 
 ### 5.3 Generador de tests unitarios
-- **Estado**: Pendiente
+- **Branch**: `feature/unit-test-generator`
+- **Estado**: Completado
+- **Archivos creados**:
+  - `src/generators/test_generator.py` - Generador de tests
+  - `src/templates/tests/module_test.py` - Plantilla de tests para módulos
+  - `src/templates/tests/class_test.py` - Plantilla de tests para clases
+  - `src/templates/tests/default.py` - Plantilla de tests por defecto
+  - `src/analyzers/testability_analyzer.py` - Analizador de testabilidad
+- **Funcionalidades implementadas**:
+  - Generación de estructura de tests unitarios
+  - Análisis de testabilidad de código
+  - Creación de casos de prueba básicos
+  - Integración con CLI para generación de tests
+  - Detección automática del framework de tests del proyecto
+  - Generación de tests para archivos individuales o funcionalidades
+  - Adaptación al framework de tests usado por el proyecto
 
 ### 5.4 Verificador de completitud
 - **Estado**: Pendiente

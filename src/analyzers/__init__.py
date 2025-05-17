@@ -10,6 +10,7 @@ from src.analyzers.file_analyzer import FileAnalyzer, get_file_analyzer
 from src.analyzers.functionality_detector import FunctionalityDetector, get_functionality_detector
 from src.analyzers.connection_analyzer import ConnectionAnalyzer, get_connection_analyzer
 from src.analyzers.dependency_graph import DependencyGraph, get_dependency_graph
+from src.analyzers.testability_analyzer import TestabilityAnalyzer, get_testability_analyzer
 
 __all__ = [
     'ProjectScanner', 'get_project_scanner',
@@ -17,4 +18,5 @@ __all__ = [
     'FunctionalityDetector', 'get_functionality_detector',
     'ConnectionAnalyzer', 'get_connection_analyzer',
     'DependencyGraph', 'get_dependency_graph',
+    'TestabilityAnalyzer', 'get_testability_analyzer',
 ]

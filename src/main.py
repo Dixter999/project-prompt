@@ -1820,23 +1820,135 @@ def implementation_prompt(
         logger.error(f"Error en implementation_prompt: {e}", exc_info=True)
 
 
-@app.callback()
-def main(debug: bool = typer.Option(False, "--debug", "-d", help="Activar modo debug")):
-    """
-    ProjectPrompt: Asistente inteligente para analizar proyectos y generar documentación
-    utilizando IA.
-    """
-    # Configurar nivel de log
-    if debug:
-        set_level(LogLevel.DEBUG)
-        logger.debug("Modo debug activado")
-    else:
-        log_level = config_manager.get("log_level", "info")
-        set_level(log_level)
+@app.command()
+def generate_tests(
+    path: str = typer.Argument(".", help="Ruta al proyecto o archivo para generar tests"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Directorio de salida para los tests generados"),
+    functionality: Optional[str] = typer.Option(None, "--functionality", "-f", 
+                                            help="Nombre de la funcionalidad específica para generar tests"),
+    config: bool = typer.Option(False, "--config", "-c", help="Generar configuración de tests"),
+    premium: bool = typer.Option(False, "--premium", "-p", help="Usar características premium para generación avanzada"),
+):
+    """Generar tests unitarios para un proyecto o funcionalidad específica."""
+    from src.generators.test_generator import get_test_generator
+    from src.analyzers.testability_analyzer import get_testability_analyzer
     
-    # Mensaje de bienvenida en modo debug
-    logger.debug(f"ProjectPrompt v{__version__} iniciado")
-
-
-if __name__ == "__main__":
-    app()
+    project_path = os.path.abspath(path)
+    
+    if not os.path.exists(project_path):
+        cli.print_error(f"La ruta especificada no existe: {project_path}")
+        return
+        
+    cli.print_header("Generación de Tests Unitarios")
+    cli.print_info(f"Analizando {project_path}")
+    
+    # Verificar si se trata de un archivo o un directorio
+    is_file = os.path.isfile(project_path)
+    
+    try:
+        # Si se solicitó premium, verificar suscripción
+        if premium:
+            from src.utils.subscription_manager import get_subscription_manager
+            subscription = get_subscription_manager()
+            has_premium_access = subscription.has_premium()
+            
+            if not has_premium_access:
+                cli.print_warning("Las funciones premium requieren una suscripción activa")
+                cli.print_info("Para activar tu suscripción: project-prompt subscription activate <clave>")
+                premium = False
+            else:
+                cli.print_info("Utilizando generador de tests unitarios premium con funcionalidades avanzadas")
+        
+        # Obtener generador de tests
+        generator = get_test_generator({"premium": premium})
+        
+        # Determinar directorio de salida
+        if not output:
+            output = os.path.join(os.path.dirname(project_path) if is_file else project_path, "tests")
+        
+        # Generar configuración de tests si se solicitó
+        if config:
+            with cli.status("Generando configuración de tests..."):
+                config_result = generator.save_test_config(
+                    os.path.dirname(project_path) if is_file else project_path,
+                    os.path.join(output, "pytest.ini") if "pytest" in str(generator.test_framework) else None
+                )
+                
+            if config_result.get("success"):
+                cli.print_success(f"Configuración de tests generada en: {config_result.get('config_path')}")
+                cli.print_info(f"Framework detectado: {config_result.get('framework', 'pytest')}")
+            else:
+                cli.print_error(f"Error al generar configuración: {config_result.get('error')}")
+        
+        # Analizar y generar tests
+        if is_file:
+            # Generar tests para un archivo específico
+            with cli.status(f"Generando tests para el archivo {os.path.basename(project_path)}..."):
+                result = generator.generate_tests_for_file(project_path, output)
+            
+            if result.get("success"):
+                cli.print_success(f"Test generado: {result.get('test_file')}")
+                cli.print_info(f"Casos de prueba generados: {result.get('test_cases', 0)}")
+            else:
+                cli.print_error(f"Error al generar tests: {result.get('error')}")
+                
+        elif functionality:
+            # Generar tests para una funcionalidad específica
+            with cli.status(f"Generando tests para la funcionalidad '{functionality}'..."):
+                result = generator.generate_tests_for_functionality(functionality, project_path, output)
+                
+            if result.get("success"):
+                cli.print_success(f"Tests generados para {functionality}")
+                cli.print_info(f"Archivos con tests: {len(result.get('results', []))}")
+                
+                # Mostrar detalle de tests generados
+                table = cli.create_table("Tests Generados", ["Módulo", "Casos de Prueba"])
+                for test_result in result.get("results", []):
+                    table.add_row(
+                        test_result.get("module_name", ""),
+                        str(test_result.get("test_cases", 0))
+                    )
+                console.print(table)
+            else:
+                cli.print_error(f"Error al generar tests: {result.get('error')}")
+        else:
+            # Generar tests para todo el proyecto
+            with cli.status(f"Analizando proyecto y generando tests..."):
+                result = generator.generate_tests_for_project(project_path, output)
+                
+            if result.get("success"):
+                cli.print_success(f"Tests generados correctamente en: {output}")
+                cli.print_info(f"Funcionalidades probadas: {result.get('functionalities_tested', 0)}")
+                cli.print_info(f"Archivos de test generados: {result.get('tests_generated', 0)}")
+                
+                # Mostrar detalle por funcionalidad
+                functionality_results = result.get("functionality_results", {})
+                
+                if functionality_results:
+                    table = cli.create_table("Resultados por Funcionalidad", ["Funcionalidad", "Tests", "Estado"])
+                    
+                    for func_name, func_result in functionality_results.items():
+                        test_count = len(func_result.get("results", []))
+                        status = "✅ OK" if func_result.get("success") else "❌ Error"
+                        
+                        table.add_row(func_name, str(test_count), status)
+                        
+                    console.print(table)
+            else:
+                cli.print_error(f"Error al generar tests para el proyecto")
+        
+        # Sugerencias sobre cómo ejecutar los tests
+        if result and result.get("success"):
+            cli.print_info("Para ejecutar los tests generados:")
+            
+            if generator.test_framework == "pytest":
+                console.print("  [bold]pytest[/bold] (para ejecutar todos los tests)")
+                console.print(f"  [bold]pytest {output}[/bold] (para ejecutar los tests generados)")
+            else:  # unittest
+                console.print("  [bold]python -m unittest discover[/bold] (para ejecutar todos los tests)")
+                console.print(f"  [bold]python -m unittest discover {output}[/bold] (para ejecutar los tests generados)")
+                
+    except Exception as e:
+        cli.print_error(f"Error durante la generación de tests: {e}")
+        logger.error(f"Error en generate_tests: {e}", exc_info=True)
+```
