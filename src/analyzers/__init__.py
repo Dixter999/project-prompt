@@ -11,6 +11,8 @@ from src.analyzers.functionality_detector import FunctionalityDetector, get_func
 from src.analyzers.connection_analyzer import ConnectionAnalyzer, get_connection_analyzer
 from src.analyzers.dependency_graph import DependencyGraph, get_dependency_graph
 from src.analyzers.testability_analyzer import TestabilityAnalyzer, get_testability_analyzer
+from src.analyzers.completeness_verifier import CompletenessVerifier, get_completeness_verifier
+from src.analyzers.code_quality_analyzer import CodeQualityAnalyzer, get_code_quality_analyzer
 
 __all__ = [
     'ProjectScanner', 'get_project_scanner',
@@ -19,4 +21,6 @@ __all__ = [
     'ConnectionAnalyzer', 'get_connection_analyzer',
     'DependencyGraph', 'get_dependency_graph',
     'TestabilityAnalyzer', 'get_testability_analyzer',
+    'CompletenessVerifier', 'get_completeness_verifier',
+    'CodeQualityAnalyzer', 'get_code_quality_analyzer',
 ]

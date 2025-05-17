@@ -455,7 +455,7 @@ def detect_functionalities(
                 # Mostrar archivos relevantes
                 files = evidence.get('files', [])
                 if files:
-                    console.print(f"  [dim]Archivos relevantes:[/dim]")
+                    console.print(f"                 [dim]Archivos relevantes:[/dim]")
                     for i, file in enumerate(files[:5]):
                         console.print(f"    - {file}")
                     if len(files) > 5:
@@ -876,7 +876,7 @@ def docs_list(
         table_data = []
         for doc in docs:
             rel_path = doc.get('relative_path', '')
-            updated = doc.get('updated', doc.get('modified', 'Desconocido'))
+            updated = doc.get('updated', doc.get('modified', 'Desconocida'))
             version = doc.get('version', '-')
             word_count = doc.get('word_count', 0)
             
@@ -1371,343 +1371,359 @@ def analyze_feature(
         logger.error(f"Error en analyze_feature: {e}", exc_info=True)
 
 
-@docs_app.callback(invoke_without_command=True)
-def docs_main(ctx: typer.Context):
-    """
-    Navegar por la documentación del proyecto.
-    Si no se especifica un subcomando, muestra el menú de navegación.
-    """
-    if ctx.invoked_subcommand is None:
-        # Si no hay subcomando, mostrar menú de navegación
-        navigator = get_documentation_navigator()
-        navigator.show_menu()
-        
-
-@docs_app.command("list")
-def docs_list(
-    path: str = typer.Argument(".", help="Ruta al proyecto"),
-):
-    """Listar todos los documentos disponibles en el proyecto."""
-    cli.print_header("Listado de Documentación")
-    
-    navigator = get_documentation_navigator()
-    navigator.show_documents_list(navigator.get_documentation_dir(path))
-    
-
-@docs_app.command("view")
-def docs_view(
-    doc_path: str = typer.Argument(..., help="Ruta al documento o nombre"),
-    show_frontmatter: bool = typer.Option(False, "--frontmatter", "-f", help="Mostrar frontmatter"),
-    project_path: str = typer.Option(".", "--project", "-p", help="Ruta al proyecto"),
-):
-    """Ver un documento específico."""
-    cli.print_header("Visor de Documentación")
-    
-    navigator = get_documentation_navigator()
-    navigator.view_document(doc_path, show_frontmatter)
-    
-
-@docs_app.command("tree")
-def docs_tree(
-    path: str = typer.Argument(".", help="Ruta al proyecto"),
-):
-    """Mostrar la estructura de documentación como árbol."""
-    cli.print_header("Estructura de Documentación")
-    
-    navigator = get_documentation_navigator()
-    navigator.show_documentation_tree(navigator.get_documentation_dir(path))
-
-
 @app.command()
-def interview(
-    functionality: str = typer.Argument(..., help="Nombre de la funcionalidad a entrevistar"),
-    path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta personalizada para guardar la entrevista"),
-    list_interviews: bool = typer.Option(False, "--list", "-l", help="Listar entrevistas existentes"),
+def verify_completeness(
+    path: str = typer.Argument(".", help="Ruta al proyecto a verificar"),
+    functionality: str = typer.Option(None, "--functionality", "-f", help="Nombre de la funcionalidad específica a verificar"),
+    template_type: str = typer.Option(None, "--template", "-t", 
+                                     help="Tipo de plantilla a utilizar (api, database, ui, utility)"),
+    output: str = typer.Option(None, "--output", "-o", help="Ruta para guardar el informe en JSON"),
+    premium: bool = typer.Option(False, "--premium", "-p", help="Usar funcionalidades premium")
 ):
     """
-    Realizar una entrevista guiada sobre una funcionalidad específica.
-    
-    Esta herramienta permite obtener información detallada sobre una funcionalidad
-    a través de un sistema de preguntas adaptativas. Las respuestas se guardan
-    como documentación y pueden utilizarse para generar informes y planes.
+    Verificar completitud de implementación de funcionalidades en un proyecto.
+    Analiza si las implementaciones cumplen con criterios de completitud y calidad.
     """
-    from src.ui import get_interview_system
-    import os
-    
-    project_path = os.path.abspath(path)
-    
-    if not os.path.isdir(project_path):
-        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
-        return
-        
-    # Inicializar sistema de entrevistas
-    interview_system = get_interview_system()
-    
-    # Si se solicita listar entrevistas existentes
-    if list_interviews:
-        cli.print_header("Entrevistas Existentes")
-        
-        interviews = interview_system.list_interviews(project_path)
-        
-        if not interviews:
-            cli.print_info("No hay entrevistas guardadas para este proyecto")
-            return
-            
-        # Crear tabla con las entrevistas
-        table = cli.create_table("Entrevistas Guardadas", ["Funcionalidad", "Fecha", "Preguntas", "Archivo"])
-        
-        for i, interview_data in enumerate(interviews):
-            table.add_row(
-                interview_data['functionality'].capitalize(),
-                interview_data['started_at'],
-                f"{interview_data['answers_count']}/{interview_data['questions_count']}",
-                interview_data['file_name']
-            )
-            
-        console.print(table)
-        return
-    
-    cli.print_header(f"Entrevista sobre {functionality.capitalize()}")
-    cli.print_info(f"Proyecto: {project_path}")
-    
-    try:
-        # Verificar primero si la funcionalidad está detectada
-        from src.analyzers.functionality_detector import get_functionality_detector
-        from src.analyzers.project_scanner import get_project_scanner
-        
-        with cli.status(f"Verificando funcionalidad '{functionality}' en el proyecto..."):
-            scanner = get_project_scanner()
-            detector = get_functionality_detector(scanner)
-            functionality_data = detector.detect_functionalities(project_path)
-        
-        # Verificar si la funcionalidad existe
-        detected = functionality_data.get('detected', {})
-        functionality_exists = False
-        
-        # Buscar coincidencias exactas o parciales
-        for func_name in detected:
-            if func_name.lower() == functionality.lower() or functionality.lower() in func_name.lower():
-                functionality_exists = True
-                if func_name != functionality:
-                    # Si encontramos un nombre más específico, usar ese
-                    functionality = func_name
-                break
-        
-        if not functionality_exists:
-            cli.print_warning(f"La funcionalidad '{functionality}' no fue detectada automáticamente en el proyecto")
-            if not cli.confirm(f"¿Desea continuar con la entrevista para '{functionality}' de todas formas?", default=True):
-                cli.print_info("Entrevista cancelada")
-                return
-        
-        # Realizar la entrevista
-        cli.print_info(f"Iniciando entrevista guiada para la funcionalidad '{functionality}'...")
-        result = interview_system.start_interview(project_path, functionality)
-        
-        # Mostrar confirmación y resumen
-        cli.print_success(f"Entrevista sobre '{functionality}' completada y guardada")
-        
-        # Mostrar ruta a la documentación generada
-        docs_dir = os.path.join(project_path, '.project-prompt', 'interviews')
-        cli.print_info(f"Los resultados están disponibles en: {docs_dir}")
-            
-    except Exception as e:
-        cli.print_error(f"Error durante la entrevista: {e}")
-        logger.error(f"Error en interview: {e}", exc_info=True)
-
-
-@app.command("list-interviews")
-def list_interviews(
-    path: str = typer.Argument(".", help="Ruta al proyecto"),
-):
-    """Listar todas las entrevistas guardadas para un proyecto."""
-    from src.ui import get_interview_system
-    import os
-    
-    project_path = os.path.abspath(path)
-    
-    if not os.path.isdir(project_path):
-        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
-        return
-    
-    cli.print_header("Entrevistas Existentes")
-    
-    # Inicializar sistema de entrevistas
-    interview_system = get_interview_system()
-    
-    # Listar entrevistas
-    interviews = interview_system.list_interviews(project_path)
-    
-    if not interviews:
-        cli.print_info("No hay entrevistas guardadas para este proyecto")
-        return
-        
-    # Crear tabla con las entrevistas
-    table = cli.create_table("Entrevistas Guardadas", ["Funcionalidad", "Fecha", "Preguntas", "Archivo"])
-    
-    for i, interview_data in enumerate(interviews):
-        table.add_row(
-            interview_data['functionality'].capitalize(),
-            interview_data['started_at'],
-            f"{interview_data['answers_count']}/{interview_data['questions_count']}",
-            interview_data['file_name']
-        )
-        
-    console.print(table)
-
-
-@app.command()
-def implementation_proposal(
-    functionality: str = typer.Argument(..., help="Nombre de la funcionalidad para la propuesta"),
-    path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto"),
-    description: str = typer.Option("", "--description", "-d", help="Descripción corta de la funcionalidad"),
-    files: str = typer.Option("", "--files", "-f", help="Archivos a crear/modificar, separados por coma"),
-    structure: str = typer.Option("", "--structure", "-s", help="Estructura sugerida (texto libre o JSON)"),
-    patterns: str = typer.Option("", "--patterns", help="Patrones y buenas prácticas sugeridas"),
-    complexity: str = typer.Option("", "--complexity", help="Estimación de complejidad"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar la propuesta en Markdown")
-):
-    """
-    Generar una propuesta de implementación para una funcionalidad específica.
-    """
-    from src.generators.implementation_proposal_generator import get_implementation_proposal_generator
-    import os
-
-    cli.print_header(f"Propuesta de Implementación: {functionality}")
-    project_path = os.path.abspath(path)
-
-    # Preparar contexto para la plantilla
-    files_section = files if files else "*No especificado*"
-    structure_section = structure if structure else "*No especificado*"
-    patterns_section = patterns if patterns else "*No especificado*"
-    complexity_section = complexity if complexity else "*No especificado*"
-    context = {
-        "description": description or "*No especificada*",
-        "files_section": files_section,
-        "structure_section": structure_section,
-        "patterns_section": patterns_section,
-        "complexity_section": complexity_section,
-    }
-
-    generator = get_implementation_proposal_generator()
-    proposal_md = generator.generate_proposal(functionality, context)
-
-    # Mostrar resumen en consola
-    cli.print_panel(f"Propuesta para '{functionality}'", proposal_md, style="cyan")
-
-    # Guardar si se solicita
-    if output:
-        output_path = output if output.endswith(".md") else f"{output}.md"
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(proposal_md)
-        cli.print_success(f"Propuesta guardada en: {output_path}")
-
-
-@app.command("suggest-branches")
-def suggest_branches(
-    functionality: str = typer.Argument(..., help="Nombre de la funcionalidad para sugerir branches"),
-    proposal: Optional[str] = typer.Option(None, "--proposal", "-p", 
-                                          help="Ruta al archivo markdown con la propuesta de implementación"),
-    branch_type: str = typer.Option("feature", "--type", "-t", 
-                                   help="Tipo de branch (feature, bugfix, hotfix, refactor)"),
-    description: str = typer.Option("", "--description", "-d", 
-                                   help="Descripción corta de la funcionalidad"),
-    files: str = typer.Option("", "--files", "-f", 
-                             help="Archivos a crear/modificar, separados por coma"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", 
-                                        help="Ruta para guardar la estrategia en Markdown")
-):
-    """
-    Sugerir una estructura de branches de Git para implementar una funcionalidad.
-    
-    Este comando genera recomendaciones de nombres de branches y una estrategia
-    para implementar cambios de forma modular, siguiendo buenas prácticas de Git.
-    """
-    from src.generators.branch_strategy_generator import get_branch_strategy_generator
     import os
     import json
-
-    cli.print_header(f"Estrategia de Branches para: {functionality}")
+    from src.analyzers.completeness_verifier import get_completeness_verifier
+    from src.utils.subscription_manager import get_subscription_manager
     
-    # Inicializar el generador
-    generator = get_branch_strategy_generator()
+    project_path = os.path.abspath(path)
     
-    # Preparar el contexto
-    proposal_data = {
-        'name': functionality,
-        'description': description or f"Implementación de {functionality}",
-        'files_section': files
-    }
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
     
-    # Si se proporciona un archivo de propuesta, leer su contenido
-    if proposal && os.path.exists(proposal):
-        try:
-            with open(proposal, 'r', encoding='utf-8') as f:
-                proposal_content = f.read()
+    cli.print_header("Verificador de Completitud")
+    
+    # Verificar suscripción para funciones premium
+    if premium:
+        subscription = get_subscription_manager()
+        if not subscription.is_premium_feature_available('completeness_verifier'):
+            cli.print_warning("Esta es una característica premium. Actualice su suscripción para acceder.")
+            premium = False
+    
+    try:
+        # Crear verificador de completitud
+        verifier = get_completeness_verifier({"premium": premium})
+        
+        # Verificar una funcionalidad específica o todo el proyecto
+        if functionality:
+            cli.print_info(f"Verificando completitud de la funcionalidad '{functionality}'...")
             
-            # Extraer información básica de la propuesta
-            if "## Descripción" in proposal_content:
-                description_section = proposal_content.split("## Descripción")[1].split("##")[0].strip()
-                proposal_data['description'] = description_section
+            with cli.status(f"Analizando implementación de '{functionality}'..."):
+                result = verifier.verify_functionality(
+                    functionality, project_path, template_type=template_type
+                )
+                
+            if "error" in result:
+                cli.print_error(result["error"])
+                return
+                
+            # Mostrar resultados
+            completeness = result.get("completeness_score", 0)
+            quality = result.get("quality_score", 0)
             
-            if "## Archivos a crear/modificar" in proposal_content:
-                files_section = proposal_content.split("## Archivos a crear/modificar")[1].split("##")[0].strip()
-                proposal_data['files_section'] = files_section
+            cli.print_success(f"Análisis de completitud para '{functionality}' finalizado")
             
-            cli.print_info(f"Propuesta cargada desde: {proposal}")
-        except Exception as e:
-            cli.print_error(f"Error al leer archivo de propuesta: {e}")
-    
-    # Generar la estrategia
-    with cli.status("Generando estrategia de branches..."):
-        strategy = generator.generate_branch_strategy(functionality, proposal_data)
-        strategy_md = generator.format_branch_strategy_markdown(strategy)
-    
-    # Mostrar resultado
-    cli.print_success(f"Branch principal sugerido: [bold cyan]{strategy['main_branch']}[/bold cyan]")
-    
-    # Mostrar estructura modular si existe
-    if strategy['modular_structure']:
-        table = cli.create_table("Estructura Modular", ["Branch", "Componente", "Descripción"])
-        for module in strategy['modular_structure']:
-            table.add_row(
-                module['branch'],
-                module['component'],
-                module['description']
+            # Mostrar puntuación general
+            color = "green" if completeness >= 80 else "yellow" if completeness >= 50 else "red"
+            cli.print_panel(
+                "Puntuación de Completitud", 
+                f"[bold {color}]{completeness}%[/bold {color}]\n\n"
+                f"Archivos: {result.get('required_files_completeness', 0)}%\n"
+                f"Funciones: {result.get('required_functions_completeness', 0)}%\n"
+                f"Componentes: {result.get('required_components_completeness', 0)}%\n"
+                f"Calidad: {quality}%"
             )
-        console.print(table)
+            
+            # Mostrar elementos faltantes
+            missing_files = result.get("missing_files", [])
+            if missing_files:
+                cli.print_warning(f"Archivos faltantes ({len(missing_files)}):")
+                for file_info in missing_files[:5]:
+                    pattern = file_info.get("pattern", "")
+                    suggestions = file_info.get("suggestions", [])
+                    console.print(f"  - Patrón: {pattern}")
+                    if suggestions:
+                        console.print(f"    Sugerencias: {', '.join(suggestions[:3])}")
+                if len(missing_files) > 5:
+                    console.print(f"  ... y {len(missing_files) - 5} más")
+            
+            missing_functions = result.get("missing_functions", [])
+            if missing_functions:
+                cli.print_warning(f"Funciones faltantes ({len(missing_functions)}):")
+                for func_info in missing_functions[:5]:
+                    func = func_info.get("function", "")
+                    suggestions = func_info.get("suggestions", [])
+                    console.print(f"  - Función: {func}")
+                    if suggestions:
+                        console.print(f"    Sugerencias: {', '.join(suggestions[:3])}")
+                if len(missing_functions) > 5:
+                    console.print(f"  ... y {len(missing_functions) - 5} más")
+            
+            # Mostrar componentes incompletos
+            incomplete_components = result.get("incomplete_components", [])
+            if incomplete_components:
+                cli.print_warning(f"Componentes incompletos ({len(incomplete_components)}):")
+                for comp_info in incomplete_components[:5]:
+                    component = comp_info.get("component", "")
+                    percentage = comp_info.get("fulfillment_percentage", 0)
+                    console.print(f"  - {component}: {percentage}% completo")
+                if len(incomplete_components) > 5:
+                    console.print(f"  ... y {len(incomplete_components) - 5} más")
+            
+            # Mostrar sugerencias de mejora
+            improvement_suggestions = result.get("improvement_suggestions", [])
+            if improvement_suggestions:
+                cli.print_info("Sugerencias de mejora:")
+                for i, suggestion in enumerate(improvement_suggestions[:5]):
+                    console.print(f"  {i+1}. {suggestion}")
+                if len(improvement_suggestions) > 5:
+                    console.print(f"  ... y {len(improvement_suggestions) - 5} más")
+        else:
+            # Verificar todo el proyecto
+            cli.print_info(f"Verificando completitud general del proyecto...")
+            
+            with cli.status("Analizando implementaciones..."):
+                result = verifier.verify_project(project_path)
+                
+            # Mostrar resultados
+            avg_score = result.get("average_completeness_score", 0)
+            functionalities = result.get("functionalities_analyzed", 0)
+            
+            cli.print_success(f"Análisis de completitud finalizado")
+            
+            # Mostrar puntuación general
+            color = "green" if avg_score >= 80 else "yellow" if avg_score >= 50 else "red"
+            cli.print_panel(
+                "Puntuación General de Completitud", 
+                f"[bold {color}]{avg_score}%[/bold {color}]\n\n"
+                f"Funcionalidades analizadas: {functionalities}\n"
+                f"Checklist del proyecto: {result.get('project_checklist', {}).get('checklist_score', 0)}%"
+            )
+            
+            # Mostrar resultados por funcionalidad
+            functionality_results = result.get("functionality_results", {})
+            if functionality_results:
+                # Crear tabla de resultados
+                func_table = cli.create_table(
+                    "Resultados por Funcionalidad", 
+                    ["Funcionalidad", "Completitud", "Archivos", "Funciones", "Componentes", "Calidad"]
+                )
+                
+                for func_name, func_result in functionality_results.items():
+                    score = func_result.get("completeness_score", 0)
+                    files = func_result.get("required_files_completeness", 0)
+                    functions = func_result.get("required_functions_completeness", 0)
+                    components = func_result.get("required_components_completeness", 0)
+                    quality = func_result.get("quality_score", 0)
+                    
+                    # Añadir a la tabla con formato condicional
+                    func_table.add_row(
+                        func_name,
+                        f"[{'green' if score >= 80 else 'yellow' if score >= 50 else 'red'}]{score}%[/]",
+                        f"{files}%",
+                        f"{functions}%",
+                        f"{components}%",
+                        f"{quality}%"
+                    )
+                
+                # Mostrar tabla
+                console.print(func_table)
+            
+            # Mostrar recomendaciones generales
+            recommendations = result.get("overall_recommendations", [])
+            if recommendations:
+                cli.print_info("Recomendaciones generales:")
+                for recommendation in recommendations:
+                    console.print(f"  • {recommendation}")
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+                
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2)
+                
+            cli.print_info(f"Resultados guardados en: {output_path}")
     
-    # Mostrar dependencias si existen
-    if strategy['dependencies']:
-        deps_str = ", ".join(d.capitalize() for d in strategy['dependencies'])
-        cli.print_info(f"Dependencias detectadas: {deps_str}")
-    
-    # Guardar a archivo si se solicita
-    if output:
-        output_path = output if output.endswith(".md") else f"{output}.md"
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(strategy_md)
-        cli.print_success(f"Estrategia guardada en: {output_path}")
-    
-    # Mostrar el markdown completo
-    cli.print_panel("Estrategia de Branches Completa", strategy_md[:500] + "...", style="cyan")
-    cli.print_info("Para ver la estrategia completa, use la opción --output")
+    except Exception as e:
+        cli.print_error(f"Error al verificar completitud: {e}")
+        logger.error(f"Error en verify_completeness: {e}", exc_info=True)
+        
+
+@app.command()
+def menu():
+    """Iniciar el menú interactivo de ProjectPrompt."""
+    menu.show()
 
 
 @app.command()
-def implementation_prompt(
-    path: str = typer.Argument(".", help="Ruta al proyecto"),
-    feature: str = typer.Argument(..., help="Funcionalidad a implementar (ej: authentication, database, api, etc.)"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el prompt en formato Markdown"),
-    override_premium: bool = typer.Option(False, "--force", "-f", help="Forzar generación (solo desarrollo)"),
-    store: bool = typer.Option(True, "--store/--no-store", help="Guardar en la estructura del proyecto")
+def config(key: Optional[str] = None, value: Optional[str] = None, list_all: bool = typer.Option(False, "--list", "-l", help="Listar toda la configuración")):
+    """Gestionar la configuración de ProjectPrompt."""
+    if list_all:
+        console.print("[bold]Configuración actual:[/bold]")
+        import json
+        console.print_json(json.dumps(config_manager.config))
+        return
+
+    if key and value:
+        config_manager.set(key, value)
+        config_manager.save_config()
+        logger.info(f"Configuración actualizada: {key}={value}")
+    elif key:
+        value = config_manager.get(key)
+        if value is not None:
+            console.print(f"[bold]{key}[/bold] = {value}")
+        else:
+            console.print(f"[yellow]No se encontró la clave: {key}[/yellow]")
+    else:
+        console.print("[yellow]Especifique una clave y opcionalmente un valor.[/yellow]")
+
+
+@app.command()
+def set_api(
+    api_name: str = typer.Argument(..., help="Nombre de la API (anthropic, github)"),
+    api_key: Optional[str] = typer.Option(None, "--key", "-k", help="Clave o token de API"),
 ):
-    """Generar un prompt detallado para la implementación de una funcionalidad específica (premium)."""
+    """Configurar una clave API para servicios."""
+    validator = get_api_validator()
+    cli.print_header("Configuración de API")
+    
+    # Si no se proporciona clave, pedirla de forma segura
+    if not api_key:
+        api_key = typer.prompt(f"Introduce la clave para {api_name}", hide_input=True)
+        
+    # Guardar y validar la clave
+    success, message = validator.set_api_key(api_name, api_key)
+    
+    if success:
+        cli.print_success(message)
+        
+        # Verificar que la clave funciona
+        result = validator.validate_api(api_name)
+        if result.get("valid", False):
+            cli.print_success(f"✅ Verificación exitosa para {api_name}")
+        else:
+            cli.print_warning(f"⚠️ La clave se guardó pero no pasó la verificación: {result.get('message')}")
+    else:
+        cli.print_error(f"❌ Error: {message}")
+
+
+@app.command()
+def set_log_level(level: str = typer.Argument(..., help="Nivel de log: debug, info, warning, error, critical")):
+    """Cambiar el nivel de logging."""
+    try:
+        log_level = LogLevel(level.lower())
+        set_level(log_level)
+        config_manager.set("log_level", log_level.value)
+        config_manager.save_config()
+        logger.info(f"Nivel de log cambiado a {log_level.value.upper()}")
+    except ValueError:
+        valid_levels = ", ".join([l.value for l in LogLevel])
+        logger.error(f"Nivel de log no válido: {level}")
+        console.print(f"[red]Niveles válidos: {valid_levels}[/red]")
+
+
+@app.command()
+def verify_api(
+    api_name: Optional[str] = typer.Argument(
+        None, help="Nombre de la API a verificar (anthropic, github). Si no se especifica, se verifican todas."
+    )
+):
+    """Verificar el estado de configuración de APIs."""
+    validator = get_api_validator()
+    cli.print_header("Verificación de APIs")
+    
+    if api_name:
+        # Verificar una API específica
+        cli.print_info(f"Verificando configuración de API: {api_name}")
+        result = validator.validate_api(api_name)
+        
+        if result.get("valid", False):
+            cli.print_success(f"✅ {api_name}: {result.get('message', 'Configuración válida')}")
+        else:
+            cli.print_error(f"❌ {api_name}: {result.get('message', 'Configuración inválida')}")
+            
+        if "usage" in result:
+            cli.print_info("Información de uso:")
+            for key, value in result["usage"].items():
+                console.print(f"  - {key}: {value}")
+    else:
+        # Verificar todas las APIs
+        cli.print_info("Verificando todas las APIs configuradas...")
+        results = validator.validate_all_apis()
+        
+        # Crear una tabla con los resultados
+        table = cli.create_table("Estado de APIs", ["API", "Estado", "Mensaje"])
+        
+        for api, status in results.items():
+            icon = "✅" if status.get("valid", False) else "❌"
+            table.add_row(
+                api,
+                f"{icon} {'Válida' if status.get('valid', False) else 'Inválida'}",
+                status.get("message", "")
+            )
+            
+        console.print(table)
+
+
+@app.command()
+def help():
+    """Mostrar ayuda detallada sobre ProjectPrompt."""
+    cli.print_header("Ayuda de ProjectPrompt")
+    
+    cli.print_panel(
+        "Acerca de ProjectPrompt", 
+        "ProjectPrompt es un asistente inteligente para analizar proyectos de código "
+        "y generar prompts contextuales utilizando IA.\n\n"
+        "Permite analizar la estructura de proyectos, detectar funcionalidades, "
+        "y generar documentación progresiva."
+    )
+    
+    # Comandos disponibles
+    table = cli.create_table("Comandos Disponibles", ["Comando", "Descripción"])
+    table.add_row("init", "Inicializar un nuevo proyecto")
+    table.add_row("analyze", "Analizar la estructura de un proyecto")
+    table.add_row("version", "Mostrar la versión actual")
+    table.add_row("config", "Gestionar la configuración")
+    table.add_row("set-api", "Configurar claves de API")
+    table.add_row("verify-api", "Verificar estado de APIs")
+    table.add_row("interview", "Realizar entrevista guiada sobre una funcionalidad")
+    table.add_row("analyze-feature", "Analizar funcionalidad específica")
+    table.add_row("list-interviews", "Listar entrevistas existentes")
+    table.add_row("implementation-proposal", "Generar propuesta de implementación")
+    table.add_row("implementation-prompt", "Generar prompt detallado para implementación (premium)")
+    table.add_row("generate_prompts", "Generar prompts contextuales del proyecto")
+    table.add_row("set-log-level", "Cambiar el nivel de logging")
+    table.add_row("menu", "Iniciar el menú interactivo")
+    table.add_row("help", "Mostrar esta ayuda")
+    console.print(table)
+    
+    cli.print_info("Para más información sobre un comando específico, use:")
+    console.print("  project-prompt [COMANDO] --help")
+
+
+@app.command()
+def report(
+    path: str = typer.Argument(".", help="Ruta al proyecto para analizar y generar el reporte"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta personalizada para guardar el reporte"),
+    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+):
+    """Generar un reporte en Markdown sobre la estructura del proyecto."""
+    from src.generators.markdown_generator import get_markdown_generator
     import os
-    import datetime
-    from src.generators import get_implementation_prompt_generator
-    from src.utils.subscription_manager import get_subscription_manager
-    from src.utils.project_structure import get_project_structure
     
     project_path = os.path.abspath(path)
     
@@ -1715,23 +1731,310 @@ def implementation_prompt(
         cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
         return
         
-    cli.print_header("Generación de Prompt de Implementación")
+    cli.print_header("Generación de Reporte en Markdown")
     cli.print_info(f"Analizando proyecto en: {project_path}")
-    cli.print_info(f"Funcionalidad a implementar: {feature}")
-    
-    # Verificar acceso premium
-    subscription = get_subscription_manager()
-    is_premium = subscription.has_premium() or override_premium
-    
-    if not is_premium:
-        cli.print_warning("Esta funcionalidad requiere una suscripción premium")
-        cli.print_info("Puedes activar tu suscripción con: project-prompt subscription activate <clave>")
-        cli.print_info("Para más información: project-prompt subscription plans")
-        return
     
     try:
-        # Crear generador de prompts de implementación
-        generator = get_implementation_prompt_generator(is_premium=True)
+        # Crear generador de markdown
+        generator = get_markdown_generator()
+        
+        # Mostrar progreso
+        with cli.status("Escaneando proyecto y generando reporte..."):
+            # Generar reporte
+            report_path = generator.save_project_report(project_path, output)
+        
+        # Mostrar resultado
+        cli.print_success(f"Reporte generado correctamente en: {report_path}")
+        cli.print_info("El reporte contiene información sobre la estructura del proyecto, lenguajes, archivos importantes y dependencias.")
+        
+        # Sugerir siguientes pasos
+        cli.print_info("Para ver el reporte puedes:")
+        console.print("  - Abrirlo en un editor compatible con Markdown")
+        console.print(f"  - Ejecutar: [bold]cat {report_path}[/bold] para ver el contenido en la terminal")
+        
+    except Exception as e:
+        cli.print_error(f"Error al generar el reporte: {e}")
+        logger.error(f"Error en report: {e}", exc_info=True)
+
+
+@app.command()
+def detect_functionalities(
+    path: str = typer.Argument(".", help="Ruta al proyecto para analizar y detectar funcionalidades"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+):
+    """Detectar funcionalidades básicas en el proyecto."""
+    from src.analyzers.project_scanner import get_project_scanner
+    from src.analyzers.functionality_detector import get_functionality_detector
+    import json
+    import os
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("Detección de Funcionalidades")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Crear escáner de proyectos
+        scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
+        
+        # Crear detector de funcionalidades
+        detector = get_functionality_detector(scanner=scanner)
+        
+        # Mostrar progreso
+        with cli.status("Detectando funcionalidades en el proyecto..."):
+            # Realizar análisis
+            result = detector.detect_functionalities(project_path)
+        
+        # Mostrar resumen
+        main_functionalities = result.get('main_functionalities', [])
+        detected = result.get('detected', {})
+        
+        if main_functionalities:
+            cli.print_success(f"Se detectaron {len(main_functionalities)} funcionalidades principales")
+            
+            # Crear tabla de funcionalidades
+            func_table = cli.create_table("Funcionalidades Detectadas", ["Funcionalidad", "Confianza", "Evidencia"])
+            
+            for func_name in main_functionalities:
+                func_data = detected.get(func_name, {})
+                confidence = func_data.get('confidence', 0)
+                
+                # Obtener evidencia más significativa
+                evidence = []
+                if func_data.get('evidence', {}).get('imports'):
+                    imports = func_data.get('evidence', {}).get('imports', [])[:2]
+                    evidence.extend(imports)
+                    
+                if func_data.get('evidence', {}).get('files'):
+                    files = [os.path.basename(file) for file in func_data.get('evidence', {}).get('files', [])[:2]]
+                    evidence.extend(files)
+                
+                # Añadir a la tabla
+                func_table.add_row(
+                    func_name.capitalize(),
+                    f"{confidence}%",
+                    ", ".join(evidence[:3]) if evidence else "N/A"
+                )
+                
+            # Mostrar tabla
+            console.print(func_table)
+            
+            # Mostrar detalles adicionales para cada funcionalidad
+            for func_name in main_functionalities:
+                func_data = detected.get(func_name, {})
+                evidence = func_data.get('evidence', {})
+                
+                cli.print_info(f"[bold]{func_name.capitalize()}[/bold] (Confianza: {func_data.get('confidence', 0)}%)")
+                
+                # Mostrar archivos relevantes
+                files = evidence.get('files', [])
+                if files:
+                    console.print(f"                "                 [dim]Archivos relevantes:[/dim]")
+                    for i, file in enumerate(files[:5]):
+                        console.print(f"    - {file}")
+                    if len(files) > 5:
+                        console.print(f"    ... y {len(files) - 5} más")
+                
+                # Mostrar importaciones detectadas
+                imports = evidence.get('imports', [])
+                if imports:
+                    console.print(f"  [dim]Importaciones detectadas:[/dim]")
+                    for i, imp in enumerate(imports[:5]):
+                        console.print(f"    - {imp}")
+                    if len(imports) > 5:
+                        console.print(f"    ... y {len(imports) - 5} más")
+                        
+                console.print("")
+        else:
+            cli.print_warning("No se detectaron funcionalidades principales en el proyecto")
+            
+        # Mostrar funcionalidades con baja confianza
+        low_confidence = [
+            name for name, data in detected.items()
+            if not data.get('present', False) and data.get('confidence', 0) > 30
+        ]
+        
+        if low_confidence:
+            cli.print_info("Funcionalidades con baja confianza de detección:")
+            for func in low_confidence:
+                confidence = detected[func].get('confidence', 0)
+                console.print(f"  - {func.capitalize()}: {confidence}%")
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+                
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2)
+                
+            cli.print_success(f"Resultados guardados en: {output_path}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante la detección de funcionalidades: {e}")
+        logger.error(f"Error en detect_functionalities: {e}", exc_info=True)
+
+
+@app.command()
+def list(
+    path: str = typer.Argument(".", help="Ruta al proyecto para listar funcionalidades"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(5000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(3.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+    detailed: bool = typer.Option(False, "--detailed/--simple", "-d/-s", 
+                               help="Mostrar información detallada de cada funcionalidad")
+):
+    """Listar las funcionalidades detectadas en un proyecto."""
+    import json
+    import os
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Listado de Funcionalidades")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Obtener funcionalidades
+        functionality_data = analysis_view.list_functionalities(
+            project_path, max_files=max_files, max_size=max_size
+        )
+        
+        if not functionality_data:
+            cli.print_error("No se pudieron detectar funcionalidades en el proyecto")
+            return
+        
+        # Obtener funcionalidades principales
+        main_functionalities = functionality_data.get('main_functionalities', [])
+        detected = functionality_data.get('detected', {})
+        
+        if not main_functionalities:
+            cli.print_warning("No se detectaron funcionalidades principales en el proyecto")
+            low_confidence = [
+                name for name, data in detected.items()
+                if not data.get('present', False) and data.get('confidence', 0) > 30
+            ]
+            
+            if low_confidence:
+                cli.print_info("Posibles funcionalidades con baja confianza:")
+                for func in low_confidence:
+                    confidence = detected[func].get('confidence', 0)
+                    console.print(f"  - {func.capitalize()}: {confidence}%")
+            return
+        
+        # Mostrar funcionalidades detectadas
+        if detailed:
+            # Mostrar con todos los detalles
+            analysis_view.show_functionalities(functionality_data)
+        else:
+            # Mostrar versión simplificada
+            cli.print_success(f"Se detectaron {len(main_functionalities)} funcionalidades principales")
+            
+            # Crear tabla simple
+            func_table = cli.create_table("Funcionalidades Detectadas", ["Funcionalidad", "Confianza"])
+            
+            for func_name in main_functionalities:
+                func_data = detected.get(func_name, {})
+                confidence = func_data.get('confidence', 0)
+                func_table.add_row(func_name.capitalize(), f"{confidence}%")
+            
+            console.print(func_table)
+            
+            # Sugerir ver más detalles
+            cli.print_info("Usa --detailed para ver información detallada de cada funcionalidad")
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+            
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(functionality_data, f, indent=2)
+                
+            cli.print_success(f"Listado de funcionalidades guardado en: {output_path}")
+            
+    except Exception as e:
+        cli.print_error(f"Error al listar funcionalidades: {e}")
+        logger.error(f"Error en list: {e}", exc_info=True)
+
+
+@app.command()
+def generate_prompts(
+    path: str = typer.Argument(".", help="Ruta al proyecto para generar prompts"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar los prompts en formato JSON"),
+    premium: bool = typer.Option(False, "--premium", "-p", help="Usar características premium"),
+    show: bool = typer.Option(True, "--show/--no-show", help="Mostrar prompts generados"),
+    enhanced: bool = typer.Option(False, "--enhanced", "-e", help="Usar generador de prompts mejorado"),
+    store: bool = typer.Option(True, "--store/--no-store", help="Guardar en la estructura del proyecto")
+):
+    """Generar prompts contextuales basados en el análisis del proyecto."""
+    import json
+    import os
+    
+    # Elegir el generador apropiado según los parámetros
+    if premium:
+        # Para premium, usar el generador de prompts de implementación
+        from src.generators import get_implementation_prompt_generator as get_generator
+    elif enhanced:
+        # Para mejorado (no premium), usar el generador contextual
+        from src.generators import get_contextual_prompt_generator as get_generator
+    else:
+        # Para básico, usar el generador simple
+        from src.generators import get_prompt_generator as get_generator
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("Generación de Prompts Contextuales")
+    
+    # Mostrar información sobre generador mejorado
+    if enhanced:
+        cli.print_info("Utilizando generador de prompts contextuales mejorado")
+    
+    # Verificar si se puede usar premium
+    if premium:
+        from src.utils.subscription_manager import get_subscription_manager
+        subscription = get_subscription_manager()
+        has_premium_access = subscription.has_premium()
+        
+        if not has_premium_access:
+            cli.print_warning("Las funciones premium requieren una suscripción activa")
+            cli.print_info("Para activar tu suscripción: project-prompt subscription activate <clave>")
+            premium = False
+        else:
+            cli.print_info("Utilizando generador de prompts premium con funcionalidades avanzadas")
+    
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Crear generador de prompts (básico o mejorado según la opción)
+        generator = get_generator(is_premium=premium)
         
         # Verificar si queremos usar la estructura de archivos
         use_structure = store and not output
@@ -1753,202 +2056,887 @@ def implementation_prompt(
                 structure.create_structure()
         
         # Mostrar progreso
-        with cli.status(f"Generando prompt detallado para implementación de {feature}..."):
-            result = generator.generate_implementation_prompt(project_path, feature)
+        with cli.status("Analizando proyecto y generando prompts..."):
+            # Generar prompts en memoria
+            result = generator.generate_prompts(project_path)
             
-            if not result.get("success", False):
-                error = result.get("error", "unknown_error")
-                message = result.get("message", "Error desconocido")
-                raise Exception(f"{message} ({error})")
-            
-            # Obtener el prompt generado
-            implementation_guide = result.get("implementation_guide", "")
-            integration_guide = result.get("integration_guide", "")
-            
-            # Construir el prompt completo
-            full_prompt = f"# Guía de Implementación: {feature.capitalize()}\n\n"
-            full_prompt += implementation_guide
-            
-            if integration_guide:
-                full_prompt += "\n\n## Integración con otros sistemas\n\n"
-                full_prompt += integration_guide
-            
-            # Determinar dónde guardar el prompt
+            # Determinar dónde guardar los prompts
             if output:
-                # Asegurar que tenga extensión .md
-                if not output.endswith('.md'):
-                    output = f"{output}.md"
-                    
-                # Guardar en ubicación específica
-                with open(output, 'w', encoding='utf-8') as f:
-                    f.write(full_prompt)
-                    
-                prompt_path = output
+                # Guardar en una ubicación específica
+                prompt_path = generator.save_prompts(project_path, output)
             elif use_structure:
-                # Guardar en la estructura de archivos como premium
-                prompt_path = structure.save_premium_functionality_prompt(
-                    feature, "implementation", full_prompt,
-                    metadata={
-                        'generated_date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
-                        'premium': True,
-                        'feature_type': feature
-                    }
-                )
+                # Guardar en la estructura de archivos
+                prompts_data = result.get('prompts', {})
+                
+                # Guardar prompt general
+                general_prompt = prompts_data.get('general', '')
+                if general_prompt:
+                    prompt_path = structure.save_prompt(general_prompt)
+                    
+                # Guardar prompts por funcionalidad
+                functionality_prompts = prompts_data.get('functionalities', {})
+                for func_name, func_prompt in functionality_prompts.items():
+                    structure.save_functionality_prompt(func_name, func_prompt)
+                
+                prompt_path = os.path.join(structure.structure_root, 'prompts')
             else:
                 # No guardar
                 prompt_path = None
         
         # Mostrar resultado
         if prompt_path:
-            cli.print_success(f"Guía de implementación generada correctamente en: {prompt_path}")
-            cli.print_info(f"La guía incluye pasos detallados, ejemplos de código y consideraciones arquitectónicas para {feature}.")
-        else:
-            cli.print_panel(
-                f"Guía de Implementación: {feature.capitalize()}",
-                full_prompt[:500] + "..." if len(full_prompt) > 500 else full_prompt,
-                "blue"
-            )
+            cli.print_success(f"Prompts generados correctamente y guardados en: {prompt_path}")
+        
+        # Si se solicitó mostrar y hay resultado disponible
+        if show and (result or output):
+            prompts = result.get('prompts', {}) if result else {}
             
+            # Si no hay resultado en memoria pero sí hay ruta de salida, cargar desde archivo
+            if not prompts and output:
+                try:
+                    with open(prompt_path, 'r', encoding='utf-8') as f:
+                        prompts = json.load(f).get('prompts', {})
+                except Exception as e:
+                    logger.error(f"Error al cargar prompts desde archivo: {e}", exc_info=True)
+            
+            # Mostrar cada prompt en un panel
+            if prompts:
+                cli.print_info("Prompts generados:")
+                
+                # Mostrar prompt de descripción
+                if 'description' in prompts:
+                    cli.print_panel(
+                        "Prompt: Descripción del Proyecto",
+                        prompts['description'],
+                        "blue"
+                    )
+                
+                # Mostrar prompt de mejoras
+                if 'improvements' in prompts:
+                    cli.print_panel(
+                        "Prompt: Sugerencias de Mejora",
+                        prompts['improvements'],
+                        "cyan"
+                    )
+                
+                # Mostrar prompt de problemas
+                if 'issues' in prompts:
+                    cli.print_panel(
+                        "Prompt: Problemas Potenciales",
+                        prompts['issues'],
+                        "yellow"
+                    )
+                
+                # Mostrar advertencia de límite freemium
+                if not premium:
+                    cli.print_info("Nota: Versión gratuita limitada a 3 prompts contextuales básicos")
+        
         # Sugerir siguientes pasos
-        cli.print_info("Sugerencias:")
-        console.print("  - Revisa la guía completa para entender los pasos de implementación")
-        console.print("  - Usa los ejemplos de código como punto de partida")
-        console.print("  - Consulta las consideraciones de seguridad y rendimiento")
+        cli.print_info("Para utilizar estos prompts:")
+        console.print("  1. Copia el contenido del archivo de prompts")
+        console.print("  2. Pégalo en tu asistente de IA favorito")
+        console.print("  3. Añade tu pregunta específica al final del prompt")
             
     except Exception as e:
-        cli.print_error(f"Error al generar prompt de implementación: {e}")
-        logger.error(f"Error en implementation_prompt: {e}", exc_info=True)
+        cli.print_error(f"Error al generar prompts: {e}")
+        logger.error(f"Error en generate_prompts: {e}", exc_info=True)
 
 
 @app.command()
-def generate_tests(
-    path: str = typer.Argument(".", help="Ruta al proyecto o archivo para generar tests"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Directorio de salida para los tests generados"),
-    functionality: Optional[str] = typer.Option(None, "--functionality", "-f", 
-                                            help="Nombre de la funcionalidad específica para generar tests"),
-    config: bool = typer.Option(False, "--config", "-c", help="Generar configuración de tests"),
-    premium: bool = typer.Option(False, "--premium", "-p", help="Usar características premium para generación avanzada"),
+def docs(
+    path: str = typer.Argument(".", help="Ruta al proyecto para generar documentación"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar la documentación"),
+    update: bool = typer.Option(False, "--update", "-u", help="Actualizar documentación existente"),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Sobrescribir documentación existente"),
 ):
-    """Generar tests unitarios para un proyecto o funcionalidad específica."""
-    from src.generators.test_generator import get_test_generator
-    from src.analyzers.testability_analyzer import get_testability_analyzer
+    """Generar documentación en markdown para el proyecto analizado."""
+    import os
+    from src.utils.documentation_system import get_documentation_system
     
     project_path = os.path.abspath(path)
     
-    if not os.path.exists(project_path):
-        cli.print_error(f"La ruta especificada no existe: {project_path}")
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
         return
-        
-    cli.print_header("Generación de Tests Unitarios")
-    cli.print_info(f"Analizando {project_path}")
     
-    # Verificar si se trata de un archivo o un directorio
-    is_file = os.path.isfile(project_path)
+    # Determinar directorio de documentación
+    output_dir = output
+    if not output_dir:
+        output_dir = os.path.join(project_path, '.project-prompt')
+    
+    cli.print_header("Sistema de Documentación")
+    cli.print_info(f"Generando documentación para proyecto en: {project_path}")
+    
+    # Verificar si ya existe documentación
+    if os.path.exists(output_dir) && not update && not overwrite:
+        cli.print_warning(f"Ya existe documentación en: {output_dir}")
+        cli.print_info("Use --update para actualizar o --overwrite para sobrescribir")
+        
+        # Mostrar información básica
+        try:
+            doc_system = get_documentation_system()
+            info = doc_system.get_documentation_info(output_dir)
+            
+            cli.print_panel(
+                "Documentación Existente",
+                f"Última actualización: {info.get('last_updated', 'Desconocida')}\n"
+                f"Documentos: {info.get('document_count', 0)}\n"
+                f"Funcionalidades: {len(info.get('functionalities', []))}"
+            )
+        except Exception as e:
+            logger.error(f"Error al obtener info de documentación: {e}", exc_info=True)
+            
+        return
     
     try:
-        # Si se solicitó premium, verificar suscripción
-        if premium:
-            from src.utils.subscription_manager import get_subscription_manager
-            subscription = get_subscription_manager()
-            has_premium_access = subscription.has_premium()
+        with cli.status("Generando documentación..."):
+            doc_system = get_documentation_system()
             
-            if not has_premium_access:
-                cli.print_warning("Las funciones premium requieren una suscripción activa")
-                cli.print_info("Para activar tu suscripción: project-prompt subscription activate <clave>")
-                premium = False
+            if update && os.path.exists(output_dir):
+                result = doc_system.update_documentation(project_path, output_dir)
+                action = "actualizada"
             else:
-                cli.print_info("Utilizando generador de tests unitarios premium con funcionalidades avanzadas")
+                result = doc_system.generate_project_documentation(
+                    project_path, output_dir, overwrite=overwrite
+                )
+                action = "generada"
         
-        # Obtener generador de tests
-        generator = get_test_generator({"premium": premium})
+        # Mostrar resultados
+        cli.print_success(f"Documentación {action} exitosamente")
+        cli.print_info(f"Directorio de documentación: {result['docs_dir']}")
         
-        # Determinar directorio de salida
-        if not output:
-            output = os.path.join(os.path.dirname(project_path) if is_file else project_path, "tests")
+        # Mostrar contenido generado
+        cli.print_panel(
+            "Documentos Generados",
+            f"Análisis general: {os.path.basename(result['project_analysis'])}\n"
+            f"Funcionalidades: {len(result['functionalities'])}\n"
+            f"Configuración: {os.path.basename(result['config'])}"
+        )
+            
+    except Exception as e:
+        cli.print_error(f"Error al generar documentación: {e}")
+        logger.error(f"Error en docs: {e}", exc_info=True)
+
+
+@app.command()
+def docs_list(
+    path: str = typer.Argument(".", help="Ruta al proyecto con documentación"),
+    pattern: str = typer.Option("**/*.md", "--pattern", "-p", help="Patrón para filtrar documentos")
+):
+    """Listar documentos de la documentación generada."""
+    import os
+    from tabulate import tabulate
+    from src.utils.markdown_manager import get_markdown_manager
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    # Determinar directorio de documentación
+    docs_dir = os.path.join(project_path, '.project-prompt')
+    if not os.path.exists(docs_dir):
+        cli.print_error(f"No se encontró documentación en: {docs_dir}")
+        cli.print_info(f"Genere documentación primero con: project-prompt docs {project_path}")
+        return
+    
+    cli.print_header("Listado de Documentación")
+    
+    try:
+        # Obtener listado de documentos
+        markdown_manager = get_markdown_manager()
+        docs = markdown_manager.list_documents(docs_dir, pattern)
         
-        # Generar configuración de tests si se solicitó
-        if config:
-            with cli.status("Generando configuración de tests..."):
-                config_result = generator.save_test_config(
-                    os.path.dirname(project_path) if is_file else project_path,
-                    os.path.join(output, "pytest.ini") if "pytest" in str(generator.test_framework) else None
+        if not docs:
+            cli.print_warning(f"No se encontraron documentos con el patrón: {pattern}")
+            return
+            
+        # Preparar tabla para mostrar
+        table_data = []
+        for doc in docs:
+            rel_path = doc.get('relative_path', '')
+            updated = doc.get('updated', doc.get('modified', 'Desconocida'))
+            version = doc.get('version', '-')
+            word_count = doc.get('word_count', 0)
+            
+            table_data.append([
+                rel_path,
+                version,
+                word_count,
+                updated
+            ])
+                
+        # Mostrar tabla
+        table = tabulate(
+            table_data,
+            headers=["Documento", "Versión", "Palabras", "Actualizado"],
+            tablefmt="fancy_grid"
+        )
+        console.print(table)
+        cli.print_info(f"Total de documentos: {len(docs)}")
+            
+    except Exception as e:
+        cli.print_error(f"Error al listar documentación: {e}")
+        logger.error(f"Error en docs_list: {e}", exc_info=True)
+
+
+@app.command()
+def docs_view(
+    doc_path: str = typer.Argument(..., help="Ruta relativa al documento dentro de .project-prompt"),
+    project: str = typer.Option(".", "--project", "-p", help="Ruta al proyecto con documentación")
+):
+    """Ver un documento específico de la documentación."""
+    import os
+    import re
+    from rich.markdown import Markdown
+    from src.utils.markdown_manager import get_markdown_manager
+    
+    project_path = os.path.abspath(project)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta del proyecto no es válida: {project_path}")
+        return
+    
+    # Determinar ruta completa al documento
+    docs_dir = os.path.join(project_path, '.project-prompt')
+    if not os.path.exists(docs_dir):
+        cli.print_error(f"No se encontró documentación en: {docs_dir}")
+        return
+    
+    # Asegurar que la extensión sea .md
+    if not doc_path.endswith('.md'):
+        doc_path = f"{doc_path}.md"
+        
+    # Construir ruta completa
+    full_path = os.path.join(docs_dir, doc_path)
+    if not os.path.exists(full_path):
+        cli.print_error(f"No se encontró el documento: {doc_path}")
+        cli.print_info(f"Use 'project-prompt docs_list' para ver documentos disponibles")
+        return
+    
+    try:
+        # Leer contenido del documento
+        with open(full_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Extraer frontmatter si existe
+        frontmatter_match = re.match(r'---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
+        if frontmatter_match:
+            content = content.len(frontmatter_match.group(0))
+        
+        # Mostrar documento
+        cli.print_header(f"Documento: {doc_path}")
+        console.print(Markdown(content))
+        
+    except Exception as e:
+        cli.print_error(f"Error al mostrar documento: {e}")
+        logger.error(f"Error en docs_view: {e}", exc_info=True)
+
+
+@app.command()
+def connections(
+    path: str = typer.Argument(".", help="Ruta al proyecto para analizar conexiones"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(5000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    detailed: bool = typer.Option(False, "--detailed/--simple", "-d/-s", help="Mostrar información detallada")
+):
+    """Analiza las conexiones entre archivos de un proyecto."""
+    import os
+    from src.ui import analysis_view
+    from src.ui.analysis_view import AnalysisView, analyze_connections
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Análisis de Conexiones Entre Archivos")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Analizar conexiones
+        with cli.status("Analizando conexiones entre archivos..."):
+            connections_data = analyze_connections(
+                project_path, max_files=max_files, output=output
+            )
+        
+        # Mostrar resultados
+        analysis_view.show_connections_analysis(connections_data, detailed=detailed)
+        
+        if output:
+            cli.print_success(f"Análisis de conexiones guardado en: {output}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante el análisis de conexiones: {e}")
+        logger.error(f"Error en connections: {e}", exc_info=True)
+
+
+@app.command()
+def dependency_graph(
+    path: str = typer.Argument(".", help="Ruta al proyecto para generar grafo"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el grafo en formato JSON"),
+    markdown: Optional[str] = typer.Option(None, "--markdown", "-md", help="Ruta para guardar visualización en markdown"),
+    max_files: int = typer.Option(5000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    detailed: bool = typer.Option(False, "--detailed/--simple", "-d/-s", help="Mostrar información detallada")
+):
+    """Genera un grafo de dependencias entre archivos de un proyecto."""
+    import os
+    from src.ui import analysis_view
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Generación de Grafo de Dependencias")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Generar grafo
+        with cli.status("Generando grafo de dependencias..."):
+            graph_data = analysis_view.generate_dependency_graph(
+                project_path, max_files=max_files, output=output, markdown_output=markdown
+            )
+        
+        # Mostrar resultados
+        analysis_view.show_dependency_graph(graph_data, detailed=detailed)
+        
+        if output:
+            cli.print_success(f"Grafo de dependencias guardado en: {output}")
+            
+        if markdown:
+            cli.print_success(f"Visualización markdown guardada en: {markdown}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante la generación del grafo: {e}")
+        logger.error(f"Error en dependency_graph: {e}", exc_info=True)
+
+
+@app.command()
+def project_structure(
+    path: str = typer.Argument(".", help="Ruta al proyecto para crear/gestionar estructura"),
+    init: bool = typer.Option(False, "--init", "-i", help="Inicializar la estructura del proyecto"),
+    info: bool = typer.Option(False, "--info", help="Mostrar información de la estructura existente"),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Sobrescribir estructura existente"),
+    clean: bool = typer.Option(False, "--clean", help="Eliminar la estructura completa"),
+):
+    """Gestionar la estructura de archivos del proyecto."""
+    from src.utils.project_structure import get_project_structure
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Estructura de Archivos del Proyecto")
+    cli.print_info(f"Proyecto: {project_path}")
+    
+    # Obtener configuración del proyecto
+    project_config = config_manager.config.copy() or {}
+    project_config['project_name'] = os.path.basename(project_path)
+    
+    # Inicializar gestor de estructura
+    structure = get_project_structure(project_path, project_config)
+    
+    # Ejecutar acción solicitada
+    try:
+        if clean:
+            with cli.status("Eliminando estructura..."):
+                result = structure.clear_structure(confirm=True)
+            
+            if result:
+                cli.print_success("Estructura eliminada correctamente.")
+            else:
+                cli.print_warning("No había estructura que eliminar.")
+            return
+        
+        if init:
+            with cli.status("Inicializando estructura de proyecto..."):
+                result = structure.create_structure(overwrite=overwrite)
+            
+            # Mostrar resultado de la inicialización
+            cli.print_success(f"Estructura creada en: {result['structure_root']}")
+            cli.print_info(f"Directorios creados: {len(result['directories_created'])}")
+            cli.print_info(f"Archivos creados: {len(result['files_created'])}")
+            
+            # Mostrar la estructura creada
+            structure_tree = cli.create_tree("Estructura del proyecto")
+            root_node = structure_tree.add(".project-prompt")
+            root_node.add("project-analysis.md")
+            root_node.add("config.yaml")
+            func_node = root_node.add("functionalities/")
+            prompts_node = root_node.add("prompts/")
+            prompts_node.add("general.md")
+            prompts_node.add("functionality/")
+            
+            console.print(structure_tree)
+            return
+        
+        # Si no se especificó ninguna acción, mostrar información
+        if info or not (init or clean):
+            with cli.status("Analizando estructura existente..."):
+                structure_info = structure.get_structure_info()
+            
+            if not structure_info['exists']:
+                cli.print_warning("No existe estructura de proyecto ProjectPrompt.")
+                cli.print_info("Use el comando 'project-structure --init' para crear la estructura.")
+                return
+            
+            # Mostrar información de la estructura
+            cli.print_success(f"Estructura encontrada en: {structure_info['structure_root']}")
+            
+            # Crear tabla con información
+            table = cli.create_table("Detalles de la estructura", ["Elemento", "Valor"])
+            table.add_row("Directorios", str(structure_info['directories_count']))
+            table.add_row("Archivos", str(structure_info['files_count']))
+            table.add_row("Análisis de proyecto", "Disponible ✅" if structure_info['has_analysis'] else "No disponible ❌")
+            table.add_row("Configuración", "Disponible ✅" if structure_info['has_config'] else "No disponible ❌")
+            
+            # Funcionalidades
+            func_str = ", ".join(structure_info['functionalities']) if structure_info['functionalities'] else "Ninguna"
+            table.add_row("Funcionalidades", func_str)
+            
+            # Prompts
+            prompts_str = ", ".join(structure_info['prompts']) if structure_info['prompts'] else "Ninguno"
+            table.add_row("Prompts de funcionalidad", prompts_str)
+            
+            console.print(table)
+            return
+    
+    except Exception as e:
+        cli.print_error(f"Error al gestionar la estructura: {e}")
+        logger.error(f"Error en project_structure: {e}", exc_info=True)
+
+
+@app.command()
+def functionality_files(
+    name: str = typer.Argument(..., help="Nombre de la funcionalidad"),
+    path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto"),
+    description: str = typer.Option(None, "--description", "-d", help="Descripción corta de la funcionalidad")
+):
+    """Crear archivos de análisis y prompts para una funcionalidad específica."""
+    from src.utils.project_structure import get_project_structure
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header(f"Creando archivos para funcionalidad: {name}")
+    
+    # Obtener configuración del proyecto
+    project_config = config_manager.config.copy() or {}
+    project_config['project_name'] = os.path.basename(project_path)
+    
+    # Inicializar gestor de estructura
+    structure = get_project_structure(project_path, project_config)
+    
+    # Verificar si existe la estructura
+    structure_info = structure.get_structure_info()
+    
+    if not structure_info['exists']:
+        cli.print_warning("No existe estructura de proyecto ProjectPrompt.")
+        if typer.confirm("¿Desea crear la estructura primero?"):
+            structure.create_structure()
+            cli.print_success("Estructura creada correctamente.")
+        else:
+            return
+    
+    # Descripción por defecto si no se proporciona
+    if not description:
+        description = f"Funcionalidad {name} del proyecto {project_config['project_name']}"
+    
+    try:
+        # Crear contenido para el análisis de la funcionalidad
+        analysis_content = f"""# Análisis de funcionalidad: {name}
+
+## Descripción
+{description}
+
+## Archivos relacionados
+*Este campo se completará al ejecutar el análisis detallado de la funcionalidad.*
+
+## Dependencias
+*Este campo se completará al ejecutar el análisis detallado de la funcionalidad.*
+
+## Notas adicionales
+*Espacio para notas y observaciones sobre la funcionalidad.*
+"""
+
+        # Crear contenido para el prompt de la funcionalidad
+        prompt_content = f"""# Prompt para funcionalidad: {name}
+
+## Descripción de la funcionalidad
+{description}
+
+## Contexto y referencias
+*Este campo se completará al generar los prompts contextuales.*
+
+## Instrucciones específicas
+*Este campo contendrá instrucciones específicas para trabajar con esta funcionalidad.*
+
+## Ejemplos de código relevantes
+*Este campo mostrará ejemplos de código relacionados con la funcionalidad.*
+"""
+
+        # Guardar los archivos
+        with cli.status("Creando archivos..."):
+            analysis_path = structure.save_functionality_analysis(name, analysis_content)
+            prompt_path = structure.save_functionality_prompt(name, prompt_content)
+        
+        cli.print_success("Archivos creados correctamente:")
+        cli.print_info(f"Análisis: {os.path.relpath(analysis_path, project_path)}")
+        cli.print_info(f"Prompt: {os.path.relpath(prompt_path, project_path)}")
+        
+    except Exception as e:
+        cli.print_error(f"Error al crear archivos para la funcionalidad: {e}")
+        logger.error(f"Error en functionality_files: {e}", exc_info=True)
+
+
+@app.command("analyze-feature")
+def analyze_feature(
+    feature: str = typer.Argument(..., help="Nombre de la funcionalidad a analizar en detalle"),
+    path: str = typer.Argument(".", help="Ruta al proyecto que contiene la funcionalidad"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON o Markdown"),
+    format: str = typer.Option("md", "--format", "-f", help="Formato de salida (json o md)")
+):
+    """
+    Analizar en profundidad una funcionalidad específica del proyecto.
+    
+    Este comando examina detalladamente una funcionalidad concreta,
+    evaluando su completitud, calidad, y generando recomendaciones específicas.
+    """
+    import json
+    import os
+    import datetime
+    
+    # Importar el analizador de funcionalidades
+    try:
+        from src.analyzers.functionality_analyzer import get_functionality_analyzer
+        from src.analyzers.project_scanner import get_project_scanner
+    except ImportError as e:
+        cli.print_error(f"Error al importar analizadores: {e}")
+        logger.error(f"Error al importar en analyze_feature: {e}", exc_info=True)
+        return
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    # Normalizar el nombre de la funcionalidad
+    feature = feature.lower().strip()
+    
+    # Verificar que es una funcionalidad válida
+    valid_features = ['authentication', 'database', 'api', 'frontend', 'tests']
+    
+    if feature not in valid_features:
+        cli.print_error(f"La funcionalidad '{feature}' no está soportada para análisis profundo")
+        cli.print_info("Funcionalidades soportadas: " + ", ".join(valid_features))
+        return
+        
+    cli.print_header(f"Análisis Profundo de Funcionalidad: {feature}")
+    cli.print_info(f"Analizando en el proyecto: {project_path}")
+    
+    try:
+        # Crear analizador de funcionalidades
+        scanner = get_project_scanner()
+        analyzer = get_functionality_analyzer(scanner=scanner)
+        
+        # Realizar análisis
+        with cli.status(f"Analizando la funcionalidad '{feature}' en detalle..."):
+            analysis_result = analyzer.analyze_functionality(project_path, feature)
+        
+        if "error" in analysis_result:
+            cli.print_error(f"Error en el análisis: {analysis_result['error']}")
+            if "suggestion" in analysis_result:
+                cli.print_info(analysis_result["suggestion"])
+            return
+            
+        # Mostrar resumen de resultados
+        completeness = analysis_result.get('completeness', {})
+        implementation = analysis_result.get('implementation', {})
+        
+        # Panel con nivel de completitud
+        level = completeness.get('level', 'desconocido').capitalize()
+        score = completeness.get('implementation_score', 0)
+        justification = completeness.get('justification', 'No disponible')
+        
+        level_color = "green"
+        if level in ["Incompleto", "Inseguro", "Mínimo"]:
+            level_color = "red"
+        elif level in ["Parcial", "Adecuado"]:
+            level_color = "yellow"
+            
+        content = f"Nivel: [bold {level_color}]{level}[/bold {level_color}]\n"
+        content += f"Puntuación: {score}/100\n"
+        content += f"Justificación: {justification}"
+        
+        cli.print_panel(f"Evaluación de completitud", content)
+        
+        # Tabla de componentes esenciales
+        essential_components = implementation.get('components', {}).get('essential', {})
+        if essential_components:
+            table = cli.create_table("Componentes Esenciales", ["Componente", "Estado", "Confianza"])
+            
+            for name, component in essential_components.items():
+                status = "✅" if component.get('present', False) else "❌"
+                confidence = component.get('confidence', 0)
+                table.add_row(
+                    name.capitalize(), 
+                    status, 
+                    f"{confidence}%" if component.get('present', False) else "-"
                 )
                 
-            if config_result.get("success"):
-                cli.print_success(f"Configuración de tests generada en: {config_result.get('config_path')}")
-                cli.print_info(f"Framework detectado: {config_result.get('framework', 'pytest')}")
-            else:
-                cli.print_error(f"Error al generar configuración: {config_result.get('error')}")
-        
-        # Analizar y generar tests
-        if is_file:
-            # Generar tests para un archivo específico
-            with cli.status(f"Generando tests para el archivo {os.path.basename(project_path)}..."):
-                result = generator.generate_tests_for_file(project_path, output)
+            console.print(table)
             
-            if result.get("success"):
-                cli.print_success(f"Test generado: {result.get('test_file')}")
-                cli.print_info(f"Casos de prueba generados: {result.get('test_cases', 0)}")
-            else:
-                cli.print_error(f"Error al generar tests: {result.get('error')}")
+        # Recomendaciones principales
+        recommendations = analysis_result.get('recommendations', [])
+        if recommendations:
+            high_priority = [r for r in recommendations if r.get('priority') == 'alta']
+            
+            if high_priority:
+                cli.print_info("Recomendaciones principales:")
+                for i, rec in enumerate(high_priority[:3], 1):  # Mostrar las 3 más importantes
+                    console.print(f"  {i}. [bold red]{rec.get('title')}[/bold red]: {rec.get('description')}")
                 
-        elif functionality:
-            # Generar tests para una funcionalidad específica
-            with cli.status(f"Generando tests para la funcionalidad '{functionality}'..."):
-                result = generator.generate_tests_for_functionality(functionality, project_path, output)
+                if len(high_priority) > 3:
+                    console.print(f"  ... y {len(high_priority) - 3} más")
+        
+        # Generar y guardar reporte si se solicitó
+        if output:
+            if format.lower() == "json":
+                # Guardar en JSON
+                output_path = output if output.endswith('.json') else f"{output}.json"
                 
-            if result.get("success"):
-                cli.print_success(f"Tests generados para {functionality}")
-                cli.print_info(f"Archivos con tests: {len(result.get('results', []))}")
-                
-                # Mostrar detalle de tests generados
-                table = cli.create_table("Tests Generados", ["Módulo", "Casos de Prueba"])
-                for test_result in result.get("results", []):
-                    table.add_row(
-                        test_result.get("module_name", ""),
-                        str(test_result.get("test_cases", 0))
-                    )
-                console.print(table)
-            else:
-                cli.print_error(f"Error al generar tests: {result.get('error')}")
-        else:
-            # Generar tests para todo el proyecto
-            with cli.status(f"Analizando proyecto y generando tests..."):
-                result = generator.generate_tests_for_project(project_path, output)
-                
-            if result.get("success"):
-                cli.print_success(f"Tests generados correctamente en: {output}")
-                cli.print_info(f"Funcionalidades probadas: {result.get('functionalities_tested', 0)}")
-                cli.print_info(f"Archivos de test generados: {result.get('tests_generated', 0)}")
-                
-                # Mostrar detalle por funcionalidad
-                functionality_results = result.get("functionality_results", {})
-                
-                if functionality_results:
-                    table = cli.create_table("Resultados por Funcionalidad", ["Funcionalidad", "Tests", "Estado"])
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    json.dump(analysis_result, f, indent=2)
                     
-                    for func_name, func_result in functionality_results.items():
-                        test_count = len(func_result.get("results", []))
-                        status = "✅ OK" if func_result.get("success") else "❌ Error"
-                        
-                        table.add_row(func_name, str(test_count), status)
-                        
-                    console.print(table)
-            else:
-                cli.print_error(f"Error al generar tests para el proyecto")
-        
-        # Sugerencias sobre cómo ejecutar los tests
-        if result and result.get("success"):
-            cli.print_info("Para ejecutar los tests generados:")
-            
-            if generator.test_framework == "pytest":
-                console.print("  [bold]pytest[/bold] (para ejecutar todos los tests)")
-                console.print(f"  [bold]pytest {output}[/bold] (para ejecutar los tests generados)")
-            else:  # unittest
-                console.print("  [bold]python -m unittest discover[/bold] (para ejecutar todos los tests)")
-                console.print(f"  [bold]python -m unittest discover {output}[/bold] (para ejecutar los tests generados)")
+                cli.print_success(f"Análisis guardado en formato JSON: {output_path}")
                 
+            else:
+                # Guardar reporte en Markdown
+                output_path = output if output.endswith('.md') else f"{output}.md"
+                
+                # Generar reporte
+                report = analyzer.generate_analysis_report(feature)
+                
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(report)
+                    
+                cli.print_success(f"Reporte guardado en Markdown: {output_path}")
+        
+        # Mostrar un extracto del informe completo
+        cli.print_info("Resumen de la evaluación:")
+        console.print(f"  - Componentes esenciales: {implementation.get('score', {}).get('essential', {}).get('present', 0)}/{implementation.get('score', {}).get('essential', {}).get('total', 0)}")
+        console.print(f"  - Componentes avanzados: {implementation.get('score', {}).get('advanced', {}).get('present', 0)}/{implementation.get('score', {}).get('advanced', {}).get('total', 0)}")
+        
+        # Mostrar problemas de seguridad si existen
+        security = analysis_result.get('security', {})
+        if security.get('applicable', False) and security.get('warnings', []):
+            cli.print_warning(f"Se detectaron {len(security['warnings'])} problemas de seguridad")
+            
+        # Sugerencia para ver reporte completo
+        if not output:
+            cli.print_info("Para guardar un reporte completo, use la opción --output")
+        
     except Exception as e:
-        cli.print_error(f"Error durante la generación de tests: {e}")
-        logger.error(f"Error en generate_tests: {e}", exc_info=True)
-```
+        cli.print_error(f"Error durante el análisis: {e}")
+        logger.error(f"Error en analyze_feature: {e}", exc_info=True)
+
+
+@app.command()
+def verify_completeness(
+    path: str = typer.Argument(".", help="Ruta al proyecto a verificar"),
+    functionality: str = typer.Option(None, "--functionality", "-f", help="Nombre de la funcionalidad específica a verificar"),
+    template_type: str = typer.Option(None, "--template", "-t", 
+                                     help="Tipo de plantilla a utilizar (api, database, ui, utility)"),
+    output: str = typer.Option(None, "--output", "-o", help="Ruta para guardar el informe en JSON"),
+    premium: bool = typer.Option(False, "--premium", "-p", help="Usar funcionalidades premium")
+):
+    """
+    Verificar completitud de implementación de funcionalidades en un proyecto.
+    Analiza si las implementaciones cumplen con criterios de completitud y calidad.
+    """
+    import os
+    import json
+    from src.analyzers.completeness_verifier import get_completeness_verifier
+    from src.utils.subscription_manager import get_subscription_manager
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    cli.print_header("Verificador de Completitud")
+    
+    # Verificar suscripción para funciones premium
+    if premium:
+        subscription = get_subscription_manager()
+        if not subscription.is_premium_feature_available('completeness_verifier'):
+            cli.print_warning("Esta es una característica premium. Actualice su suscripción para acceder.")
+            premium = False
+    
+    try:
+        # Crear verificador de completitud
+        verifier = get_completeness_verifier({"premium": premium})
+        
+        # Verificar una funcionalidad específica o todo el proyecto
+        if functionality:
+            cli.print_info(f"Verificando completitud de la funcionalidad '{functionality}'...")
+            
+            with cli.status(f"Analizando implementación de '{functionality}'..."):
+                result = verifier.verify_functionality(
+                    functionality, project_path, template_type=template_type
+                )
+                
+            if "error" in result:
+                cli.print_error(result["error"])
+                return
+                
+            # Mostrar resultados
+            completeness = result.get("completeness_score", 0)
+            quality = result.get("quality_score", 0)
+            
+            cli.print_success(f"Análisis de completitud para '{functionality}' finalizado")
+            
+            # Mostrar puntuación general
+            color = "green" if completeness >= 80 else "yellow" if completeness >= 50 else "red"
+            cli.print_panel(
+                "Puntuación de Completitud", 
+                f"[bold {color}]{completeness}%[/bold {color}]\n\n"
+                f"Archivos: {result.get('required_files_completeness', 0)}%\n"
+                f"Funciones: {result.get('required_functions_completeness', 0)}%\n"
+                f"Componentes: {result.get('required_components_completeness', 0)}%\n"
+                f"Calidad: {quality}%"
+            )
+            
+            # Mostrar elementos faltantes
+            missing_files = result.get("missing_files", [])
+            if missing_files:
+                cli.print_warning(f"Archivos faltantes ({len(missing_files)}):")
+                for file_info in missing_files[:5]:
+                    pattern = file_info.get("pattern", "")
+                    suggestions = file_info.get("suggestions", [])
+                    console.print(f"  - Patrón: {pattern}")
+                    if suggestions:
+                        console.print(f"    Sugerencias: {', '.join(suggestions[:3])}")
+                if len(missing_files) > 5:
+                    console.print(f"  ... y {len(missing_files) - 5} más")
+            
+            missing_functions = result.get("missing_functions", [])
+            if missing_functions:
+                cli.print_warning(f"Funciones faltantes ({len(missing_functions)}):")
+                for func_info in missing_functions[:5]:
+                    func = func_info.get("function", "")
+                    suggestions = func_info.get("suggestions", [])
+                    console.print(f"  - Función: {func}")
+                    if suggestions:
+                        console.print(f"    Sugerencias: {', '.join(suggestions[:3])}")
+                if len(missing_functions) > 5:
+                    console.print(f"  ... y {len(missing_functions) - 5} más")
+            
+            # Mostrar componentes incompletos
+            incomplete_components = result.get("incomplete_components", [])
+            if incomplete_components:
+                cli.print_warning(f"Componentes incompletos ({len(incomplete_components)}):")
+                for comp_info in incomplete_components[:5]:
+                    component = comp_info.get("component", "")
+                    percentage = comp_info.get("fulfillment_percentage", 0)
+                    console.print(f"  - {component}: {percentage}% completo")
+                if len(incomplete_components) > 5:
+                    console.print(f"  ... y {len(incomplete_components) - 5} más")
+            
+            # Mostrar sugerencias de mejora
+            improvement_suggestions = result.get("improvement_suggestions", [])
+            if improvement_suggestions:
+                cli.print_info("Sugerencias de mejora:")
+                for i, suggestion in enumerate(improvement_suggestions[:5]):
+                    console.print(f"  {i+1}. {suggestion}")
+                if len(improvement_suggestions) > 5:
+                    console.print(f"  ... y {len(improvement_suggestions) - 5} más")
+        else:
+            # Verificar todo el proyecto
+            cli.print_info(f"Verificando completitud general del proyecto...")
+            
+            with cli.status("Analizando implementaciones..."):
+                result = verifier.verify_project(project_path)
+                
+            # Mostrar resultados
+            avg_score = result.get("average_completeness_score", 0)
+            functionalities = result.get("functionalities_analyzed", 0)
+            
+            cli.print_success(f"Análisis de completitud finalizado")
+            
+            # Mostrar puntuación general
+            color = "green" if avg_score >= 80 else "yellow" if avg_score >= 50 else "red"
+            cli.print_panel(
+                "Puntuación General de Completitud", 
+                f"[bold {color}]{avg_score}%[/bold {color}]\n\n"
+                f"Funcionalidades analizadas: {functionalities}\n"
+                f"Checklist del proyecto: {result.get('project_checklist', {}).get('checklist_score', 0)}%"
+            )
+            
+            # Mostrar resultados por funcionalidad
+            functionality_results = result.get("functionality_results", {})
+            if functionality_results:
+                # Crear tabla de resultados
+                func_table = cli.create_table(
+                    "Resultados por Funcionalidad", 
+                    ["Funcionalidad", "Completitud", "Archivos", "Funciones", "Componentes", "Calidad"]
+                )
+                
+                for func_name, func_result in functionality_results.items():
+                    score = func_result.get("completeness_score", 0)
+                    files = func_result.get("required_files_completeness", 0)
+                    functions = func_result.get("required_functions_completeness", 0)
+                    components = func_result.get("required_components_completeness", 0)
+                    quality = func_result.get("quality_score", 0)
+                    
+                    # Añadir a la tabla con formato condicional
+                    func_table.add_row(
+                        func_name,
+                        f"[{'green' if score >= 80 else 'yellow' if score >= 50 else 'red'}]{score}%[/]",
+                        f"{files}%",
+                        f"{functions}%",
+                        f"{components}%",
+                        f"{quality}%"
+                    )
+                
+                # Mostrar tabla
+                console.print(func_table)
+            
+            # Mostrar recomendaciones generales
+            recommendations = result.get("overall_recommendations", [])
+            if recommendations:
+                cli.print_info("Recomendaciones generales:")
+                for recommendation in recommendations:
+                    console.print(f"  • {recommendation}")
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+                
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(result, f, indent=2)
+                
+            cli.print_info(f"Resultados guardados en: {output_path}")
+    
+    except Exception as e:
+        cli.print_error(f"Error al verificar completitud: {e}")
+        logger.error(f"Error en verify_completeness: {e}", exc_info=True)

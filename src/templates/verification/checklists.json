@@ -1,0 +1,59 @@
+{
+    "error_handling": [
+        "¿Se capturan y gestionan excepciones específicas?",
+        "¿Se registran los errores con nivel de log adecuado?",
+        "¿Se devuelven mensajes de error útiles al usuario?",
+        "¿Se manejan condiciones de borde y casos extremos?"
+    ],
+    "authentication": [
+        "¿Se utilizan métodos seguros de autenticación?",
+        "¿Se validan correctamente las credenciales?",
+        "¿Se protegen adecuadamente los tokens y secretos?",
+        "¿Existe manejo de sesiones y expiración de credenciales?"
+    ],
+    "rate_limiting": [
+        "¿Se implementa limitación de tasa para prevenir abusos?",
+        "¿Se respetan los límites de la API externa?",
+        "¿Se informa al usuario sobre límites alcanzados?",
+        "¿Existe una estrategia de reintentos con backoff?"
+    ],
+    "transaction_management": [
+        "¿Se utilizan transacciones para operaciones múltiples?",
+        "¿Se implementa rollback ante fallos?",
+        "¿Se minimizan los bloqueos y se optimiza concurrencia?"
+    ],
+    "connection_pooling": [
+        "¿Se reutilizan conexiones mediante pooling?",
+        "¿Se gestionan adecuadamente el ciclo de vida de las conexiones?",
+        "¿Se configuran tiempos de espera y reintentos adecuados?"
+    ],
+    "logging": [
+        "¿Se utilizan niveles de log apropiados?",
+        "¿Se evita registrar datos sensibles?",
+        "¿Los mensajes de log son descriptivos y útiles?",
+        "¿Se utiliza un formato estándar para todos los mensajes?"
+    ],
+    "responsive_design": [
+        "¿La interfaz se adapta a diferentes tamaños de pantalla?",
+        "¿Se utilizan unidades relativas para dimensiones?",
+        "¿Se prueban diferentes resoluciones y dispositivos?"
+    ],
+    "accessibility": [
+        "¿Se utilizan etiquetas y descripciones para elementos?",
+        "¿La navegación es posible mediante teclado?",
+        "¿Se cumplen estándares de contraste y legibilidad?",
+        "¿Hay equivalentes textuales para contenido no textual?"
+    ],
+    "security": [
+        "¿Se validan todas las entradas del usuario?",
+        "¿Se implementa protección contra inyecciones?",
+        "¿Se utilizan prácticas de codificación segura?",
+        "¿Se manejan adecuadamente los datos sensibles?"
+    ],
+    "performance": [
+        "¿Se implementan técnicas de caché apropiadas?",
+        "¿Se optimizan consultas y operaciones costosas?",
+        "¿Se mide y monitorea el rendimiento?",
+        "¿Se utiliza carga perezosa cuando es apropiado?"
+    ]
+}
