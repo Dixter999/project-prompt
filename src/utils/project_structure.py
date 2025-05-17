@@ -363,6 +363,57 @@ class ProjectStructure:
         
         return file_path
     
+    def save_premium_functionality_prompt(self, functionality: str, prompt_type: str, content: str, 
+                                        metadata: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Guardar un prompt premium para una funcionalidad específica.
+        
+        Args:
+            functionality: Nombre de la funcionalidad
+            prompt_type: Tipo de prompt premium (implementation, testing, integration)
+            content: Contenido del prompt
+            metadata: Metadatos opcionales
+        
+        Returns:
+            Ruta al archivo generado
+        """
+        # Crear el directorio premium si no existe
+        premium_dir = os.path.join(self.structure_root, 'prompts', 'premium')
+        os.makedirs(premium_dir, exist_ok=True)
+        
+        # Crear directorio para la funcionalidad dentro de premium
+        functionality_dir = os.path.join(premium_dir, functionality.lower())
+        os.makedirs(functionality_dir, exist_ok=True)
+        
+        # Definir el nombre del archivo
+        file_name = f"{prompt_type}.md"
+        file_path = os.path.join(functionality_dir, file_name)
+        
+        # Metadata por defecto
+        default_metadata = {
+            'title': f"Prompt premium de {prompt_type} para: {functionality}",
+            'functionality': functionality,
+            'date': self.get_current_date(),
+            'version': self.config.get('version', '0.1.0'),
+            'type': 'premium',
+            'premium_feature': prompt_type
+        }
+        
+        # Combinar con metadata proporcionada
+        file_metadata = {**default_metadata, **(metadata or {})}
+        
+        # Guardar archivo
+        with open(file_path, 'w', encoding='utf-8') as f:
+            # Añadir frontmatter
+            f.write('---\n')
+            yaml.dump(file_metadata, f, default_flow_style=False)
+            f.write('---\n\n')
+            
+            # Escribir contenido
+            f.write(content)
+        
+        return file_path
+    
     def clear_structure(self, confirm: bool = False) -> bool:
         """
         Eliminar toda la estructura de archivos.
