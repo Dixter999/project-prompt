@@ -200,35 +200,6 @@ def config(key: Optional[str] = None, value: Optional[str] = None, list_all: boo
     if key and value:
         config_manager.set(key, value)
         config_manager.save_config()
-
-
-# Submenu para comandos de suscripción
-subscription_app = typer.Typer(help="Gestión de suscripción premium")
-app.add_typer(subscription_app, name="subscription")
-
-
-@subscription_app.command("info")
-def subscription_info():
-    """Muestra información sobre la suscripción actual."""
-    show_subscription()
-    
-    
-@subscription_app.command("activate")
-def subscription_activate(license_key: str = typer.Argument(..., help="Clave de licencia a activar")):
-    """Activa una licencia para acceso premium."""
-    activate_license(license_key)
-    
-    
-@subscription_app.command("deactivate")
-def subscription_deactivate():
-    """Desactiva la licencia actual y revierte a la versión gratuita."""
-    deactivate_license()
-    
-    
-@subscription_app.command("plans")
-def subscription_plans():
-    """Muestra información sobre los planes de suscripción disponibles."""
-    show_plans()
         logger.info(f"Configuración actualizada: {key}={value}")
     elif key:
         value = config_manager.get(key)
@@ -352,6 +323,8 @@ def help():
     table.add_row("analyze-feature", "Analizar funcionalidad específica")
     table.add_row("list-interviews", "Listar entrevistas existentes")
     table.add_row("implementation-proposal", "Generar propuesta de implementación")
+    table.add_row("implementation-prompt", "Generar prompt detallado para implementación (premium)")
+    table.add_row("generate_prompts", "Generar prompts contextuales del proyecto")
     table.add_row("set-log-level", "Cambiar el nivel de logging")
     table.add_row("menu", "Iniciar el menú interactivo")
     table.add_row("help", "Mostrar esta ayuda")
@@ -642,10 +615,15 @@ def generate_prompts(
     import os
     
     # Elegir el generador apropiado según los parámetros
-    if enhanced:
-        from src.generators.contextual_prompt_generator import get_contextual_prompt_generator as get_generator
+    if premium:
+        # Para premium, usar el generador de prompts de implementación
+        from src.generators import get_implementation_prompt_generator as get_generator
+    elif enhanced:
+        # Para mejorado (no premium), usar el generador contextual
+        from src.generators import get_contextual_prompt_generator as get_generator
     else:
-        from src.generators.prompt_generator import get_prompt_generator as get_generator
+        # Para básico, usar el generador simple
+        from src.generators import get_prompt_generator as get_generator
     
     project_path = os.path.abspath(path)
     
@@ -659,10 +637,18 @@ def generate_prompts(
     if enhanced:
         cli.print_info("Utilizando generador de prompts contextuales mejorado")
     
-    # Mostrar advertencia si se intenta usar premium en versión gratuita
+    # Verificar si se puede usar premium
     if premium:
-        cli.print_warning("Las funciones premium no están disponibles en esta versión")
-        premium = False
+        from src.utils.subscription_manager import get_subscription_manager
+        subscription = get_subscription_manager()
+        has_premium_access = subscription.has_premium()
+        
+        if not has_premium_access:
+            cli.print_warning("Las funciones premium requieren una suscripción activa")
+            cli.print_info("Para activar tu suscripción: project-prompt subscription activate <clave>")
+            premium = False
+        else:
+            cli.print_info("Utilizando generador de prompts premium con funcionalidades avanzadas")
     
     cli.print_info(f"Analizando proyecto en: {project_path}")
     
@@ -802,7 +788,7 @@ def docs(
     cli.print_info(f"Generando documentación para proyecto en: {project_path}")
     
     # Verificar si ya existe documentación
-    if os.path.exists(output_dir) and not update and not overwrite:
+    if os.path.exists(output_dir) && not update && not overwrite:
         cli.print_warning(f"Ya existe documentación en: {output_dir}")
         cli.print_info("Use --update para actualizar o --overwrite para sobrescribir")
         
@@ -1654,7 +1640,7 @@ def suggest_branches(
     }
     
     # Si se proporciona un archivo de propuesta, leer su contenido
-    if proposal and os.path.exists(proposal):
+    if proposal && os.path.exists(proposal):
         try:
             with open(proposal, 'r', encoding='utf-8') as f:
                 proposal_content = f.read()
@@ -1706,6 +1692,132 @@ def suggest_branches(
     # Mostrar el markdown completo
     cli.print_panel("Estrategia de Branches Completa", strategy_md[:500] + "...", style="cyan")
     cli.print_info("Para ver la estrategia completa, use la opción --output")
+
+
+@app.command()
+def implementation_prompt(
+    path: str = typer.Argument(".", help="Ruta al proyecto"),
+    feature: str = typer.Argument(..., help="Funcionalidad a implementar (ej: authentication, database, api, etc.)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el prompt en formato Markdown"),
+    override_premium: bool = typer.Option(False, "--force", "-f", help="Forzar generación (solo desarrollo)"),
+    store: bool = typer.Option(True, "--store/--no-store", help="Guardar en la estructura del proyecto")
+):
+    """Generar un prompt detallado para la implementación de una funcionalidad específica (premium)."""
+    import os
+    import datetime
+    from src.generators import get_implementation_prompt_generator
+    from src.utils.subscription_manager import get_subscription_manager
+    from src.utils.project_structure import get_project_structure
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("Generación de Prompt de Implementación")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    cli.print_info(f"Funcionalidad a implementar: {feature}")
+    
+    # Verificar acceso premium
+    subscription = get_subscription_manager()
+    is_premium = subscription.has_premium() or override_premium
+    
+    if not is_premium:
+        cli.print_warning("Esta funcionalidad requiere una suscripción premium")
+        cli.print_info("Puedes activar tu suscripción con: project-prompt subscription activate <clave>")
+        cli.print_info("Para más información: project-prompt subscription plans")
+        return
+    
+    try:
+        # Crear generador de prompts de implementación
+        generator = get_implementation_prompt_generator(is_premium=True)
+        
+        # Verificar si queremos usar la estructura de archivos
+        use_structure = store and not output
+        
+        # Obtener configuración del proyecto
+        project_config = config_manager.config.copy() or {}
+        project_config['project_name'] = os.path.basename(project_path)
+        
+        if use_structure:
+            # Si queremos guardar en la estructura de archivos
+            from src.utils.project_structure import get_project_structure
+            structure = get_project_structure(project_path, project_config)
+            
+            # Verificar si existe la estructura
+            structure_info = structure.get_structure_info()
+            if not structure_info['exists']:
+                # Crear la estructura si no existe
+                cli.print_info("Creando estructura de archivos del proyecto...")
+                structure.create_structure()
+        
+        # Mostrar progreso
+        with cli.status(f"Generando prompt detallado para implementación de {feature}..."):
+            result = generator.generate_implementation_prompt(project_path, feature)
+            
+            if not result.get("success", False):
+                error = result.get("error", "unknown_error")
+                message = result.get("message", "Error desconocido")
+                raise Exception(f"{message} ({error})")
+            
+            # Obtener el prompt generado
+            implementation_guide = result.get("implementation_guide", "")
+            integration_guide = result.get("integration_guide", "")
+            
+            # Construir el prompt completo
+            full_prompt = f"# Guía de Implementación: {feature.capitalize()}\n\n"
+            full_prompt += implementation_guide
+            
+            if integration_guide:
+                full_prompt += "\n\n## Integración con otros sistemas\n\n"
+                full_prompt += integration_guide
+            
+            # Determinar dónde guardar el prompt
+            if output:
+                # Asegurar que tenga extensión .md
+                if not output.endswith('.md'):
+                    output = f"{output}.md"
+                    
+                # Guardar en ubicación específica
+                with open(output, 'w', encoding='utf-8') as f:
+                    f.write(full_prompt)
+                    
+                prompt_path = output
+            elif use_structure:
+                # Guardar en la estructura de archivos como premium
+                prompt_path = structure.save_premium_functionality_prompt(
+                    feature, "implementation", full_prompt,
+                    metadata={
+                        'generated_date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        'premium': True,
+                        'feature_type': feature
+                    }
+                )
+            else:
+                # No guardar
+                prompt_path = None
+        
+        # Mostrar resultado
+        if prompt_path:
+            cli.print_success(f"Guía de implementación generada correctamente en: {prompt_path}")
+            cli.print_info(f"La guía incluye pasos detallados, ejemplos de código y consideraciones arquitectónicas para {feature}.")
+        else:
+            cli.print_panel(
+                f"Guía de Implementación: {feature.capitalize()}",
+                full_prompt[:500] + "..." if len(full_prompt) > 500 else full_prompt,
+                "blue"
+            )
+            
+        # Sugerir siguientes pasos
+        cli.print_info("Sugerencias:")
+        console.print("  - Revisa la guía completa para entender los pasos de implementación")
+        console.print("  - Usa los ejemplos de código como punto de partida")
+        console.print("  - Consulta las consideraciones de seguridad y rendimiento")
+            
+    except Exception as e:
+        cli.print_error(f"Error al generar prompt de implementación: {e}")
+        logger.error(f"Error en implementation_prompt: {e}", exc_info=True)
 
 
 @app.callback()
