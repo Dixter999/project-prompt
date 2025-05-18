@@ -101,7 +101,24 @@
   - Cola de datos para envío asíncrono
 
 ### 6.6 Empaquetado y distribución
-- **Estado**: Pendiente
+- **Branch**: `feature/packaging`
+- **Estado**: Completado
+- **Archivos creados/modificados**:
+  - `pyproject.toml` - Configuración actualizada para Poetry
+  - `setup.py` - Configuración actualizada para setuptools
+  - `setup.cfg` - Configuración adicional para distribución
+  - `requirements.txt` - Actualizado con nuevas dependencias
+  - `MANIFEST.in` - Configuración de archivos a incluir en el paquete
+  - `/scripts/build.py` - Script de construcción para paquetes y ejecutables
+  - `/scripts/test_package.py` - Script para probar el empaquetado
+  - `/.github/workflows/release.yml` - Workflow de GitHub para releases
+  - `src/__init__.py` - Actualización de versión a 1.0.0
+- **Funcionalidades implementadas**:
+  - Empaquetado con Poetry y setuptools
+  - Configuración de CI/CD para releases
+  - Generación de ejecutables con PyInstaller
+  - Preparación para publicación en PyPI
+  - Construcción de extensión para VS Code Marketplace
 
 ### 6.7 Pruebas finales e integración
 - **Estado**: Pendiente

@@ -1,3 +1,3 @@
-"""ProjectPrompt - Asistente inteligente para proyectos usando IA."""
+"""ProjectPrompt - Asistente inteligente para análisis y documentación de proyectos usando IA."""
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
