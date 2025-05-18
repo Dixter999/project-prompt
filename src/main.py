@@ -16,9 +16,11 @@ from src import __version__
 from src.utils import logger, config_manager, LogLevel, set_level
 from src.utils.api_validator import get_api_validator
 from src.utils.updater import Updater, check_and_notify_updates
-from src.utils.sync_manager import SyncManager, get_sync_manager 
+from src.utils.sync_manager import SyncManager, get_sync_manager
+from src.utils.telemetry import initialize_telemetry, shutdown_telemetry, get_telemetry_manager, record_command, record_error
 from src.ui import menu
 from src.ui.cli import cli
+from src.ui.consent_manager import ConsentManager
 from src.ui.analysis_view import analysis_view
 from src.ui.documentation_navigator import get_documentation_navigator
 from src.ui.subscription_view import show_subscription, activate_license, deactivate_license, show_plans
@@ -48,8 +50,64 @@ app.add_typer(update_app, name="update")
 premium_app = typer.Typer(help="Comandos premium para acceso a funcionalidades avanzadas")
 app.add_typer(premium_app, name="premium")
 
+# Submenu para comandos de telemetría
+telemetry_app = typer.Typer(help="Comandos para gestionar la telemetría anónima")
+app.add_typer(telemetry_app, name="telemetry")
+
+# Decorador para telemetría de comandos
+import time
+import functools
+import inspect
+
+def telemetry_command(func):
+    """
+    Decorador para registrar el uso de comandos en telemetría.
+    También registra errores que ocurran durante la ejecución.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        telemetry_enabled = get_telemetry_manager().is_enabled()
+        command_name = func.__name__
+        start_time = time.time()
+        
+        try:
+            # Ejecutar el comando original
+            result = func(*args, **kwargs)
+            
+            # Registrar telemetría solo si está habilitada
+            if telemetry_enabled:
+                duration_ms = int((time.time() - start_time) * 1000)
+                record_command(command_name, duration_ms)
+                
+            return result
+        except Exception as e:
+            # Registrar el error si la telemetría está habilitada
+            if telemetry_enabled:
+                error_type = type(e).__name__
+                error_msg = str(e)
+                
+                # Obtener información del archivo y línea donde ocurrió el error
+                # Solo para errores en nuestro código, no en librerías externas
+                file = None
+                line = None
+                tb = getattr(e, '__traceback__', None)
+                while tb:
+                    if 'src' in tb.tb_frame.f_code.co_filename:
+                        file = tb.tb_frame.f_code.co_filename
+                        line = tb.tb_lineno
+                        break
+                    tb = tb.tb_next
+                
+                record_error(error_type, error_msg, file, line)
+                
+            # Re-lanzar la excepción para mantener el comportamiento normal
+            raise
+    
+    return wrapper
+
 
 @app.command()
+@telemetry_command
 def version():
     """Mostrar la versión actual de ProjectPrompt."""
     cli.print_header("Información de Versión")
@@ -439,8 +497,61 @@ def docs(
         logger.error(f"Error en docs: {e}", exc_info=True)
 
 
+# Decorador para telemetría de comandos
+import time
+import functools
+import inspect
+
+def telemetry_command(func):
+    """
+    Decorador para registrar el uso de comandos en telemetría.
+    También registra errores que ocurran durante la ejecución.
+    """
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        telemetry_enabled = get_telemetry_manager().is_enabled()
+        command_name = func.__name__
+        start_time = time.time()
+        
+        try:
+            # Ejecutar el comando original
+            result = func(*args, **kwargs)
+            
+            # Registrar telemetría solo si está habilitada
+            if telemetry_enabled:
+                duration_ms = int((time.time() - start_time) * 1000)
+                record_command(command_name, duration_ms)
+                
+            return result
+        except Exception as e:
+            # Registrar el error si la telemetría está habilitada
+            if telemetry_enabled:
+                error_type = type(e).__name__
+                error_msg = str(e)
+                
+                # Obtener información del archivo y línea donde ocurrió el error
+                # Solo para errores en nuestro código, no en librerías externas
+                file = None
+                line = None
+                tb = getattr(e, '__traceback__', None)
+                while tb:
+                    if 'src' in tb.tb_frame.f_code.co_filename:
+                        file = tb.tb_frame.f_code.co_filename
+                        line = tb.tb_lineno
+                        break
+                    tb = tb.tb_next
+                
+                record_error(error_type, error_msg, file, line)
+                
+            # Re-lanzar la excepción para mantener el comportamiento normal
+            raise
+    
+    return wrapper
+
+
 # Implementación de comandos de IA
 @ai_app.command("generate")
+@telemetry_command
 def ai_generate_code(
     description: str = typer.Argument(..., help="Descripción del código a generar"),
     language: str = typer.Option("python", "--language", "-l", help="Lenguaje de programación"),
@@ -503,6 +614,7 @@ def ai_generate_code(
 
 
 @ai_app.command("analyze")
+@telemetry_command
 def ai_analyze_code(
     file_path: str = typer.Argument(..., help="Ruta al archivo de código a analizar"),
     language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
@@ -615,6 +727,7 @@ def ai_analyze_code(
 
 
 @ai_app.command("refactor")
+@telemetry_command
 def ai_refactor_code(
     file_path: str = typer.Argument(..., help="Ruta al archivo de código a refactorizar"),
     language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
@@ -720,6 +833,7 @@ def ai_refactor_code(
 
 
 @ai_app.command("explain")
+@telemetry_command
 def ai_explain_code(
     file_path: str = typer.Argument(..., help="Ruta al archivo de código a explicar"),
     language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
@@ -1140,6 +1254,99 @@ def premium_implementation_assistant(
         logger.error(f"Error en premium_implementation_assistant: {e}", exc_info=True)
 
 
+#
+# Comandos para telemetría anónima
+#
+
+@telemetry_app.command("status")
+def telemetry_status():
+    """
+    Muestra el estado actual de la telemetría anónima.
+    """
+    try:
+        # Registrar el comando para telemetría (sólo si está activada)
+        record_command("telemetry_status")
+        
+        manager = get_telemetry_manager()
+        consent_manager = ConsentManager(console=console)
+        
+        # Mostrar estado
+        cli.print_header("Estado de Telemetría")
+        status = "Activada" if manager.is_enabled() else "Desactivada"
+        status_color = "green" if manager.is_enabled() else "red"
+        console.print(f"Telemetría anónima: [{status_color}]{status}[/{status_color}]")
+        
+        # Mostrar información detallada
+        consent_manager.show_collected_data()
+        
+    except Exception as e:
+        logger.error(f"Error al mostrar estado de telemetría: {e}")
+        cli.print_error("No se pudo mostrar el estado de telemetría")
+
+
+@telemetry_app.command("enable")
+def telemetry_enable():
+    """
+    Activa la recolección anónima de telemetría.
+    """
+    try:
+        consent_manager = ConsentManager(console=console)
+        
+        if consent_manager.enable_telemetry():
+            cli.print_success("Telemetría anónima activada")
+            console.print("\nGracias por ayudarnos a mejorar ProjectPrompt. Todos los datos recolectados son")
+            console.print("completamente anónimos y se utilizan únicamente para mejorar la herramienta.")
+            console.print("\nPuedes revisar los datos recolectados con: project-prompt telemetry status")
+            console.print("Puedes desactivar la telemetría en cualquier momento con: project-prompt telemetry disable")
+            
+            # Registrar ahora que está activada
+            record_command("telemetry_enable")
+        else:
+            cli.print_error("No se pudo activar la telemetría")
+    except Exception as e:
+        logger.error(f"Error al activar telemetría: {e}")
+        cli.print_error("No se pudo activar la telemetría")
+
+
+@telemetry_app.command("disable")
+def telemetry_disable():
+    """
+    Desactiva la recolección anónima de telemetría.
+    """
+    try:
+        # Registrar comando antes de desactivar
+        record_command("telemetry_disable")
+        
+        consent_manager = ConsentManager(console=console)
+        
+        if consent_manager.disable_telemetry():
+            cli.print_success("Telemetría anónima desactivada")
+            console.print("\nLos datos pendientes de envío han sido eliminados. No se recopilarán más datos.")
+            console.print("Puedes volver a activar la telemetría en cualquier momento con: project-prompt telemetry enable")
+        else:
+            cli.print_error("No se pudo desactivar la telemetría")
+    except Exception as e:
+        logger.error(f"Error al desactivar telemetría: {e}")
+        cli.print_error("No se pudo desactivar la telemetría")
+
+
+@telemetry_app.command("prompt")
+def telemetry_prompt():
+    """
+    Muestra el prompt de consentimiento para telemetría.
+    """
+    try:
+        consent_manager = ConsentManager(console=console)
+        status = consent_manager.request_consent(force=True)
+        
+        # No necesitamos hacer nada más, el consent_manager ya maneja todo
+        if status == "granted":
+            record_command("telemetry_prompt")
+    except Exception as e:
+        logger.error(f"Error en prompt de telemetría: {e}")
+        cli.print_error("No se pudo mostrar el prompt de telemetría")
+
+
 # Submenu para comandos de actualización y sincronización
 update_app = typer.Typer(help="Comandos para gestionar actualizaciones y sincronización")
 app.add_typer(update_app, name="update")
@@ -1409,3 +1616,54 @@ def sync_status():
                 inst.get('last_sync', 'Nunca')
             )
         console.print(install_table)
+
+
+# Configurar callbacks para inicialización y cierre de telemetría
+
+@app.callback()
+def app_callback():
+    """
+    Callback que se ejecuta al iniciar la aplicación.
+    Configura el entorno y la telemetría.
+    """
+    try:
+        # Inicializar telemetría
+        initialize_telemetry()
+        
+        # Verificar si es la primera ejecución para solicitar consentimiento
+        check_first_run_telemetry_consent()
+        
+    except Exception as e:
+        # No queremos que un error en la telemetría impida el uso de la aplicación
+        logger.error(f"Error al inicializar telemetría: {e}")
+    
+    # El callback de Typer no debe retornar nada para continuar con la ejecución normal
+    return
+    
+def check_first_run_telemetry_consent():
+    """
+    Verifica si es la primera ejecución para solicitar consentimiento de telemetría.
+    """
+    config = config_manager.get_config()
+    
+    # Verificar si ya se ha mostrado el prompt de telemetría
+    if config.get("telemetry", {}).get("prompted", False):
+        return
+        
+    # Marcar que ya se ha solicitado consentimiento
+    if "telemetry" not in config:
+        config["telemetry"] = {}
+    config["telemetry"]["prompted"] = True
+    config_manager.save_config(config)
+    
+    # Mostrar prompt de consentimiento
+    try:
+        consent_manager = ConsentManager(console=console)
+        consent_manager.request_consent()
+    except Exception as e:
+        logger.error(f"Error al solicitar consentimiento de telemetría: {e}")
+
+
+# Registrar cierre de telemetría al finalizar el programa
+import atexit
+atexit.register(shutdown_telemetry)

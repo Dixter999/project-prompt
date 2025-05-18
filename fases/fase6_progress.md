@@ -84,7 +84,21 @@
   - Documentación de arquitectura y diseño del sistema
 
 ### 6.5 Sistema de telemetría anónima
-- **Estado**: Pendiente
+- **Branch**: `feature/anonymous-telemetry`
+- **Estado**: Completado
+- **Archivos creados/modificados**:
+  - `/src/utils/telemetry.py` - Sistema de telemetría anónima
+  - `/src/ui/consent_manager.py` - Gestor de consentimiento del usuario
+  - `/src/main.py` - Comandos CLI para gestión de telemetría
+  - `/tests/test_telemetry.py` - Pruebas para el sistema de telemetría
+- **Funcionalidades implementadas**:
+  - Sistema de telemetría anónima con consentimiento explícito
+  - Generación de ID de instalación preservando privacidad
+  - Seguimiento de uso de comandos y errores
+  - Sistema de gestión de consentimiento transparente
+  - Comandos CLI para control de telemetría
+  - Decorador para capturar uso de comandos y errores
+  - Cola de datos para envío asíncrono
 
 ### 6.6 Empaquetado y distribución
 - **Estado**: Pendiente
