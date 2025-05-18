@@ -19,7 +19,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union, Any
 
-from ..utils.config import Config
+from ..utils.config import ConfigManager, get_configManager, get_config
 from ..utils.logger import get_logger
 
 
@@ -34,7 +34,7 @@ UPDATE_CHECK_INTERVAL_DAYS = 1  # Verificar actualizaciones cada día por defect
 class Updater:
     """Clase para gestionar actualizaciones del sistema ProjectPrompt."""
     
-    def __init__(self, config: Config = None, force: bool = False):
+    def __init__(self, config=None, force: bool = False):
         """
         Inicializa el gestor de actualizaciones.
         
@@ -42,7 +42,7 @@ class Updater:
             config: Configuración del sistema
             force: Forzar la verificación incluso si se hizo recientemente
         """
-        self.config = config or Config()
+        self.config = config or get_config()
         self.force_check = force
         self._version = self._get_current_version()
         self._last_check_data = self._load_last_check_data()

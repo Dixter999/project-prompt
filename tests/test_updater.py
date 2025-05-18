@@ -21,10 +21,10 @@ class TestUpdater:
     
     @pytest.fixture
     def updater(self, mock_config):
-        with patch('src.utils.updater.Config') as MockConfig:
+        with patch('src.utils.updater.get_config') as mock_get_config:
             mock_config_instance = MagicMock()
             mock_config_instance.get.side_effect = lambda key, default=None: mock_config.get(key, default)
-            MockConfig.return_value = mock_config_instance
+            mock_get_config.return_value = mock_config_instance
             return Updater(config=mock_config_instance)
     
     def test_get_current_version(self, updater):

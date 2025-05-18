@@ -25,10 +25,10 @@ class TestSyncManager:
     
     @pytest.fixture
     def sync_manager(self, mock_config):
-        with patch('src.utils.sync_manager.Config') as MockConfig:
+        with patch('src.utils.sync_manager.get_config') as mock_get_config:
             mock_config_instance = MagicMock()
             mock_config_instance.get.side_effect = lambda key, default=None: mock_config.get(key, default)
-            MockConfig.return_value = mock_config_instance
+            mock_get_config.return_value = mock_config_instance
             
             # Parchar métodos de inicialización
             with patch.object(SyncManager, '_initialize_sync_directory'), \

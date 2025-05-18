@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union, Any
 
-from ..utils.config import Config
+from ..utils.config import ConfigManager, get_configManager, get_config
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,14 +32,14 @@ DEFAULT_SYNC_DIRECTORIES = [
 class SyncManager:
     """Gestor para sincronizar configuraciones y datos entre diferentes instalaciones."""
 
-    def __init__(self, config: Config = None):
+    def __init__(self, config=None):
         """
         Inicializa el gestor de sincronización.
         
         Args:
             config: Configuración del sistema
         """
-        self.config = config or Config()
+        self.config = config or get_config()
         self.sync_enabled = self.config.get('sync_enabled', False)
         self.sync_provider = self.config.get('sync_provider', 'local')
         self.last_sync = self._get_last_sync_time()
