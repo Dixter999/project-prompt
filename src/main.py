@@ -15,6 +15,8 @@ from rich.console import Console
 from src import __version__
 from src.utils import logger, config_manager, LogLevel, set_level
 from src.utils.api_validator import get_api_validator
+from src.utils.updater import Updater, check_and_notify_updates
+from src.utils.sync_manager import SyncManager, get_sync_manager 
 from src.ui import menu
 from src.ui.cli import cli
 from src.ui.analysis_view import analysis_view
@@ -37,6 +39,10 @@ app.add_typer(ai_app, name="ai")
 # Submenu para comandos de suscripción
 subscription_app = typer.Typer(help="Comandos para gestionar la suscripción")
 app.add_typer(subscription_app, name="subscription")
+
+# Submenu para comandos de actualización y sincronización
+update_app = typer.Typer(help="Comandos para gestionar actualizaciones y sincronización")
+app.add_typer(update_app, name="update")
 
 # Submenu para comandos premium 
 premium_app = typer.Typer(help="Comandos premium para acceso a funcionalidades avanzadas")
@@ -1132,3 +1138,274 @@ def premium_implementation_assistant(
     except Exception as e:
         cli.print_error(f"Error en el asistente de implementación: {e}")
         logger.error(f"Error en premium_implementation_assistant: {e}", exc_info=True)
+
+
+# Submenu para comandos de actualización y sincronización
+update_app = typer.Typer(help="Comandos para gestionar actualizaciones y sincronización")
+app.add_typer(update_app, name="update")
+
+
+@update_app.command("check")
+def check_updates(
+    force: bool = typer.Option(False, "--force", "-f", help="Forzar verificación incluso si se realizó recientemente")
+):
+    """Verificar si hay actualizaciones disponibles para ProjectPrompt."""
+    cli.print_header("Verificación de Actualizaciones")
+    
+    updater = Updater(force=force)
+    update_info = updater.check_for_updates()
+    
+    if update_info.get('available'):
+        version = update_info.get('latest')
+        current = update_info.get('version')
+        cli.print_info(f"¡Actualización disponible! Versión actual: v{current}, Nueva versión: v{version}")
+        
+        if update_info.get('changes'):
+            cli.print_info("\nMejoras destacadas:")
+            for change in update_info.get('changes'):
+                console.print(f"• [green]{change}[/]")
+        
+        console.print("\nPara actualizar, ejecute: [bold]project-prompt update system[/]")
+    else:
+        if update_info.get('error'):
+            cli.print_warning(f"Error al verificar actualizaciones: {update_info.get('error')}")
+        else:
+            cli.print_success(f"Ya tiene la última versión: v{update_info.get('version')}")
+
+
+@update_app.command("system")
+def update_system(
+    force: bool = typer.Option(False, "--force", "-f", help="Forzar actualización sin confirmación")
+):
+    """Actualizar ProjectPrompt a la última versión disponible."""
+    cli.print_header("Actualización del Sistema")
+    
+    # Verificar si hay actualizaciones
+    updater = Updater()
+    update_info = updater.check_for_updates()
+    
+    if not update_info.get('available'):
+        if update_info.get('error'):
+            cli.print_warning(f"Error al verificar actualizaciones: {update_info.get('error')}")
+            return
+        else:
+            cli.print_success(f"Ya tiene la última versión: v{update_info.get('version')}")
+            return
+    
+    # Confirmar la actualización con el usuario si no es forzada
+    if not force:
+        current = update_info.get('version')
+        new_version = update_info.get('latest')
+        cli.print_info(f"Se actualizará de v{current} a v{new_version}")
+        
+        if update_info.get('changes'):
+            cli.print_info("\nMejoras destacadas:")
+            for change in update_info.get('changes'):
+                console.print(f"• [green]{change}[/]")
+        
+        confirm = typer.confirm("¿Desea continuar con la actualización?")
+        if not confirm:
+            cli.print_info("Actualización cancelada.")
+            return
+    
+    # Realizar la actualización
+    with cli.status_spinner("Actualizando ProjectPrompt..."):
+        success, message = updater.update_system()
+    
+    if success:
+        cli.print_success(message)
+        cli.print_info("Por favor, reinicie la aplicación para aplicar los cambios.")
+    else:
+        cli.print_error(f"Error durante la actualización: {message}")
+
+
+@update_app.command("templates")
+def update_templates():
+    """Actualizar plantillas a la última versión disponible."""
+    cli.print_header("Actualización de Plantillas")
+    
+    updater = Updater()
+    with cli.status_spinner("Actualizando plantillas..."):
+        success, stats = updater.update_templates()
+    
+    if success:
+        cli.print_success("Plantillas actualizadas correctamente")
+        table = cli.create_table("Estadísticas", ["Operación", "Cantidad"])
+        table.add_row("Actualizadas", str(stats.get('updated', 0)))
+        table.add_row("Añadidas", str(stats.get('added', 0)))
+        table.add_row("Ignoradas", str(stats.get('skipped', 0)))
+        table.add_row("Fallidas", str(stats.get('failed', 0)))
+        console.print(table)
+    else:
+        cli.print_error("Error al actualizar las plantillas")
+
+
+@update_app.command("skip")
+def skip_version(
+    version: str = typer.Argument(..., help="Versión a ignorar (ej: 1.2.3)")
+):
+    """Ignorar una versión específica para futuras actualizaciones."""
+    cli.print_header("Ignorar Versión")
+    
+    updater = Updater()
+    updater.skip_version(version)
+    
+    cli.print_info(f"La versión {version} no se notificará en futuras verificaciones.")
+
+
+@update_app.command("sync")
+def sync_data(
+    direction: str = typer.Option("both", "--direction", "-d", 
+                                 help="Dirección de sincronización: 'upload', 'download', o 'both'")
+):
+    """Sincronizar datos con la ubicación configurada."""
+    cli.print_header("Sincronización de Datos")
+    
+    sync_manager = SyncManager()
+    
+    if not sync_manager.sync_enabled:
+        cli.print_warning("La sincronización no está habilitada. Configure sync_enabled=True en config.yaml")
+        return
+    
+    with cli.status_spinner("Sincronizando datos..."):
+        if direction in ["both", "upload"]:
+            success, stats = sync_manager.upload_data()
+            if success:
+                cli.print_success("Datos subidos correctamente")
+                cli.print_info(f"Archivos sincronizados: {stats.get('uploaded', 0)}")
+            else:
+                cli.print_error("Error al subir datos")
+        
+        if direction in ["both", "download"]:
+            success, stats = sync_manager.download_data()
+            if success:
+                cli.print_success("Datos descargados correctamente")
+                cli.print_info(f"Archivos actualizados: {stats.get('downloaded', 0)}")
+            else:
+                cli.print_error("Error al descargar datos")
+
+
+@update_app.command("backup")
+def create_backup(
+    output: str = typer.Option(None, "--output", "-o", help="Ruta donde guardar el archivo de respaldo")
+):
+    """Crear un respaldo de la configuración y datos de ProjectPrompt."""
+    cli.print_header("Creación de Respaldo")
+    
+    sync_manager = SyncManager()
+    
+    # Si no se especifica ruta, usar la predeterminada
+    if not output:
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output = os.path.expanduser(f"~/projectprompt_backup_{timestamp}.zip")
+    
+    with cli.status_spinner(f"Creando respaldo en {output}..."):
+        success, message = sync_manager.create_backup(output)
+    
+    if success:
+        cli.print_success(f"Respaldo creado correctamente en: {output}")
+    else:
+        cli.print_error(f"Error al crear respaldo: {message}")
+
+
+@update_app.command("restore")
+def restore_backup(
+    backup_file: str = typer.Argument(..., help="Ruta al archivo de respaldo"),
+    force: bool = typer.Option(False, "--force", "-f", help="Sobrescribir datos existentes sin confirmación")
+):
+    """Restaurar un respaldo de ProjectPrompt."""
+    cli.print_header("Restauración de Respaldo")
+    
+    # Confirmar restauración si no es forzada
+    if not force:
+        confirm = typer.confirm("Esta operación sobrescribirá los datos actuales. ¿Desea continuar?")
+        if not confirm:
+            cli.print_info("Restauración cancelada.")
+            return
+    
+    sync_manager = SyncManager()
+    
+    with cli.status_spinner("Restaurando datos desde respaldo..."):
+        success, message = sync_manager.restore_backup(backup_file)
+    
+    if success:
+        cli.print_success("Datos restaurados correctamente")
+    else:
+        cli.print_error(f"Error al restaurar: {message}")
+
+
+@update_app.command("configure")
+def configure_sync(
+    provider: str = typer.Option(None, "--provider", "-p", 
+                               help="Proveedor de sincronización: 'local', 'gdrive', 'dropbox', etc."),
+    directory: str = typer.Option(None, "--directory", "-d", 
+                                help="Directorio para sincronización local"),
+    enable: bool = typer.Option(None, "--enable/--disable", 
+                              help="Activar o desactivar la sincronización")
+):
+    """Configurar opciones de sincronización."""
+    cli.print_header("Configuración de Sincronización")
+    
+    config = config_manager.get_config()
+    modified = False
+    
+    if enable is not None:
+        config['sync_enabled'] = enable
+        cli.print_info(f"Sincronización {'activada' if enable else 'desactivada'}")
+        modified = True
+    
+    if provider:
+        config['sync_provider'] = provider
+        cli.print_info(f"Proveedor de sincronización establecido a: {provider}")
+        modified = True
+    
+    if directory:
+        config['sync_directory'] = os.path.abspath(directory)
+        cli.print_info(f"Directorio de sincronización establecido a: {directory}")
+        modified = True
+    
+    if modified:
+        config_manager.save_config(config)
+        cli.print_success("Configuración guardada correctamente")
+    else:
+        # Mostrar configuración actual
+        table = cli.create_table("Configuración Actual", ["Opción", "Valor"])
+        table.add_row("Sincronización", "Activada ✅" if config.get('sync_enabled', False) else "Desactivada ❌")
+        table.add_row("Proveedor", config.get('sync_provider', 'local'))
+        table.add_row("Directorio", config.get('sync_directory', 'No configurado'))
+        console.print(table)
+
+
+@update_app.command("status")
+def sync_status():
+    """Mostrar estado de sincronización."""
+    cli.print_header("Estado de Sincronización")
+    
+    sync_manager = SyncManager()
+    
+    if not sync_manager.sync_enabled:
+        cli.print_warning("La sincronización no está habilitada. Use 'project-prompt update configure --enable' para activarla.")
+        return
+    
+    # Obtener información de estado
+    status = sync_manager.get_status()
+    
+    # Mostrar información
+    table = cli.create_table("Estado de Sincronización", ["Propiedad", "Valor"])
+    table.add_row("Proveedor", status.get('provider', 'No configurado'))
+    table.add_row("Última sincronización", status.get('last_sync', 'Nunca'))
+    table.add_row("Instalaciones registradas", str(status.get('installations', 0)))
+    console.print(table)
+    
+    # Si hay instalaciones, mostrarlas
+    installations = status.get('installation_list', [])
+    if installations:
+        install_table = cli.create_table("Instalaciones Registradas", ["Nombre", "Plataforma", "Última Sincronización"])
+        for inst in installations:
+            install_table.add_row(
+                inst.get('name', 'Desconocido'),
+                inst.get('platform', 'Desconocido'),
+                inst.get('last_sync', 'Nunca')
+            )
+        console.print(install_table)

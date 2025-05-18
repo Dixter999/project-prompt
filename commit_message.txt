@@ -1,37 +1,12 @@
-feat(prompts): Complete task 3.3 - Enhanced Contextual Prompt Generator
+Implementa sistema de actualización y sincronización (Fase 6 - Tarea 6.2)
 
-This commit completes Task 3.3 "Generación de prompts contextuales mejorados" from Phase 3:
+- Añade sistema de verificación de nuevas versiones en src/utils/updater.py
+- Implementa mecanismo de actualización automática del sistema
+- Añade actualización automática de plantillas
+- Implementa sincronización de configuraciones entre instalaciones en src/utils/sync_manager.py
+- Añade migración de datos entre versiones
+- Implementa sistema de respaldo y restauración
+- Añade comandos CLI para todas las funcionalidades en src/main.py
+- Incluye tests para los nuevos módulos
 
-- Added unit tests for the ContextualPromptGenerator
-- Updated CLI tests to verify the --enhanced flag functionality
-- Updated README.md with information about the enhanced prompt generator
-- Created a demonstration script to showcase the enhanced prompt capabilities
-- Updated fase3_progress.md to mark task 3.3 as completed
-
-The enhanced prompt generator now includes:
-- Project-specific contextual information
-- Direct references to relevant files
-- Suggestions based on code patterns
-- Guided questions for clarification
-- Architecture analysis based on dependency graphs
-- Code completion prompt generation
-
-feat(fase5): Integración avanzada con Copilot y Anthropic
-
-- Implementada integración avanzada con Claude de Anthropic
-- Implementada integración avanzada con GitHub Copilot
-- Añadido optimizador de prompts para IA
-- Agregadas capacidades premium de generación de código
-- Implementado detector de errores y refactorización
-- Creados tests unitarios para verificar todas las funcionalidades
-- Integrado con sistema de verificación de subscripción
-
-Resolves: Fase 5 - Tarea 5.5
-- Añade patrones avanzados para autenticación y bases de datos en `src/templates/functionality_patterns/`.
-- Detecta arquitecturas comunes (MVC, MVVM, Clean Architecture, etc.).
-- Reconoce frameworks y bibliotecas por lenguaje.
-- Realiza análisis semántico básico y evalúa seguridad en autenticación.
-- Analiza tipos y operaciones de bases de datos.
-- Actualiza `fases/fase4_progress.md` con el avance de la tarea 4.1.
-
-Refs: fase4, tarea 4.1
+Esta implementación completa la Tarea 6.2 del proyecto.

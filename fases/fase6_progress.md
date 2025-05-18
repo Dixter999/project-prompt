@@ -20,7 +20,21 @@
   - Interfaz interactiva con pestañas
 
 ### 6.2 Sistema de actualización y sincronización
-- **Estado**: Pendiente
+- **Branch**: `feature/update-system`
+- **Estado**: Completado
+- **Archivos creados/modificados**:
+  - `src/utils/updater.py` - Sistema de actualización
+  - `src/utils/sync_manager.py` - Gestor de sincronización
+  - `src/main.py` - Comandos CLI para actualización y sincronización
+  - `tests/test_updater.py` - Pruebas para el sistema de actualización
+  - `tests/test_sync_manager.py` - Pruebas para el gestor de sincronización
+- **Funcionalidades implementadas**:
+  - Verificación de nuevas versiones
+  - Actualización automática de plantillas
+  - Sincronización de configuraciones
+  - Migración de datos entre versiones
+  - Sistema de respaldo y restauración
+  - Comandos CLI completos para todas las funcionalidades
 
 ### 6.3 Mejoras de UX para CLI
 - **Estado**: Pendiente
