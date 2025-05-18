@@ -1,6 +1,16 @@
 # Guía de Verificación del Sistema Freemium
 
-Este documento proporciona instrucciones detalladas sobre cómo verificar la implementación del Sistema de Verificación Freemium para ProjectPrompt.
+> **Nota**: Esta documentación ha sido trasladada a [Sistema Freemium de ProjectPrompt](/mnt/h/Projects/project-prompt/docs/developer/freemium_system.md).
+> 
+> Por favor, consulte el nuevo documento para obtener información completa sobre:
+> 
+> - Niveles de características (gratuito vs premium)
+> - Detalles de implementación
+> - Integración con APIs
+> - Procedimientos de verificación
+> - Directrices para añadir nuevas características premium
+>
+> Este archivo se mantiene para enlaces heredados, pero la documentación activa ahora está en la sección de desarrolladores.
 
 ## Scripts de Verificación
 

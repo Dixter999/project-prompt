@@ -6,27 +6,64 @@ Bienvenido a la documentación oficial de ProjectPrompt, un asistente inteligent
 
 ProjectPrompt es una herramienta diseñada para ayudar a desarrolladores a interactuar de manera más efectiva con modelos de inteligencia artificial, proporcionando contexto relevante sobre sus proyectos para obtener respuestas más precisas y útiles.
 
-## Secciones principales
+## Documentación Unificada
 
-### [📚 Documentación para usuarios](./user/README.md)
+### [📚 Documentación Completa](./complete_documentation.md) | [🌍 Documentación en Español](./documentacion_completa_es.md)
 
-Guías, tutoriales y referencias para usuarios de ProjectPrompt. Aquí encontrarás:
-- [Guía de inicio rápido](./user/guides/quick_start.md)
-- [Tutoriales](./user/tutorials/README.md)
-- [Referencia de comandos](./user/reference/commands.md)
+Manual completo con todas las funciones de ProjectPrompt, incluyendo:
+- Instrucciones de instalación
+- Todas las funciones principales
+- Características avanzadas
+- Referencias de comandos y scripts
+- Información sobre pruebas y desarrollo
 
-### [🔧 Documentación para desarrolladores](./developer/README.md)
+### [👤 Guía del Usuario](./user_guide.md)
 
-Información técnica para desarrolladores que desean contribuir al proyecto o entender su funcionamiento interno:
-- [Arquitectura](./developer/architecture/README.md)
-- [Guía de contribución](./developer/contributing/README.md)
-- [Decisiones de diseño](./developer/design/README.md)
+Guía paso a paso para usuarios de ProjectPrompt, incluye:
+- Instrucciones de instalación
+- Uso básico de comandos
+- Análisis de proyectos
+- Inicialización de proyectos
+- Generación de prompts
+- Solución de problemas comunes
 
-### [🔌 Documentación de la API](./api/README.md)
+### [🛠️ Referencia de Scripts](./script_reference.md)
 
-Referencia técnica para integrar ProjectPrompt en otras aplicaciones:
-- [Referencia de módulos](./api/reference/)
-- [Ejemplos de uso](./api/examples/)
+Información detallada sobre todos los scripts del proyecto:
+- Scripts principales
+- Scripts de utilidades
+- Scripts de pruebas
+- Estructura de módulos de código fuente
+
+### [💎 Sistema Freemium](./developer/freemium_system.md)
+
+Documentación sobre el sistema de características premium:
+- Características gratuitas vs premium
+- Detalles de implementación
+- Integración con APIs
+- Verificación del sistema
+
+## Recursos Adicionales
+
+### [🧪 Guía de Testing](./testing_guide.md)
+
+Procedimientos básicos de prueba para ProjectPrompt.
+
+### [🔬 Guía de Testing Comprehensiva](./comprehensive_testing_guide.md)
+
+Protocolos detallados de prueba para todas las funcionalidades.
+
+### [📝 Notas de Implementación](./implementation_notes/)
+
+Detalles técnicos sobre la implementación de varias funcionalidades.
+
+## Documentación Heredada
+
+Algunos archivos de documentación más antiguos han sido consolidados en los recursos de documentación principales anteriores:
+
+- Los detalles de implementación ahora están en la [Documentación Completa](./complete_documentation.md#development)
+- La verificación del sistema freemium está en el documento [Sistema Freemium](./developer/freemium_system.md)
+- La guía antigua de implementación actual ha sido reemplazada por la [Documentación Completa](./complete_documentation.md)
 
 ## Características principales
 
@@ -36,14 +73,6 @@ Referencia técnica para integrar ProjectPrompt en otras aplicaciones:
 - **Interfaz flexible**: Utilizable como CLI, extensión de VSCode o biblioteca
 - **Sistema de plantillas**: Personaliza la generación de prompts a tus necesidades
 - **Gestión de configuración**: Sincronización entre dispositivos y respaldo
-
-## Versiones
-
-| Versión | Estado | Características principales |
-|---------|--------|----------------------------|
-| v1.0.0  | Estable | Funcionalidad básica, análisis y generación |
-| v1.1.0  | Estable | Integración con VSCode, mejoras de UX |
-| v1.2.0  | En desarrollo | Sistema de sincronización, telemetría anónima |
 
 ## Licencia
 

@@ -48,8 +48,20 @@ config.yaml
 .coverage
 htmlcov/
 .pytest_cache/
+test_results/
 
 # OS specific
 .DS_Store
 Thumbs.db
 .project-prompt/
+
+# Commit scripts and temporary files
+commit_*.sh
+commit_message.txt
+cleanup_project.sh
+
+# Backup and temp files
+*.bak
+*.original
+*.tmp
+*~

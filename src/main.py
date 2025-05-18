@@ -1667,3 +1667,8 @@ def check_first_run_telemetry_consent():
 # Registrar cierre de telemetría al finalizar el programa
 import atexit
 atexit.register(shutdown_telemetry)
+
+
+# Punto de entrada principal para ejecución directa
+if __name__ == "__main__":
+    app()
