@@ -12,12 +12,15 @@ import os
 import re
 import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Callable
+from typing import Dict, List, Any, Optional, Callable, TYPE_CHECKING
 import jinja2
 
 from src import __version__
-from src.analyzers.project_scanner import ProjectScanner, get_project_scanner
 from src.utils.logger import get_logger
+
+# Using TYPE_CHECKING to avoid circular imports
+if TYPE_CHECKING:
+    from src.analyzers.project_scanner import ProjectScanner
 
 # Configurar logger
 logger = get_logger()
@@ -208,6 +211,9 @@ class MarkdownGenerator:
             Ruta al archivo generado
         """
         try:
+            # Importar aquí para evitar importaciones circulares
+            from src.analyzers.project_scanner import get_project_scanner
+            
             # Crear scanner de proyectos
             scanner = get_project_scanner()
             

@@ -20,6 +20,7 @@ from src.ui.cli import cli
 from src.ui.analysis_view import analysis_view
 from src.ui.documentation_navigator import get_documentation_navigator
 from src.ui.subscription_view import show_subscription, activate_license, deactivate_license, show_plans
+from src.ui.dashboard import DashboardCLI
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
 
 console = Console()
@@ -32,6 +33,14 @@ app.add_typer(docs_app, name="docs")
 # Submenu para comandos de IA avanzada
 ai_app = typer.Typer(help="Comandos premium de IA (Copilot/Anthropic)")
 app.add_typer(ai_app, name="ai")
+
+# Submenu para comandos de suscripción
+subscription_app = typer.Typer(help="Comandos para gestionar la suscripción")
+app.add_typer(subscription_app, name="subscription")
+
+# Submenu para comandos premium 
+premium_app = typer.Typer(help="Comandos premium para acceso a funcionalidades avanzadas")
+app.add_typer(premium_app, name="premium")
 
 
 @app.command()
@@ -331,7 +340,18 @@ def help():
     table.add_row("generate_prompts", "Generar prompts contextuales del proyecto")
     table.add_row("set-log-level", "Cambiar el nivel de logging")
     table.add_row("menu", "Iniciar el menú interactivo")
+    table.add_row("dashboard", "Generar dashboard básico del proyecto")
+    table.add_row("subscription", "Gestionar suscripción premium")
+    table.add_row("premium", "Acceder a comandos premium")
     table.add_row("help", "Mostrar esta ayuda")
+    
+    # Comandos premium
+    premium_table = cli.create_table("Comandos Premium", ["Comando", "Descripción"])
+    premium_table.add_row("premium dashboard", "Dashboard avanzado interactivo")
+    premium_table.add_row("premium test-generator", "Generador de tests unitarios")
+    premium_table.add_row("premium verify-completeness", "Verificador de completitud")
+    premium_table.add_row("premium implementation", "Asistente de implementación")
+    console.print(premium_table)
     console.print(table)
     
     cli.print_info("Para más información sobre un comando específico, use:")
@@ -781,5 +801,334 @@ def ai_explain_code(
         cli.print_error(f"Error al explicar código: {result.get('error', 'Error desconocido')}")
 
 
-if __name__ == "__main__":
-    app()
+@app.command()
+def dashboard(
+    project: str = typer.Argument(".", help="Ruta al proyecto para generar el dashboard"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta donde guardar el dashboard HTML"),
+    no_browser: bool = typer.Option(False, "--no-browser", help="No abrir automáticamente en el navegador")
+):
+    """Generar un dashboard visual con el estado y progreso del proyecto."""
+    cli.print_header("Dashboard de Progreso del Proyecto")
+    
+    # Sugerir versión premium para acceso a todas las características
+    cli.print_info("ProjectPrompt ofrece una versión premium del dashboard con características adicionales.")
+    cli.print_info("Para acceder a todas las funcionalidades como seguimiento de branches, progreso por característica")
+    cli.print_info("y recomendaciones proactivas, use: 'project-prompt premium dashboard'")
+    console.print("")
+    
+    try:
+        # Crear instancia del CLI del dashboard
+        dashboard_cli = DashboardCLI()
+        
+        # Configurar argumentos
+        args = []
+        if project != ".":
+            args.extend(["--project", project])
+        if output:
+            args.extend(["--output", output])
+        if no_browser:
+            args.append("--no-browser")
+            
+        # Ejecutar el dashboard
+        result = dashboard_cli.run(args)
+        
+        if result != 0:
+            cli.print_error("Error al generar el dashboard")
+            return
+            
+    except Exception as e:
+        cli.print_error(f"Error al generar el dashboard: {str(e)}")
+        logger.error(f"Error en dashboard: {str(e)}", exc_info=True)
+
+
+# Implementación de comandos de suscripción
+@subscription_app.command("info")
+def subscription_info():
+    """Mostrar información de la suscripción actual."""
+    show_subscription()
+
+
+@subscription_app.command("activate")
+def subscription_activate(
+    license_key: str = typer.Argument(..., help="Clave de licencia a activar")
+):
+    """Activar una licencia premium."""
+    activate_license(license_key)
+
+
+@subscription_app.command("deactivate")
+def subscription_deactivate():
+    """Desactivar la licencia actual y volver a la versión gratuita."""
+    deactivate_license()
+
+
+@subscription_app.command("plans")
+def subscription_plans():
+    """Mostrar los planes de suscripción disponibles."""
+    show_plans()
+
+
+# Implementación de comandos premium
+
+@premium_app.command("dashboard")
+def premium_dashboard(
+    project: str = typer.Argument(".", help="Ruta al proyecto para generar el dashboard"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta donde guardar el dashboard HTML"),
+    no_browser: bool = typer.Option(False, "--no-browser", help="No abrir automáticamente en el navegador")
+):
+    """Genera un dashboard visual interactivo con el estado y progreso del proyecto (característica premium)."""
+    from src.utils.subscription_manager import get_subscription_manager
+    
+    cli.print_header("Dashboard Premium de Proyecto")
+    
+    # Verificar suscripción
+    subscription = get_subscription_manager()
+    if not subscription.can_use_feature("project_dashboard"):
+        cli.check_premium_feature("project_dashboard")
+        return
+    
+    # Crear instancia del CLI del dashboard
+    dashboard_cli = DashboardCLI()
+    
+    # Configurar argumentos
+    args = []
+    if project != ".":
+        args.extend(["--project", project])
+    if output:
+        args.extend(["--output", output])
+    if no_browser:
+        args.append("--no-browser")
+    
+    # Ejecutar dashboard
+    dashboard_cli.run(args)
+
+
+@premium_app.command("test-generator")
+def premium_generate_tests(
+    target: str = typer.Argument(..., help="Archivo o directorio para generar tests"),
+    output_dir: str = typer.Option("tests", "--output-dir", "-o", help="Directorio donde guardar los tests generados"),
+    framework: str = typer.Option("auto", "--framework", "-f", help="Framework de tests (pytest, unittest, jest, auto)"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Mostrar información detallada")
+):
+    """Genera tests unitarios automáticamente para un componente o archivo (característica premium)."""
+    from src.generators.test_generator import TestGenerator
+    from src.utils.subscription_manager import get_subscription_manager
+    import os
+    
+    cli.print_header("Generación de Tests Unitarios")
+    
+    # Verificar suscripción
+    subscription = get_subscription_manager()
+    if not subscription.can_use_feature("test_generation"):
+        cli.check_premium_feature("test_generation")
+        return
+    
+    # Verificar que el objetivo existe
+    target_path = os.path.abspath(target)
+    if not os.path.exists(target_path):
+        cli.print_error(f"El archivo o directorio no existe: {target_path}")
+        return
+    
+    # Configurar generador de tests
+    config = {
+        "output_dir": output_dir,
+        "test_framework": framework,
+        "verbose": verbose,
+    }
+    
+    cli.print_info(f"Generando tests unitarios para: {target_path}")
+    
+    try:
+        generator = TestGenerator(config)
+        
+        with cli.status("Analizando código y generando tests..."):
+            if os.path.isdir(target_path):
+                results = generator.generate_tests_for_directory(target_path)
+            else:
+                results = generator.generate_tests_for_file(target_path)
+        
+        # Mostrar resultados
+        if results.get("success"):
+            cli.print_success(f"Tests generados exitosamente en: {os.path.abspath(output_dir)}")
+            
+            # Mostrar detalles de archivos generados
+            tests_table = cli.create_table("Tests Generados", ["Archivo Original", "Archivo de Test", "Cobertura Est."])
+            for item in results.get("generated_tests", []):
+                tests_table.add_row(
+                    os.path.basename(item.get("source_file", "")),
+                    os.path.basename(item.get("test_file", "")),
+                    f"{item.get('estimated_coverage', 0)}%"
+                )
+            console.print(tests_table)
+            
+            # Mostrar recomendaciones
+            if results.get("recommendations"):
+                cli.print_panel(
+                    "Recomendaciones", 
+                    "\n".join([f"• {r}" for r in results.get("recommendations", [])])
+                )
+        else:
+            cli.print_error(f"Error al generar tests: {results.get('error', 'Error desconocido')}")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante la generación de tests: {e}")
+        logger.error(f"Error en premium_generate_tests: {e}", exc_info=True)
+
+
+@premium_app.command("verify-completeness")
+def premium_verify_completeness(
+    target: str = typer.Argument(".", help="Archivo, directorio o funcionalidad para verificar"),
+    checklist_type: str = typer.Option("auto", "--type", "-t", 
+                                      help="Tipo de verificación (component, feature, project, auto)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", 
+                                        help="Archivo donde guardar el reporte en formato JSON")
+):
+    """Verifica la completitud de una implementación según criterios predefinidos (característica premium)."""
+    from src.analyzers.completeness_verifier import CompletenessVerifier
+    from src.utils.subscription_manager import get_subscription_manager
+    import os
+    
+    cli.print_header("Verificación de Completitud")
+    
+    # Verificar suscripción
+    subscription = get_subscription_manager()
+    if not subscription.can_use_feature("completeness_verification"):
+        cli.check_premium_feature("completeness_verification")
+        return
+    
+    # Si es una ruta, verificar que existe
+    if os.path.exists(target):
+        target_path = os.path.abspath(target)
+        target_type = "directory" if os.path.isdir(target_path) else "file"
+        cli.print_info(f"Verificando completitud de {target_type}: {target_path}")
+    else:
+        # Podría ser el nombre de una funcionalidad
+        target_path = "."
+        cli.print_info(f"Verificando completitud de funcionalidad: {target}")
+    
+    try:
+        # Crear el verificador con acceso premium
+        config = {"premium": True}
+        verifier = CompletenessVerifier(config)
+        
+        with cli.status("Analizando completitud..."):
+            if target_type == "file":
+                results = verifier.verify_file(target_path, checklist_type)
+            elif target_type == "directory":
+                results = verifier.verify_directory(target_path, checklist_type)
+            else:
+                # Funcionalidad
+                results = verifier.verify_functionality(target, checklist_type)
+        
+        # Mostrar resultados
+        completeness = results.get("completeness_score", 0)
+        quality_score = results.get("quality_score", 0)
+        
+        # Determinar color según completitud
+        color = "green" if completeness >= 80 else "yellow" if completeness >= 50 else "red"
+        
+        # Mostrar puntuación general
+        console.print(f"Puntuación de completitud: [{color}]{completeness}%[/{color}]")
+        console.print(f"Puntuación de calidad: [blue]{quality_score}%[/blue]")
+        
+        # Mostrar desglose de criterios
+        criteria_table = cli.create_table("Criterios Evaluados", ["Criterio", "Estado", "Peso"])
+        for criteria in results.get("criteria", []):
+            status_icon = "✅" if criteria.get("satisfied") else "❌"
+            criteria_table.add_row(
+                criteria.get("name", ""),
+                f"{status_icon} {criteria.get('status', '')}",
+                f"{criteria.get('weight', 1)}"
+            )
+        console.print(criteria_table)
+        
+        # Mostrar componentes faltantes
+        if results.get("missing_components"):
+            cli.print_panel(
+                "Componentes Faltantes", 
+                "\n".join([f"• {c}" for c in results.get("missing_components", [])])
+            )
+        
+        # Guardar reporte si se solicitó
+        if output:
+            try:
+                with open(output, 'w', encoding='utf-8') as f:
+                    json.dump(results, f, indent=2)
+                cli.print_success(f"Reporte guardado en: {output}")
+            except Exception as e:
+                cli.print_error(f"Error al guardar reporte: {e}")
+                
+    except Exception as e:
+        cli.print_error(f"Error durante la verificación: {e}")
+        logger.error(f"Error en premium_verify_completeness: {e}", exc_info=True)
+
+
+@premium_app.command("implementation")
+def premium_implementation_assistant(
+    functionality: str = typer.Argument(..., help="Nombre de la funcionalidad a implementar"),
+    language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación principal"),
+    path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", 
+                                       help="Archivo donde guardar la guía de implementación")
+):
+    """Genera una guía detallada de implementación para una funcionalidad (característica premium)."""
+    from src.generators.implementation_prompt_generator import get_implementation_prompt_generator
+    from src.utils.subscription_manager import get_subscription_manager
+    
+    cli.print_header("Asistente de Implementación Premium")
+    
+    # Verificar suscripción
+    subscription = get_subscription_manager()
+    if not subscription.can_use_feature("implementation_prompts"):
+        cli.check_premium_feature("implementation_prompts")
+        return
+    
+    cli.print_info(f"Generando guía de implementación para: {functionality}")
+    
+    try:
+        # Crear generador con configuración premium
+        generator = get_implementation_prompt_generator(premium=True)
+        
+        with cli.status(f"Analizando proyecto y generando guía para {functionality}..."):
+            # Generar guía de implementación detallada
+            result = generator.generate_implementation_guide(
+                functionality=functionality,
+                project_path=path,
+                language=language
+            )
+        
+        # Mostrar resultados
+        if result.get("success"):
+            guide_content = result.get("content", "")
+            
+            # Mostrar resumen
+            cli.print_success("Guía de implementación generada correctamente")
+            
+            # Mostrar vista previa
+            cli.print_panel(
+                "Vista previa de la guía", 
+                guide_content[:300] + "..." if len(guide_content) > 300 else guide_content
+            )
+            
+            # Guardar a archivo si se especificó
+            if output:
+                try:
+                    output_path = output
+                    if not output.lower().endswith('.md'):
+                        output_path = f"{output}.md"
+                        
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        f.write(guide_content)
+                    cli.print_success(f"Guía guardada en: {output_path}")
+                except Exception as e:
+                    cli.print_error(f"Error al guardar guía: {e}")
+            else:
+                # Mostrar guía completa en consola
+                console.print("\n")
+                console.print(guide_content)
+                console.print("\n")
+        else:
+            cli.print_error(f"Error al generar guía: {result.get('error', 'Error desconocido')}")
+    except Exception as e:
+        cli.print_error(f"Error en el asistente de implementación: {e}")
+        logger.error(f"Error en premium_implementation_assistant: {e}", exc_info=True)

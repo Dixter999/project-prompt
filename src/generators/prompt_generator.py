@@ -12,13 +12,16 @@ con modelos de IA para obtener sugerencias y recomendaciones.
 import os
 import re
 import random
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any, Optional, Tuple, TYPE_CHECKING
 import json
 from pathlib import Path
 
 from src.utils.logger import get_logger
-from src.analyzers.project_scanner import get_project_scanner
-from src.analyzers.functionality_detector import get_functionality_detector
+
+# Evitar importación circular
+if TYPE_CHECKING:
+    from src.analyzers.project_scanner import ProjectScanner 
+    from src.analyzers.functionality_detector import FunctionalityDetector
 from src.templates.prompt_templates import (
     FREE_TEMPLATES,
     PROJECT_TYPE_HINTS,
@@ -43,6 +46,11 @@ class PromptGenerator:
         """
         self.is_premium = is_premium
         self.max_prompts = 10 if is_premium else 3
+        
+        # Importar aquí para evitar importaciones circulares
+        from src.analyzers.project_scanner import get_project_scanner
+        from src.analyzers.functionality_detector import get_functionality_detector
+        
         self.scanner = get_project_scanner()
         self.functionality_detector = get_functionality_detector(scanner=self.scanner)
         

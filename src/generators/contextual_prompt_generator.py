@@ -15,14 +15,17 @@ import re
 import json
 import random
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Set
+from typing import Dict, List, Any, Optional, Tuple, Set, TYPE_CHECKING
 
 from src.utils.logger import get_logger
-from src.analyzers.project_scanner import get_project_scanner
-from src.analyzers.functionality_detector import get_functionality_detector
-from src.analyzers.connection_analyzer import get_connection_analyzer
-from src.analyzers.dependency_graph import get_dependency_graph
 from src.generators.prompt_generator import PromptGenerator
+
+# Evitar importación circular - importar en los métodos donde sea necesario
+if TYPE_CHECKING:
+    from src.analyzers.project_scanner import ProjectScanner
+    from src.analyzers.functionality_detector import FunctionalityDetector
+    from src.analyzers.connection_analyzer import ConnectionAnalyzer
+    from src.analyzers.dependency_graph import DependencyGraph
 
 # Configurar logger
 logger = get_logger()
@@ -46,6 +49,11 @@ class ContextualPromptGenerator(PromptGenerator):
         """
         super().__init__(is_premium)
         self.max_prompts = 15 if is_premium else 5  # Aumentamos el límite
+        
+        # Importar aquí para evitar importaciones circulares
+        from src.analyzers.connection_analyzer import get_connection_analyzer
+        from src.analyzers.dependency_graph import get_dependency_graph
+        
         self.connection_analyzer = get_connection_analyzer()
         self.dependency_graph = get_dependency_graph()
         

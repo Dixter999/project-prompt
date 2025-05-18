@@ -5,13 +5,12 @@ Crea tests unitarios para las funcionalidades del proyecto detectadas.
 """
 import os
 import json
-from typing import Dict, List, Any, Optional, Union
+from typing import Dict, List, Any, Optional, Union, TYPE_CHECKING
 from pathlib import Path
 
 from src.utils import logger, config_manager
-from src.analyzers.project_scanner import get_project_scanner
-from src.analyzers.functionality_detector import get_functionality_detector
-from src.analyzers.testability_analyzer import get_testability_analyzer
+
+# Evitar importaciones circulares
 
 
 class TestGenerator:
@@ -27,6 +26,11 @@ class TestGenerator:
         self.config = config or {}
         self.output_dir = self.config.get("output_dir", "tests")
         self.test_framework = self.config.get("test_framework", "pytest")
+        
+        # Importar aquí para evitar importaciones circulares
+        from src.analyzers.project_scanner import get_project_scanner
+        from src.analyzers.functionality_detector import get_functionality_detector
+        from src.analyzers.testability_analyzer import get_testability_analyzer
         
         # Obtener analizadores
         self.scanner = get_project_scanner()

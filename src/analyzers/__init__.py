@@ -13,12 +13,14 @@ from src.analyzers.dependency_graph import DependencyGraph, get_dependency_graph
 from src.analyzers.testability_analyzer import TestabilityAnalyzer, get_testability_analyzer
 from src.analyzers.completeness_verifier import CompletenessVerifier, get_completeness_verifier
 from src.analyzers.code_quality_analyzer import CodeQualityAnalyzer, get_code_quality_analyzer
+from src.analyzers.project_progress_tracker import ProjectProgressTracker, get_project_progress_tracker
 
 __all__ = [
     'ProjectScanner', 'get_project_scanner',
     'FileAnalyzer', 'get_file_analyzer',
     'FunctionalityDetector', 'get_functionality_detector',
     'ConnectionAnalyzer', 'get_connection_analyzer',
+    'ProjectProgressTracker', 'get_project_progress_tracker',
     'DependencyGraph', 'get_dependency_graph',
     'TestabilityAnalyzer', 'get_testability_analyzer',
     'CompletenessVerifier', 'get_completeness_verifier',
