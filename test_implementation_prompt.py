@@ -5,7 +5,7 @@
 Test script for checking the implementation prompt generator.
 """
 
-from src.generators.implementation_prompt_generator import get_implementation_prompt_generator
+from src.generators.implementation_prompt_generator_simple import get_implementation_prompt_generator
 
 def test_generator():
     """
@@ -16,10 +16,10 @@ def test_generator():
         generator = get_implementation_prompt_generator(is_premium=True)
         print("✓ Successfully created generator instance")
         
-        # Test a simple operation that doesn't require real data
+        # Test the generate_implementation_prompt method
         feature_name = "TestFeature"
-        result = generator._format_feature_name(feature_name, "snake")
-        print(f"✓ Feature name formatting test: {result}")
+        result = generator.generate_implementation_prompt("test_path", feature_name)
+        print(f"✓ Generate implementation prompt test: {result['success']}")
         
         print("All tests passed!")
     except Exception as e:
