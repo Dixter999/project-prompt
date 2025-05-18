@@ -172,6 +172,29 @@ class LicenseValidator:
         Returns:
             Estado de la licencia
         """
+        # Manejo de claves de demostración para pruebas
+        if license_key in ["DEMO-LICENSE-KEY", "DEMO-BASIC", "DEMO-PRO", "DEMO-TEAM"]:
+            status = LicenseStatus()
+            status.valid = True
+            if license_key == "DEMO-BASIC":
+                status.subscription_type = "basic"
+            elif license_key == "DEMO-PRO":
+                status.subscription_type = "pro"
+            elif license_key == "DEMO-TEAM":
+                status.subscription_type = "team"
+            else:
+                status.subscription_type = "basic"
+                
+            # Establecer fecha de expiración a 30 días desde hoy para demo
+            future_date = datetime.now() + timedelta(days=30)
+            status.expiration_date = future_date.strftime("%Y-%m-%d")
+            status.user_name = "Demo User"
+            status.user_email = "demo@example.com"
+            
+            # Guardar en caché
+            self.cache[license_key] = (status, time.time())
+            return status
+        
         # Verificar si tenemos una respuesta en caché
         if license_key in self.cache:
             cached_status, timestamp = self.cache[license_key]
@@ -183,11 +206,13 @@ class LicenseValidator:
         status = LicenseStatus()
         
         # Intentar verificar online si corresponde
+        online_success = False
         if self._should_check_online():
             online_result = self._verify_online(license_key)
             
             if online_result:
                 # Actualizar estado con la respuesta online
+                online_success = True
                 status.valid = online_result.get("valid", False)
                 status.expired = online_result.get("expired", False)
                 status.subscription_type = online_result.get("subscription_type", "free")

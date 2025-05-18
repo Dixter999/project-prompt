@@ -19,11 +19,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union, Any
 
-from ..utils.config import ConfigManager, get_configManager, get_config
+from ..utils.config import ConfigManager, config_manager, get_config
 from ..utils.logger import get_logger
 
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 # Constantes
 GITHUB_API_URL = "https://api.github.com/repos/projectprompt/project-prompt/"

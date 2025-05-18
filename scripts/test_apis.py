@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.utils.api_validator import APIValidator, get_api_validator
-from src.utils.config import Config
+from src.utils.config import ConfigManager
 
 
 def test_api_validator():

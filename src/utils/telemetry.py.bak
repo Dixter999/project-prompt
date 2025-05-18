@@ -17,7 +17,7 @@ from typing import Dict, List, Any, Optional, Union
 from datetime import datetime, timedelta
 import requests
 
-from src.utils.config import config_manager
+from src.utils.config import config_manager, save_config
 from src.utils import logger
 
 # Configurar logger específico para telemetría
@@ -268,7 +268,8 @@ class TelemetryManager:
             True si está habilitada, False en caso contrario
         """
         try:
-            return config_manager.get("telemetry", {}).get("enabled", False)
+            config = get_config()
+            return config.get("telemetry", {}).get("enabled", False)
         except Exception as e:
             telemetry_logger.error(f"Error al comprobar configuración de telemetría: {e}")
             return False
@@ -454,7 +455,7 @@ def _get_installation_id() -> str:
             config["telemetry"] = {}
             
         config["telemetry"]["installation_id"] = installation_id
-        config_manager.save_config()
+        save_config(config)
         
         return installation_id
     except Exception as e:

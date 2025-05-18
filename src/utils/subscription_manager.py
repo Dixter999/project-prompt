@@ -117,6 +117,15 @@ class SubscriptionManager:
         # Actualizar estado de premium en el gestor de configuración
         config_manager.set_premium(self._subscription_type != SUBSCRIPTION_FREE)
     
+    def get_limits(self) -> Dict[str, Any]:
+        """
+        Obtiene los límites de uso para el tipo de suscripción actual.
+        
+        Returns:
+            Diccionario con los límites de uso
+        """
+        return SUBSCRIPTION_LIMITS.get(self._subscription_type, SUBSCRIPTION_LIMITS[SUBSCRIPTION_FREE])
+
     def get_subscription_type(self) -> str:
         """
         Obtiene el tipo de suscripción actual del usuario.

@@ -48,7 +48,25 @@ class AnthropicAPI:
     def is_configured(self) -> bool:
         """Comprobar si la API está correctamente configurada."""
         return bool(self.api_key)
-    
+        
+    def set_api_key(self, api_key: str) -> None:
+        """
+        Establece o actualiza la clave API.
+        
+        Args:
+            api_key: Nueva clave API para Anthropic
+        """
+        self.api_key = api_key
+        
+        # Actualizar en la configuración
+        if self.config:
+            self.config.set("api.anthropic.key", api_key)
+            self.config.set("api.anthropic.enabled", True)
+            self.config.save_config()
+        
+        # Resetear estado de validación
+        self._valid_key = False
+
     def verify_api_key(self) -> Tuple[bool, str]:
         """
         Verificar si la clave API es válida.
@@ -99,34 +117,78 @@ class AnthropicAPI:
 
     def get_usage_info(self) -> Dict[str, Union[int, bool]]:
         """
-        Obtener información de uso de la API.
+        Obtiene información de uso de la API.
         
         Returns:
-            Diccionario con información de límites y uso actual
+            Dict con información de uso
         """
-        # En una implementación real, aquí consultaríamos a la API sobre los límites
-        # Por ahora devolvemos valores simulados
         return {
-            "valid": self._valid_key,
             "limit": self._usage_limit,
             "used": self._usage_current,
-            "remaining": max(0, self._usage_limit - self._usage_current)
+            "remaining": max(0, self._usage_limit - self._usage_current),
+            "valid_key": self._valid_key
         }
         
-    def set_api_key(self, api_key: str) -> bool:
+    def simple_completion(self, prompt: str, max_tokens: Optional[int] = None) -> str:
         """
-        Establecer una nueva clave API y guardarla en la configuración.
+        Realiza una consulta simple a la API de Claude y retorna la respuesta como texto.
         
         Args:
-            api_key: La nueva clave API
+            prompt: Texto de la consulta
+            max_tokens: Número máximo de tokens en la respuesta (opcional)
             
         Returns:
-            True si la clave se guardó correctamente
+            Texto de la respuesta
+            
+        Raises:
+            Exception: Si hay un error en la API o no está configurada
         """
-        self.api_key = api_key
-        self.config.set("api.anthropic.key", api_key)
-        self.config.save()
-        return True
+        if not self.is_configured:
+            raise ValueError("API de Anthropic no configurada. Configure una clave API primero.")
+            
+        # Establecer número máximo de tokens
+        tokens = max_tokens or self.max_tokens
+        
+        # Preparar payload
+        payload = {
+            "model": self.model,
+            "max_tokens": min(tokens, 4096),  # Límite de seguridad
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
+        # Realizar la solicitud
+        try:
+            response = requests.post(
+                f"{ANTHROPIC_API_BASE_URL}/v1/messages",
+                headers=self._get_headers(),
+                json=payload
+            )
+            
+            # Verificar si hay error
+            if response.status_code != 200:
+                error_msg = f"Error en API Anthropic: {response.status_code} - {response.text}"
+                logger.error(error_msg)
+                raise Exception(error_msg)
+                
+            # Procesar respuesta
+            result = response.json()
+            content = result.get("content", [])
+            
+            # Extraer el texto del contenido
+            text_parts = []
+            for item in content:
+                if item.get("type") == "text":
+                    text_parts.append(item.get("text", ""))
+                    
+            return "".join(text_parts).strip()
+            
+        except requests.RequestException as e:
+            logger.error(f"Error de conexión con API Anthropic: {e}")
+            raise Exception(f"Error de conexión: {str(e)}")
+            
+        except Exception as e:
+            logger.error(f"Error al procesar respuesta de Anthropic: {e}")
+            raise
 
 
 def get_anthropic_client(config: Optional[ConfigManager] = None) -> AnthropicAPI:
