@@ -57,21 +57,52 @@ class Menu:
             "kwargs": kwargs or {}
         })
     
+    def add_section(self, title: str):
+        """
+        Añade una sección al menú para agrupar opciones.
+        
+        Args:
+            title: Título de la sección
+        """
+        self.options.append({
+            "type": "section",
+            "title": title
+        })
+
+    def add_separator(self):
+        """Añade una línea separadora al menú."""
+        self.options.append({
+            "type": "separator"
+        })
+
+    def add_info(self, text: str):
+        """
+        Añade un texto informativo al menú.
+        
+        Args:
+            text: Texto a mostrar
+        """
+        self.options.append({
+            "type": "info",
+            "text": text
+        })
+
     def add_submenu(self, key: str, description: str, submenu: 'Menu'):
         """
         Añade un submenú como opción.
         
         Args:
             key: Clave para seleccionar la opción
-            description: Descripción de la opción
-            submenu: Menú a mostrar cuando se seleccione esta opción
+            description: Descripción del submenú
+            submenu: Objeto Menu del submenú
         """
-        self.add_option(key, description, submenu.show)
-    
-    def add_separator(self):
-        """Añade una separación en el menú."""
-        self.options.append({"key": "", "description": "─" * 50, "action": None})
-    
+        self.options.append({
+            "type": "submenu",
+            "key": key,
+            "description": description,
+            "submenu": submenu
+        })
+        
     def add_back_option(self, key: str = "0", description: str = "Volver al menú anterior"):
         """
         Añade una opción para volver al menú anterior.
@@ -140,6 +171,101 @@ class Menu:
                         # Pausa para que se vean los resultados antes de volver al menú
                         input("\nPresione Enter para continuar...")
                         break
+    
+    def show_with_autocompletion(self):
+        """
+        Muestra el menú con autocompletado de opciones.
+        
+        Returns:
+            Opción seleccionada
+        """
+        from prompt_toolkit import PromptSession
+        from prompt_toolkit.completion import WordCompleter
+        
+        print_header(self.title)
+        
+        # Extraer opciones seleccionables
+        selectable_options = {}
+        for option in self.options:
+            if option.get("type") == "option":
+                selectable_options[option["key"]] = option["description"]
+            elif option.get("type") == "submenu":
+                selectable_options[option["key"]] = option["description"]
+        
+        # Crear completador de palabras
+        option_completer = WordCompleter(list(selectable_options.keys()), ignore_case=True)
+        session = PromptSession(completer=option_completer)
+        
+        # Mostrar opciones
+        self._print_options()
+        
+        # Solicitar selección con autocompletado
+        try:
+            selected = session.prompt("\nSeleccione una opción (Tab para autocompletar): ")
+            self._handle_selection(selected)
+        except KeyboardInterrupt:
+            self.console.print("\n[yellow]Operación cancelada.[/yellow]")
+            
+        return selected
+        
+    def _print_options(self):
+        """Muestra las opciones del menú."""
+        table = Table(box=None, show_header=False)
+        table.add_column("Key", style="cyan")
+        table.add_column("Description")
+        
+        for option in self.options:
+            option_type = option.get("type", "option")
+            
+            if option_type == "section":
+                # Añadir una sección
+                table.add_row("", f"[bold blue]{option['title']}[/bold blue]")
+                
+            elif option_type == "separator":
+                # Añadir un separador
+                table.add_row("", "─" * 40)
+                
+            elif option_type == "info":
+                # Añadir texto informativo
+                table.add_row("", f"[dim]{option['text']}[/dim]")
+                
+            elif option_type == "submenu":
+                # Añadir opción de submenú
+                table.add_row(option["key"], f"{option['description']} [dim]→[/dim]")
+                
+            else:  # opción normal
+                table.add_row(option["key"], option["description"])
+        
+        self.console.print(table)
+        
+    def _handle_selection(self, key: str):
+        """
+        Maneja la selección de una opción.
+        
+        Args:
+            key: Clave seleccionada
+            
+        Returns:
+            True si se procesó correctamente, False en caso contrario
+        """
+        for option in self.options:
+            if option.get("type") != "option" and option.get("type") != "submenu":
+                continue
+                
+            if option["key"] == key:
+                if option.get("type") == "option":
+                    # Ejecutar función asociada
+                    kwargs = option.get("kwargs", {}) or {}
+                    option["action"](*option.get("args", ()), **kwargs)
+                    return True
+                elif option.get("type") == "submenu":
+                    # Mostrar submenú
+                    submenu = option["submenu"]
+                    submenu.show()
+                    return True
+        
+        self.console.print(f"[red]Opción no válida: {key}[/red]")
+        return False
 
 
 # Funciones específicas para los menús

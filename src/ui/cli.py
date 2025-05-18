@@ -6,18 +6,28 @@ Este módulo provee todas las interfaces basadas en texto para interactuar con e
 
 import os
 import sys
-from typing import List, Optional, Dict, Any, Callable
+import platform
+import shutil
+import time
+from typing import List, Optional, Dict, Any, Callable, Union, Tuple
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn
+from rich.prompt import Prompt, Confirm, IntPrompt
+from rich.syntax import Syntax
+from rich.markdown import Markdown
+from rich.layout import Layout
+from rich.live import Live
 
 from src import __version__
 from src.utils import logger, config_manager, LogLevel, set_level
+from src.ui.themes import get_current_theme, apply_theme_to_console
 
-# Console para output estándar
-console = Console()
+# Console para output estándar con tema aplicado
+console = apply_theme_to_console(Console())
 
 
 class CLI:
@@ -211,6 +221,192 @@ class CLI:
         from src.main import suggest_branches as suggest_branches_cmd
         suggest_branches_cmd(functionality=functionality, proposal=proposal, branch_type=branch_type,
                           description=description, files=files, output=output)
+    
+    @staticmethod
+    def status_spinner(message: str):
+        """
+        Muestra un spinner con un mensaje que indica actividad.
+        
+        Args:
+            message: Mensaje a mostrar
+            
+        Returns:
+            Context manager para usar con 'with'
+        """
+        return Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        )
+    
+    @staticmethod
+    def progress_bar(message: str, total: int = 100):
+        """
+        Crea una barra de progreso.
+        
+        Args:
+            message: Mensaje a mostrar
+            total: Total de pasos
+            
+        Returns:
+            Object Progress para usar con 'with'
+        """
+        return Progress(
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            console=console
+        )
+        
+    @staticmethod
+    def display_code(code: str, language: str = "python", line_numbers: bool = True):
+        """
+        Muestra código con resaltado de sintaxis.
+        
+        Args:
+            code: Código a mostrar
+            language: Lenguaje del código (para resaltado)
+            line_numbers: Si debe mostrar números de línea
+        """
+        syntax = Syntax(code, language, line_numbers=line_numbers)
+        console.print(syntax)
+    
+    @staticmethod
+    def display_markdown(text: str):
+        """
+        Muestra texto en formato Markdown.
+        
+        Args:
+            text: Texto en Markdown
+        """
+        md = Markdown(text)
+        console.print(md)
+    
+    @staticmethod
+    def clear_screen():
+        """Limpia la pantalla de la consola."""
+        os.system('cls' if platform.system() == 'Windows' else 'clear')
+    
+    @staticmethod
+    def get_console_size() -> Tuple[int, int]:
+        """
+        Obtiene el tamaño de la consola.
+        
+        Returns:
+            Tupla con el ancho y alto de la consola (columnas, filas)
+        """
+        terminal_width, terminal_height = shutil.get_terminal_size((80, 20))
+        return terminal_width, terminal_height
+    
+    @staticmethod
+    def create_layout() -> Layout:
+        """
+        Crea un layout para organizar la interfaz.
+        
+        Returns:
+            Layout de Rich configurado
+        """
+        layout = Layout()
+        return layout
+    
+    @staticmethod
+    def create_multi_column_table(title: str, column_groups: List[List[str]]) -> Table:
+        """
+        Crea una tabla con grupos de columnas.
+        
+        Args:
+            title: Título de la tabla
+            column_groups: Lista de grupos de columnas, donde cada grupo es una lista de nombres de columnas
+            
+        Returns:
+            Una tabla de Rich configurada
+        """
+        table = Table(title=title, show_header=True, header_style="bold blue")
+        
+        for group in column_groups:
+            for column in group:
+                table.add_column(column)
+                
+        return table
+    
+    @staticmethod
+    def ask_choice(prompt_text: str, choices: List[str], default: int = 0) -> str:
+        """
+        Solicita al usuario que elija una opción de una lista.
+        
+        Args:
+            prompt_text: Texto del prompt
+            choices: Lista de opciones
+            default: Índice de la opción por defecto
+            
+        Returns:
+            Opción seleccionada
+        """
+        if not choices:
+            raise ValueError("La lista de opciones no puede estar vacía")
+            
+        # Mostrar opciones numeradas
+        console.print(f"\n{prompt_text}")
+        for i, choice in enumerate(choices):
+            console.print(f"  [cyan]{i+1}.[/cyan] {choice}")
+        
+        # Solicitar selección
+        while True:
+            try:
+                selected = IntPrompt.ask(
+                    "\nSeleccione una opción",
+                    default=default + 1,
+                    console=console
+                )
+                
+                if 1 <= selected <= len(choices):
+                    return choices[selected - 1]
+                else:
+                    console.print("[red]Opción inválida. Intente de nuevo.[/red]")
+            except ValueError:
+                console.print("[red]Por favor ingrese un número.[/red]")
+    
+    @staticmethod
+    def ask_input(prompt_text: str, default: str = "", password: bool = False) -> str:
+        """
+        Solicita una entrada de texto al usuario.
+        
+        Args:
+            prompt_text: Texto del prompt
+            default: Valor por defecto
+            password: Si debe ocultar la entrada
+            
+        Returns:
+            Texto ingresado por el usuario
+        """
+        return Prompt.ask(
+            prompt_text, 
+            default=default, 
+            password=password,
+            console=console
+        )
+    
+    @staticmethod
+    def ask_confirm(prompt_text: str, default: bool = True) -> bool:
+        """
+        Solicita una confirmación al usuario.
+        
+        Args:
+            prompt_text: Texto del prompt
+            default: Valor por defecto
+            
+        Returns:
+            True si el usuario confirma, False en caso contrario
+        """
+        return Confirm.ask(prompt_text, default=default, console=console)
+    
+    @staticmethod
+    def apply_theme():
+        """Aplica el tema actual a la consola."""
+        # Importar aquí para evitar dependencias circulares
+        from src.ui.themes import apply_theme_to_console
+        global console
+        console = apply_theme_to_console(console)
 
 
 # Exportar una instancia global para uso directo
