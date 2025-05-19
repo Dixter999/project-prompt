@@ -45,6 +45,7 @@ logs/
 config.yaml
 
 # Testing
+/tests/
 .coverage
 htmlcov/
 .pytest_cache/
