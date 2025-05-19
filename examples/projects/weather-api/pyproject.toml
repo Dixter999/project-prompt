@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weather-api-client"
+version = "0.1.0"
+description = "A simple Python client for accessing weather data from OpenWeather API"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+authors = [
+    {name = "Example Author", email = "author@example.com"}
+]
+dependencies = [
+    "requests>=2.25.0",
+    "click>=8.0.0",
+    "python-dotenv>=0.15.0",
+    "tabulate>=0.8.9",
+    "colorama>=0.4.4",
+]
+
+[project.scripts]
+weather = "src.cli:cli"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"

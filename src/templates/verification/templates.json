@@ -1,0 +1,93 @@
+{
+    "api": {
+        "required_files": [
+            "{name}_client.py",
+            "{name}_api.py"
+        ],
+        "required_functions": [
+            "connect", 
+            "authenticate", 
+            "request"
+        ],
+        "required_components": [
+            "error_handling",
+            "authentication",
+            "rate_limiting"
+        ],
+        "quality_metrics": {
+            "test_coverage": 60,
+            "documentation": 70
+        }
+    },
+    "database": {
+        "required_files": [
+            "{name}_model.py",
+            "{name}_repository.py"
+        ],
+        "required_functions": [
+            "connect",
+            "query",
+            "insert",
+            "update",
+            "delete"
+        ],
+        "required_components": [
+            "connection_pooling",
+            "transaction_management",
+            "error_handling"
+        ],
+        "quality_metrics": {
+            "test_coverage": 70,
+            "documentation": 60
+        }
+    },
+    "ui": {
+        "required_files": [
+            "{name}_view.py",
+            "{name}_controller.py"
+        ],
+        "required_functions": [
+            "render",
+            "handle_input",
+            "update"
+        ],
+        "required_components": [
+            "error_handling",
+            "responsive_design",
+            "accessibility"
+        ],
+        "quality_metrics": {
+            "test_coverage": 50,
+            "documentation": 50
+        }
+    },
+    "utility": {
+        "required_files": [
+            "{name}.py"
+        ],
+        "required_functions": [
+            "main_function"
+        ],
+        "required_components": [
+            "error_handling",
+            "logging"
+        ],
+        "quality_metrics": {
+            "test_coverage": 60,
+            "documentation": 60
+        }
+    },
+    "default": {
+        "required_files": [
+            "{name}.py"
+        ],
+        "required_functions": [],
+        "required_components": [
+            "error_handling"
+        ],
+        "quality_metrics": {
+            "test_coverage": 50,
+            "documentation": 50
+        }
+    }
+}

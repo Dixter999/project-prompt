@@ -1,0 +1,785 @@
+#!/usr/bin/env python3
+"""
+Punto de entrada principal para ProjectPrompt.
+"""
+
+import os
+import sys
+import json
+from enum import Enum
+from typing import Dict, List, Optional, Any
+
+import typer
+from rich.console import Console
+
+from src import __version__
+from src.utils import logger, config_manager, LogLevel, set_level
+from src.utils.api_validator import get_api_validator
+from src.ui import menu
+from src.ui.cli import cli
+from src.ui.analysis_view import analysis_view
+from src.ui.documentation_navigator import get_documentation_navigator
+from src.ui.subscription_view import show_subscription, activate_license, deactivate_license, show_plans
+# Importamos los analizadores bajo demanda para evitar carga innecesaria
+
+console = Console()
+app = typer.Typer(help="ProjectPrompt: Asistente inteligente para proyectos")
+
+# Submenu para comandos de documentación
+docs_app = typer.Typer(help="Comandos de navegación de documentación")
+app.add_typer(docs_app, name="docs")
+
+# Submenu para comandos de IA avanzada
+ai_app = typer.Typer(help="Comandos premium de IA (Copilot/Anthropic)")
+app.add_typer(ai_app, name="ai")
+
+
+@app.command()
+def version():
+    """Mostrar la versión actual de ProjectPrompt."""
+    cli.print_header("Información de Versión")
+    cli.print_info(f"ProjectPrompt v{__version__}")
+    
+    # Verificar estado de las APIs
+    validator = get_api_validator()
+    status = validator.get_status_summary()
+    
+    # Mostrar información adicional
+    table = cli.create_table("Detalles", ["Componente", "Versión/Estado"])
+    table.add_row("Python", sys.version.split()[0])
+    table.add_row("API Anthropic", "Configurada ✅" if status.get("anthropic", False) else "No configurada ❌")
+    table.add_row("API GitHub", "Configurada ✅" if status.get("github", False) else "No configurada ❌")
+    console.print(table)
+
+
+@app.command()
+def init(name: str = typer.Option(None, "--name", "-n", help="Nombre del proyecto"),
+         path: str = typer.Option(".", "--path", "-p", help="Ruta donde inicializar")):
+    """Inicializar un nuevo proyecto con ProjectPrompt."""
+    cli.print_header("Inicialización de Proyecto")
+    
+    # Si no se proporciona un nombre, solicitarlo
+    if not name:
+        name = typer.prompt("Nombre del proyecto")
+    
+    cli.print_info(f"Inicializando proyecto '{name}' en {path}...")
+    
+    # Aquí iría la implementación real de inicialización de proyecto
+    # Por ahora, solo simulamos con un mensaje
+    
+    cli.print_success(f"Proyecto '{name}' inicializado correctamente")
+
+
+@app.command()
+def analyze(
+    path: str = typer.Argument(".", help="Ruta al proyecto a analizar"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar el análisis en formato JSON"),
+    max_files: int = typer.Option(10000, "--max-files", "-m", help="Número máximo de archivos a analizar"),
+    max_size: float = typer.Option(5.0, "--max-size", "-s", help="Tamaño máximo de archivo a analizar en MB"),
+    functionalities: bool = typer.Option(True, "--functionalities/--no-functionalities", "-f/-nf", 
+                                       help="Detectar funcionalidades del proyecto"),
+    structure: bool = typer.Option(False, "--structure/--no-structure", "-st/-nst", 
+                                 help="Mostrar estructura del proyecto"),
+):
+    """Analizar la estructura y funcionalidades de un proyecto existente."""
+    from src.analyzers.project_scanner import get_project_scanner
+    from src.analyzers.functionality_detector import get_functionality_detector
+    import json
+    import os
+    from datetime import datetime
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("Análisis Completo de Proyecto")
+    cli.print_info(f"Analizando proyecto en: {project_path}")
+    
+    try:
+        # Crear escáner de proyectos
+        scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
+        
+        # Realizar análisis de estructura
+        with cli.status("Escaneando archivos y directorios..."):
+            project_data = scanner.scan_project(project_path)
+        
+        # Mostrar resumen general
+        cli.print_success(f"Análisis completado en {project_data.get('scan_time', 0)} segundos")
+        
+        # Estadísticas básicas
+        stats = project_data.get('stats', {})
+        stats_table = cli.create_table("Estadísticas", ["Métrica", "Valor"])
+        stats_table.add_row("Total de archivos", str(stats.get('total_files', 0)))
+        stats_table.add_row("Total de directorios", str(stats.get('total_dirs', 0)))
+        stats_table.add_row("Archivos analizados", str(stats.get('analyzed_files', 0)))
+        stats_table.add_row("Archivos binarios", str(stats.get('binary_files', 0)))
+        stats_table.add_row("Tamaño total", f"{stats.get('total_size_kb', 0):,} KB")
+        console.print(stats_table)
+        
+        # Mostrar lenguajes principales
+        analysis_view.show_languages(project_data)
+        
+        # Mostrar estructura del proyecto si se solicitó
+        if structure:
+            analysis_view.show_project_structure(project_data)
+        
+        # Detectar funcionalidades si se solicitó
+        functionality_data = {}
+        if functionalities:
+            # Crear detector de funcionalidades
+            detector = get_functionality_detector(scanner=scanner)
+            
+            # Mostrar progreso
+            with cli.status("Detectando funcionalidades en el proyecto..."):
+                # Realizar análisis
+                functionality_data = detector.detect_functionalities(project_path)
+            
+            # Mostrar funcionalidades
+            analysis_view.show_functionalities(functionality_data)
+        
+        # Guardar resultados si se especificó un archivo de salida
+        if output:
+            output_path = output
+            
+            # Si no se especificó extensión, añadir .json
+            if not output.endswith('.json'):
+                output_path = f"{output}.json"
+                
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+                
+            # Simplificar datos para JSON
+            combined_result = {
+                'project_path': project_data.get('project_path', ''),
+                'scan_time': project_data.get('scan_time', 0),
+                'stats': project_data.get('stats', {}),
+                'languages': project_data.get('languages', {}),
+                'important_files': project_data.get('important_files', {}),
+                'dependencies': project_data.get('dependencies', {}),
+            }
+            
+            # Añadir funcionalidades si se detectaron
+            if functionality_data:
+                combined_result['functionalities'] = functionality_data
+                
+            # Guardar en formato JSON
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(combined_result, f, indent=2)
+                
+            cli.print_success(f"Análisis guardado en: {output_path}")
+        
+        # Sugerir siguientes pasos    
+        cli.print_info("Sugerencias:")
+        
+        if not structure:
+            console.print("  - Ejecutar con --structure para ver la estructura del proyecto")
+            
+        if not functionalities:
+            console.print("  - Ejecutar con --functionalities para detectar funcionalidades")
+        
+        console.print("  - Usar 'report' para generar un informe detallado en Markdown")
+        console.print("  - Usar 'list' para ver solo las funcionalidades del proyecto")
+            
+    except Exception as e:
+        cli.print_error(f"Error durante el análisis: {e}")
+        logger.error(f"Error en analyze: {e}", exc_info=True)
+
+
+@app.command()
+def menu():
+    """Iniciar el menú interactivo de ProjectPrompt."""
+    menu.show()
+
+
+@app.command()
+def config(key: Optional[str] = None, value: Optional[str] = None, list_all: bool = typer.Option(False, "--list", "-l", help="Listar toda la configuración")):
+    """Gestionar la configuración de ProjectPrompt."""
+    if list_all:
+        console.print("[bold]Configuración actual:[/bold]")
+        import json
+        console.print_json(json.dumps(config_manager.config))
+        return
+
+    if key and value:
+        config_manager.set(key, value)
+        config_manager.save_config()
+        logger.info(f"Configuración actualizada: {key}={value}")
+    elif key:
+        value = config_manager.get(key)
+        if value is not None:
+            console.print(f"[bold]{key}[/bold] = {value}")
+        else:
+            console.print(f"[yellow]No se encontró la clave: {key}[/yellow]")
+    else:
+        console.print("[yellow]Especifique una clave y opcionalmente un valor.[/yellow]")
+
+
+@app.command()
+def set_api(
+    api_name: str = typer.Argument(..., help="Nombre de la API (anthropic, github)"),
+    api_key: Optional[str] = typer.Option(None, "--key", "-k", help="Clave o token de API"),
+):
+    """Configurar una clave API para servicios."""
+    validator = get_api_validator()
+    cli.print_header("Configuración de API")
+    
+    # Si no se proporciona clave, pedirla de forma segura
+    if not api_key:
+        api_key = typer.prompt(f"Introduce la clave para {api_name}", hide_input=True)
+        
+    # Guardar y validar la clave
+    success, message = validator.set_api_key(api_name, api_key)
+    
+    if success:
+        cli.print_success(message)
+        
+        # Verificar que la clave funciona
+        result = validator.validate_api(api_name)
+        if result.get("valid", False):
+            cli.print_success(f"✅ Verificación exitosa para {api_name}")
+        else:
+            cli.print_warning(f"⚠️ La clave se guardó pero no pasó la verificación: {result.get('message')}")
+    else:
+        cli.print_error(f"❌ Error: {message}")
+
+
+@app.command()
+def set_log_level(level: str = typer.Argument(..., help="Nivel de log: debug, info, warning, error, critical")):
+    """Cambiar el nivel de logging."""
+    try:
+        log_level = LogLevel(level.lower())
+        set_level(log_level)
+        config_manager.set("log_level", log_level.value)
+        config_manager.save_config()
+        logger.info(f"Nivel de log cambiado a {log_level.value.upper()}")
+    except ValueError:
+        valid_levels = ", ".join([l.value for l in LogLevel])
+        logger.error(f"Nivel de log no válido: {level}")
+        console.print(f"[red]Niveles válidos: {valid_levels}[/red]")
+
+
+@app.command()
+def verify_api(
+    api_name: Optional[str] = typer.Argument(
+        None, help="Nombre de la API a verificar (anthropic, github). Si no se especifica, se verifican todas."
+    )
+):
+    """Verificar el estado de configuración de APIs."""
+    validator = get_api_validator()
+    cli.print_header("Verificación de APIs")
+    
+    if api_name:
+        # Verificar una API específica
+        cli.print_info(f"Verificando configuración de API: {api_name}")
+        result = validator.validate_api(api_name)
+        
+        if result.get("valid", False):
+            cli.print_success(f"✅ {api_name}: {result.get('message', 'Configuración válida')}")
+        else:
+            cli.print_error(f"❌ {api_name}: {result.get('message', 'Configuración inválida')}")
+            
+        if "usage" in result:
+            cli.print_info("Información de uso:")
+            for key, value in result["usage"].items():
+                console.print(f"  - {key}: {value}")
+    else:
+        # Verificar todas las APIs
+        cli.print_info("Verificando todas las APIs configuradas...")
+        results = validator.validate_all_apis()
+        
+        # Crear una tabla con los resultados
+        table = cli.create_table("Estado de APIs", ["API", "Estado", "Mensaje"])
+        
+        for api, status in results.items():
+            icon = "✅" if status.get("valid", False) else "❌"
+            table.add_row(
+                api,
+                f"{icon} {'Válida' if status.get('valid', False) else 'Inválida'}",
+                status.get("message", "")
+            )
+            
+        console.print(table)
+
+
+@app.command()
+def help():
+    """Mostrar ayuda detallada sobre ProjectPrompt."""
+    cli.print_header("Ayuda de ProjectPrompt")
+    
+    cli.print_panel(
+        "Acerca de ProjectPrompt", 
+        "ProjectPrompt es un asistente inteligente para analizar proyectos de código "
+        "y generar prompts contextuales utilizando IA.\n\n"
+        "Permite analizar la estructura de proyectos, detectar funcionalidades, "
+        "y generar documentación progresiva."
+    )
+    
+    # Comandos disponibles
+    table = cli.create_table("Comandos Disponibles", ["Comando", "Descripción"])
+    table.add_row("init", "Inicializar un nuevo proyecto")
+    table.add_row("analyze", "Analizar la estructura de un proyecto")
+    table.add_row("version", "Mostrar la versión actual")
+    table.add_row("config", "Gestionar la configuración")
+    table.add_row("set-api", "Configurar claves de API")
+    table.add_row("verify-api", "Verificar estado de APIs")
+    table.add_row("interview", "Realizar entrevista guiada sobre una funcionalidad")
+    table.add_row("analyze-feature", "Analizar funcionalidad específica")
+    table.add_row("list-interviews", "Listar entrevistas existentes")
+    table.add_row("implementation-proposal", "Generar propuesta de implementación")
+    table.add_row("implementation-prompt", "Generar prompt detallado para implementación (premium)")
+    table.add_row("generate_prompts", "Generar prompts contextuales del proyecto")
+    table.add_row("set-log-level", "Cambiar el nivel de logging")
+    table.add_row("menu", "Iniciar el menú interactivo")
+    table.add_row("help", "Mostrar esta ayuda")
+    console.print(table)
+    
+    cli.print_info("Para más información sobre un comando específico, use:")
+    console.print("  project-prompt [COMANDO] --help")
+
+
+@app.command()
+def docs(
+    path: str = typer.Argument(".", help="Ruta al proyecto para generar documentación"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta para guardar la documentación"),
+    update: bool = typer.Option(False, "--update", "-u", help="Actualizar documentación existente"),
+    overwrite: bool = typer.Option(False, "--overwrite", help="Sobrescribir documentación existente"),
+):
+    """Generar documentación en markdown para el proyecto analizado."""
+    import os
+    from src.utils.documentation_system import get_documentation_system
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+    
+    # Determinar directorio de documentación
+    output_dir = output
+    if not output_dir:
+        output_dir = os.path.join(project_path, '.project-prompt')
+    
+    cli.print_header("Sistema de Documentación")
+    cli.print_info(f"Generando documentación para proyecto en: {project_path}")
+    
+    # Verificar si ya existe documentación
+    if os.path.exists(output_dir) and not update and not overwrite:
+        cli.print_warning(f"Ya existe documentación en: {output_dir}")
+        cli.print_info("Use --update para actualizar o --overwrite para sobrescribir")
+        
+        # Mostrar información básica
+        try:
+            doc_system = get_documentation_system()
+            info = doc_system.get_documentation_info(output_dir)
+            
+            cli.print_panel(
+                "Documentación Existente",
+                f"Última actualización: {info.get('last_updated', 'Desconocida')}\n"
+                f"Documentos: {info.get('document_count', 0)}\n"
+                f"Funcionalidades: {len(info.get('functionalities', []))}"
+            )
+        except Exception as e:
+            logger.error(f"Error al obtener info de documentación: {e}", exc_info=True)
+            
+        return
+    
+    try:
+        with cli.status("Generando documentación..."):
+            doc_system = get_documentation_system()
+            
+            if update and os.path.exists(output_dir):
+                result = doc_system.update_documentation(project_path, output_dir)
+                action = "actualizada"
+            else:
+                result = doc_system.generate_project_documentation(
+                    project_path, output_dir, overwrite=overwrite
+                )
+                action = "generada"
+        
+        # Mostrar resultados
+        cli.print_success(f"Documentación {action} exitosamente")
+        cli.print_info(f"Directorio de documentación: {result['docs_dir']}")
+        
+        # Mostrar contenido generado
+        cli.print_panel(
+            "Documentos Generados",
+            f"Análisis general: {os.path.basename(result['project_analysis'])}\n"
+            f"Funcionalidades: {len(result['functionalities'])}\n"
+            f"Configuración: {os.path.basename(result['config'])}"
+        )
+    except Exception as e:
+        cli.print_error(f"Error al generar documentación: {e}")
+        logger.error(f"Error en docs: {e}", exc_info=True)
+
+
+# Implementación de comandos de IA
+@ai_app.command("generate")
+def ai_generate_code(
+    description: str = typer.Argument(..., help="Descripción del código a generar"),
+    language: str = typer.Option("python", "--language", "-l", help="Lenguaje de programación"),
+    provider: str = typer.Option("anthropic", "--provider", "-p", 
+                                help="Proveedor de IA (anthropic, copilot)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Archivo donde guardar el código")
+):
+    """
+    Generar código utilizando IA avanzada (característica premium).
+    """
+    from src.integrations.anthropic_advanced import get_advanced_anthropic_client
+    from src.integrations.copilot_advanced import get_advanced_copilot_client
+    from src.utils.subscription_manager import get_subscription_manager
+    
+    cli.print_header("Generación de Código con IA")
+    
+    # Verificar suscripción
+    subscription = get_subscription_manager()
+    if not subscription.is_premium_feature_available("ai_integrations"):
+        cli.print_error("Esta es una característica premium. Actualiza tu suscripción para acceder.")
+        return
+    
+    # Seleccionar cliente según proveedor
+    if provider.lower() == "anthropic":
+        client = get_advanced_anthropic_client()
+        provider_name = "Anthropic Claude"
+    elif provider.lower() == "copilot":
+        client = get_advanced_copilot_client()
+        provider_name = "GitHub Copilot"
+    else:
+        cli.print_error(f"Proveedor no soportado: {provider}")
+        return
+    
+    cli.print_info(f"Utilizando {provider_name} para generar código {language}")
+    
+    with cli.status(f"Generando código {language} con {provider_name}..."):
+        result = client.generate_code(description, language)
+    
+    if result.get("success"):
+        code = result.get("code", "")
+        
+        # Mostrar código generado
+        cli.print_success("Código generado exitosamente:")
+        console.print("")
+        console.print(f"```{language}")
+        console.print(code)
+        console.print("```")
+        console.print("")
+        
+        # Guardar a archivo si se especificó
+        if output:
+            try:
+                with open(output, 'w', encoding='utf-8') as f:
+                    f.write(code)
+                cli.print_success(f"Código guardado en: {output}")
+            except Exception as e:
+                cli.print_error(f"Error al guardar código: {e}")
+    else:
+        cli.print_error(f"Error al generar código: {result.get('error', 'Error desconocido')}")
+
+
+@ai_app.command("analyze")
+def ai_analyze_code(
+    file_path: str = typer.Argument(..., help="Ruta al archivo de código a analizar"),
+    language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
+    provider: str = typer.Option("anthropic", "--provider", "-p", 
+                               help="Proveedor de IA (anthropic, copilot)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", 
+                                       help="Archivo donde guardar el análisis")
+):
+    """
+    Analizar código para detectar errores y problemas (característica premium).
+    """
+    from src.integrations.anthropic_advanced import get_advanced_anthropic_client
+    from src.integrations.copilot_advanced import get_advanced_copilot_client
+    from src.utils.subscription_manager import get_subscription_manager
+    import os
+    
+    cli.print_header("Análisis de Código con IA")
+    
+    # Verificar suscripción
+    subscription = get_subscription_manager()
+    if not subscription.is_premium_feature_available("ai_integrations"):
+        cli.print_error("Esta es una característica premium. Actualiza tu suscripción para acceder.")
+        return
+    
+    # Verificar archivo
+    if not os.path.isfile(file_path):
+        cli.print_error(f"El archivo no existe: {file_path}")
+        return
+    
+    # Determinar lenguaje si no se especificó
+    if not language:
+        _, ext = os.path.splitext(file_path)
+        language_map = {
+            '.py': 'python',
+            '.js': 'javascript',
+            '.ts': 'typescript',
+            '.java': 'java',
+            '.cs': 'csharp',
+            '.go': 'go',
+            '.rb': 'ruby',
+            '.php': 'php',
+            '.rs': 'rust',
+            '.cpp': 'cpp',
+            '.c': 'c',
+        }
+        language = language_map.get(ext.lower(), 'unknown')
+        if language == 'unknown':
+            cli.print_warning(f"No se pudo determinar el lenguaje para la extensión {ext}")
+            language = 'python'  # Valor predeterminado
+    
+    # Leer contenido del archivo
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+    except Exception as e:
+        cli.print_error(f"Error al leer archivo: {e}")
+        return
+    
+    # Seleccionar cliente según proveedor
+    if provider.lower() == "anthropic":
+        client = get_advanced_anthropic_client()
+        provider_name = "Anthropic Claude"
+    elif provider.lower() == "copilot":
+        client = get_advanced_copilot_client()
+        provider_name = "GitHub Copilot"
+    else:
+        cli.print_error(f"Proveedor no soportado: {provider}")
+        return
+    
+    cli.print_info(f"Analizando código {language} con {provider_name}")
+    
+    with cli.status(f"Analizando código..."):
+        result = client.detect_errors(code, language)
+    
+    if result.get("success"):
+        issues = result.get("issues", [])
+        
+        if issues:
+            # Crear tabla con problemas detectados
+            issues_table = cli.create_table(
+                "Problemas Detectados", 
+                ["Tipo", "Descripción", "Ubicación", "Severidad", "Solución"]
+            )
+            
+            for issue in issues:
+                issues_table.add_row(
+                    issue.get("type", ""),
+                    issue.get("description", ""),
+                    issue.get("location", ""),
+                    issue.get("severity", ""),
+                    issue.get("fix", "")
+                )
+            
+            console.print(issues_table)
+            cli.print_info(f"Se detectaron {len(issues)} problemas en el código.")
+        else:
+            cli.print_success("No se detectaron problemas en el código.")
+        
+        # Guardar análisis si se especificó
+        if output:
+            try:
+                import json
+                with open(output, 'w', encoding='utf-8') as f:
+                    json.dump(result, f, indent=2)
+                cli.print_success(f"Análisis guardado en: {output}")
+            except Exception as e:
+                cli.print_error(f"Error al guardar análisis: {e}")
+    else:
+        cli.print_error(f"Error al analizar código: {result.get('error', 'Error desconocido')}")
+
+
+@ai_app.command("refactor")
+def ai_refactor_code(
+    file_path: str = typer.Argument(..., help="Ruta al archivo de código a refactorizar"),
+    language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
+    provider: str = typer.Option("anthropic", "--provider", "-p", 
+                               help="Proveedor de IA (anthropic, copilot)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", 
+                                       help="Archivo donde guardar el código refactorizado")
+):
+    """
+    Refactorizar código para mejorar su calidad (característica premium).
+    """
+    from src.integrations.anthropic_advanced import get_advanced_anthropic_client
+    from src.integrations.copilot_advanced import get_advanced_copilot_client
+    from src.utils.subscription_manager import get_subscription_manager
+    import os
+    
+    cli.print_header("Refactorización de Código con IA")
+    
+    # Verificar suscripción
+    subscription = get_subscription_manager()
+    if not subscription.is_premium_feature_available("ai_integrations"):
+        cli.print_error("Esta es una característica premium. Actualiza tu suscripción para acceder.")
+        return
+    
+    # Verificar archivo
+    if not os.path.isfile(file_path):
+        cli.print_error(f"El archivo no existe: {file_path}")
+        return
+    
+    # Determinar lenguaje si no se especificó
+    if not language:
+        _, ext = os.path.splitext(file_path)
+        language_map = {
+            '.py': 'python',
+            '.js': 'javascript',
+            '.ts': 'typescript',
+            '.java': 'java',
+            '.cs': 'csharp',
+            '.go': 'go',
+            '.rb': 'ruby',
+            '.php': 'php',
+            '.rs': 'rust',
+            '.cpp': 'cpp',
+            '.c': 'c',
+        }
+        language = language_map.get(ext.lower(), 'unknown')
+        if language == 'unknown':
+            cli.print_warning(f"No se pudo determinar el lenguaje para la extensión {ext}")
+            language = 'python'  # Valor predeterminado
+    
+    # Leer contenido del archivo
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+    except Exception as e:
+        cli.print_error(f"Error al leer archivo: {e}")
+        return
+    
+    # Seleccionar cliente según proveedor
+    if provider.lower() == "anthropic":
+        client = get_advanced_anthropic_client()
+        provider_name = "Anthropic Claude"
+    elif provider.lower() == "copilot":
+        client = get_advanced_copilot_client()
+        provider_name = "GitHub Copilot"
+    else:
+        cli.print_error(f"Proveedor no soportado: {provider}")
+        return
+    
+    cli.print_info(f"Refactorizando código {language} con {provider_name}")
+    
+    with cli.status(f"Refactorizando código..."):
+        result = client.suggest_refactoring(code, language)
+    
+    if result.get("success"):
+        refactored_code = result.get("refactored_code", "")
+        suggestions = result.get("suggestions", [])
+        
+        # Mostrar código refactorizado
+        cli.print_success("Código refactorizado:")
+        console.print("")
+        console.print(f"```{language}")
+        console.print(refactored_code)
+        console.print("```")
+        console.print("")
+        
+        # Mostrar sugerencias
+        if suggestions:
+            cli.print_info("Mejoras realizadas:")
+            for i, suggestion in enumerate(suggestions):
+                console.print(f"  {i+1}. {suggestion}")
+        
+        # Guardar a archivo si se especificó
+        if output:
+            try:
+                with open(output, 'w', encoding='utf-8') as f:
+                    f.write(refactored_code)
+                cli.print_success(f"Código refactorizado guardado en: {output}")
+            except Exception as e:
+                cli.print_error(f"Error al guardar código: {e}")
+    else:
+        cli.print_error(f"Error al refactorizar código: {result.get('error', 'Error desconocido')}")
+
+
+@ai_app.command("explain")
+def ai_explain_code(
+    file_path: str = typer.Argument(..., help="Ruta al archivo de código a explicar"),
+    language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
+    detail_level: str = typer.Option("standard", "--detail", "-d", 
+                                   help="Nivel de detalle (basic, standard, advanced)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", 
+                                       help="Archivo donde guardar la explicación")
+):
+    """
+    Generar una explicación detallada del código (característica premium para nivel avanzado).
+    """
+    from src.integrations.anthropic_advanced import get_advanced_anthropic_client
+    from src.utils.subscription_manager import get_subscription_manager
+    import os
+    
+    cli.print_header("Explicación de Código con IA")
+    
+    # Verificar suscripción para nivel avanzado
+    if detail_level == "advanced":
+        subscription = get_subscription_manager()
+        if not subscription.is_premium_feature_available("ai_integrations"):
+            cli.print_warning("El nivel avanzado requiere suscripción premium. Usando nivel estándar.")
+            detail_level = "standard"
+    
+    # Verificar archivo
+    if not os.path.isfile(file_path):
+        cli.print_error(f"El archivo no existe: {file_path}")
+        return
+    
+    # Determinar lenguaje si no se especificó
+    if not language:
+        _, ext = os.path.splitext(file_path)
+        language_map = {
+            '.py': 'python',
+            '.js': 'javascript',
+            '.ts': 'typescript',
+            '.java': 'java',
+            '.cs': 'csharp',
+            '.go': 'go',
+            '.rb': 'ruby',
+            '.php': 'php',
+            '.rs': 'rust',
+            '.cpp': 'cpp',
+            '.c': 'c',
+        }
+        language = language_map.get(ext.lower(), 'unknown')
+        if language == 'unknown':
+            cli.print_warning(f"No se pudo determinar el lenguaje para la extensión {ext}")
+            language = 'python'  # Valor predeterminado
+    
+    # Leer contenido del archivo
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+    except Exception as e:
+        cli.print_error(f"Error al leer archivo: {e}")
+        return
+    
+    # Usar Anthropic para la explicación
+    client = get_advanced_anthropic_client()
+    
+    cli.print_info(f"Generando explicación de código {language} (nivel {detail_level})")
+    
+    with cli.status(f"Analizando y explicando código..."):
+        result = client.explain_code(code, language, detail_level)
+    
+    if result.get("success"):
+        explanation = result.get("explanation", "")
+        
+        # Mostrar explicación
+        cli.print_success(f"Explicación del código ({os.path.basename(file_path)}):")
+        console.print("")
+        console.print(explanation)
+        console.print("")
+        
+        # Guardar a archivo si se especificó
+        if output:
+            try:
+                with open(output, 'w', encoding='utf-8') as f:
+                    f.write(explanation)
+                cli.print_success(f"Explicación guardada en: {output}")
+            except Exception as e:
+                cli.print_error(f"Error al guardar explicación: {e}")
+    else:
+        cli.print_error(f"Error al explicar código: {result.get('error', 'Error desconocido')}")
+
+
+if __name__ == "__main__":
+    app()

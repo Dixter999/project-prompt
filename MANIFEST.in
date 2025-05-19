@@ -1,0 +1,35 @@
+# Include license, readme, and other important files
+include LICENSE
+include README.md
+include CHANGELOG.md
+include pyproject.toml
+include setup.py
+include setup.cfg
+
+# Include configuration examples
+include config.yaml.example
+
+# Include all template files
+recursive-include src/templates *
+
+# Include all documentation
+recursive-include docs *
+
+# Include assets
+recursive-include assets *
+
+# Exclude development and CI files
+exclude .gitignore
+exclude .github/*
+exclude .vscode/*
+exclude scripts/build.py
+exclude commit_*.sh
+exclude test_*.py
+recursive-exclude tests *
+recursive-exclude vscode-extension *
+recursive-exclude test_project *
+recursive-exclude build *
+recursive-exclude dist *
+recursive-exclude .pytest_cache *
+recursive-exclude **/__pycache__ *
+recursive-exclude **/*.pyc
