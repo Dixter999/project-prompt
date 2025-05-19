@@ -15,7 +15,7 @@ jobs:
     
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -31,19 +31,11 @@ jobs:
         run: |
           python -m build
           
-      - name: Create artifacts directory
-        run: mkdir -p artifacts/python-package
-          
-      - name: Move build artifacts
-        run: |
-          mv dist/*.whl artifacts/python-package/
-          mv dist/*.tar.gz artifacts/python-package/
-          
       - name: Upload Python packages
         uses: actions/upload-artifact@v3
         with:
           name: python-package
-          path: artifacts/python-package
+          path: dist/
 
   build-vscode-extension:
     name: Build VS Code Extension
@@ -51,7 +43,7 @@ jobs:
     
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -69,18 +61,11 @@ jobs:
           cd vscode-extension
           vsce package
           
-      - name: Create artifacts directory
-        run: mkdir -p artifacts/vscode-extension
-          
-      - name: Move build artifacts
-        run: |
-          mv vscode-extension/*.vsix artifacts/vscode-extension/
-          
       - name: Upload VS Code extension
         uses: actions/upload-artifact@v3
         with:
           name: vscode-extension
-          path: artifacts/vscode-extension
+          path: vscode-extension/*.vsix
 
   create-release:
     name: Create GitHub Release
@@ -89,7 +74,7 @@ jobs:
     
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Download artifacts
         uses: actions/download-artifact@v3
@@ -110,8 +95,8 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            artifacts/python-package/*
-            artifacts/vscode-extension/*.vsix
+            artifacts/python-package/**/*
+            artifacts/vscode-extension/**/*
           
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -128,11 +113,11 @@ jobs:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          twine upload artifacts/python-package/*
+          twine upload artifacts/python-package/**/*
           
       - name: Publish to VS Code Marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
-          npm install -g vsce
-          vsce publish -p $VSCE_PAT -i artifacts/vscode-extension/*.vsix
+          npm install -g @vscode/vsce
+          find artifacts/vscode-extension -name "*.vsix" -exec vsce publish -p $VSCE_PAT -i {} \;
