@@ -1,5 +1,10 @@
 # ProjectPrompt: Intelligent Assistant for Project Analysis and Documentation
 
+![CI Status](https://github.com/Dixter999/project-prompt/actions/workflows/ci.yml/badge.svg)
+![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub Release](https://img.shields.io/github/v/release/Dixter999/project-prompt)](https://github.com/Dixter999/project-prompt/releases)
+
 Advanced tool that uses AI to analyze projects, generate documentation, and provide improvement suggestions.
 
 ## Features
@@ -188,7 +193,21 @@ LOG_LEVEL=info
 
 ## Contributing
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to the project.
+We welcome contributions from the community! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to the project.
+
+- **Bug reports**: Open an issue with the label "bug"
+- **Feature requests**: Open an issue with the label "enhancement"
+- **Code contributions**: Check our [ROADMAP.md](ROADMAP.md) and look for issues labeled "good first issue"
+
+## Security
+
+Please review our [Security Policy](SECURITY.md) for information about reporting vulnerabilities.
+
+## Community
+
+- **Code of Conduct**: Please read our [Code of Conduct](CODE_OF_CONDUCT.md)
+- **Discussions**: Use GitHub Discussions for questions and community interaction
+- **Project Status**: Check our [ROADMAP.md](ROADMAP.md) for upcoming features
 
 ## License
 
