@@ -1,0 +1,113 @@
+name: Anthropic Verification
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'analyze_with_anthropic_direct.py'
+      - 'analyze_project_with_anthropic.py'
+      - 'test-projects/**'
+      - '.github/workflows/verify-anthropic.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'analyze_with_anthropic_direct.py'
+      - 'analyze_project_with_anthropic.py'
+      - 'test-projects/**'
+  workflow_dispatch:
+    inputs:
+      run_api_tests:
+        description: 'Run tests with Anthropic API'
+        required: true
+        default: 'false'
+        type: boolean
+      project_types:
+        description: 'Project types to test (comma separated)'
+        required: false
+        default: 'web-project'
+        type: string
+
+jobs:
+  verify-anthropic:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest numpy
+      
+      - name: Run unit tests
+        run: |
+          python -m pytest test-projects/test_verification_system.py -v
+      
+      - name: Run verification script
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_api_tests == 'true' }} || ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Parse project types from input
+          PROJECT_TYPES="${{ github.event.inputs.project_types || 'web-project' }}"
+          PROJECT_TYPES_ARG=$(echo $PROJECT_TYPES | sed 's/,/ /g')
+          
+          # Run the verification script
+          bash test-projects/ci_verify_anthropic.sh --project-types $PROJECT_TYPES_ARG
+      
+      - name: Run verification script (mock mode)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_api_tests == 'false' }} && ${{ secrets.ANTHROPIC_API_KEY == '' }}
+        run: |
+          bash test-projects/ci_verify_anthropic.sh --skip-api-tests
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: success() || failure()
+        with:
+          name: anthropic-verification-results
+          path: test-projects/ci_results_*
+          retention-days: 7
+      
+      - name: Post summary comment
+        if: github.event_name == 'pull_request' && (success() || failure())
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Find the latest results directory
+            const testDir = path.join(process.env.GITHUB_WORKSPACE, 'test-projects');
+            const resultsPattern = /ci_results_\d+/;
+            const dirs = fs.readdirSync(testDir).filter(d => resultsPattern.test(d));
+            const latestDir = dirs.sort().pop();
+            
+            if (!latestDir) {
+              console.log('No results directory found');
+              return;
+            }
+            
+            // Read summary file
+            const summaryPath = path.join(testDir, latestDir, 'summary.md');
+            if (!fs.existsSync(summaryPath)) {
+              console.log('No summary file found');
+              return;
+            }
+            
+            const summary = fs.readFileSync(summaryPath, 'utf8');
+            
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
