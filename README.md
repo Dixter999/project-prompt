@@ -287,6 +287,26 @@ project-prompt set-api anthropic TU_API_KEY
 python verify_freemium_system.py
 ```
 
+### Activación del Modelo Premium para Desarrolladores
+
+Si eres desarrollador del proyecto, puedes activar todas las funciones premium siguiendo estos pasos:
+
+```bash
+# Generar credenciales de desarrollador (sustituye TU_EMAIL con tu correo)
+python generate_developer_credentials.py --name "Tu Nombre" --email "TU_EMAIL" --type pro
+
+# Si tienes una API key de Anthropic, puedes configurarla al mismo tiempo
+python generate_developer_credentials.py --name "Tu Nombre" --email "TU_EMAIL" --anthropic-key "TU_API_KEY"
+
+# Verificar el estado de las credenciales de desarrollador
+python generate_developer_credentials.py --verify-only
+
+# Verificar el estado del sistema freemium
+python verify_freemium_system.py
+```
+
+Las credenciales de desarrollador se almacenan localmente en `~/.config/project-prompt/developer_credentials.json` y son válidas durante un año por defecto. Puedes modificar la duración con el parámetro `--days`.
+
 ### Herramientas de Análisis Independientes
 
 ```bash
@@ -451,6 +471,7 @@ ProjectPrompt cuenta con una documentación unificada y detallada que explica to
 - [Guía del Usuario](docs/user_guide.md) - Manual paso a paso para usuarios
 - [Referencia de Scripts](docs/script_reference.md) - Información detallada de cada script
 - [Sistema Freemium](docs/developer/freemium_system.md) - Documentación sobre las características freemium
+- [Activación Premium para Desarrolladores](docs/developer/premium_activation.md) - Guía para activar funciones premium
 
 ## Estructura de Directorios
 

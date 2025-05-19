@@ -370,7 +370,7 @@ class TelemetryManager:
             return
             
         try:
-            config = get_config()
+            config = config_manager.config
             telemetry_dir = os.path.join(
                 os.path.dirname(os.path.abspath(config.get("config_path", ""))),
                 "telemetry"
@@ -391,7 +391,7 @@ class TelemetryManager:
     def _load_queued_data(self) -> None:
         """Carga datos pendientes desde el almacenamiento local."""
         try:
-            config = get_config()
+            config = config_manager.config
             telemetry_dir = os.path.join(
                 os.path.dirname(os.path.abspath(config.get("config_path", ""))),
                 "telemetry"
@@ -424,7 +424,7 @@ def _get_installation_id() -> str:
         ID de instalación anónimo
     """
     try:
-        config = get_config()
+        config = config_manager.config
         
         # Comprobar si ya tenemos un ID guardado
         installation_id = config.get("telemetry", {}).get("installation_id")
