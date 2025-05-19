@@ -29,10 +29,19 @@ echo -e "\n${YELLOW}[1/7] Verifying environment and dependencies...${NC}"
 
 # Check Python
 python_version=$(python3 --version 2>&1)
-if [[ $python_version =~ Python\ 3\.[0-9]+\.[0-9]+ ]]; then
-    echo -e "✓ ${GREEN}Python detected: $python_version${NC}"
+if [[ $python_version =~ Python\ 3\.([0-9]+)\.[0-9]+ ]]; then
+    version="${BASH_REMATCH[1]}"
+    if (( version >= 11 )); then
+        echo -e "✓ ${GREEN}Python detected: $python_version${NC}"
+    else
+        echo -e "✗ ${YELLOW}Python version is lower than recommended. Python 3.11 or higher is recommended.${NC}"
+        read -p "Continue anyway? [y/N] " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
 else
-    echo -e "✗ ${RED}Python 3.x not found. Please install Python 3.8 or higher.${NC}"
+    echo -e "✗ ${RED}Python 3.x not found. Please install Python 3.11 or higher.${NC}"
     exit 1
 fi
 

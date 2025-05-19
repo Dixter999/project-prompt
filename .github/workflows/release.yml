@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -40,7 +40,7 @@ jobs:
     
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -61,7 +61,7 @@ jobs:
           twine check dist/*
           
       - name: Upload Python package artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: python-package
           path: dist/
@@ -76,7 +76,7 @@ jobs:
         
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -94,7 +94,7 @@ jobs:
           python scripts/build.py --exe-only
           
       - name: Upload executable artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: executable-${{ matrix.os }}
           path: dist/project-prompt-*
@@ -123,7 +123,7 @@ jobs:
           cd vscode-extension && vsce package
           
       - name: Upload VS Code extension artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: vscode-extension
           path: vscode-extension/*.vsix
@@ -136,10 +136,10 @@ jobs:
     
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts
           
