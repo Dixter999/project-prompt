@@ -25,7 +25,7 @@ Advanced tool that uses AI to analyze projects, generate documentation, and prov
 #### For Linux/macOS
 ```bash
 # Clone the repository
-git clone https://github.com/projectprompt/project-prompt.git
+git clone https://github.com/Dixter999/project-prompt.git
 cd project-prompt
 
 # Run the setup script
@@ -36,7 +36,7 @@ chmod +x scripts/setup_environment.sh
 #### For Windows
 ```powershell
 # Clone the repository
-git clone https://github.com/projectprompt/project-prompt.git
+git clone https://github.com/Dixter999/project-prompt.git
 cd project-prompt
 
 # Run the setup script
@@ -47,7 +47,7 @@ cd project-prompt
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/projectprompt/project-prompt.git
+   git clone https://github.com/Dixter999/project-prompt.git
    cd project-prompt
    ```
 
