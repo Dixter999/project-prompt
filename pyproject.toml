@@ -1,13 +1,16 @@
 [tool.poetry]
-name = "project-prompt"
+name = "projectprompt"
 version = "1.0.0"
-description = "Asistente inteligente para análisis y documentación de proyectos usando IA"
+description = "Intelligent assistant for project analysis and documentation using AI"
 authors = ["ProjectPrompt Team <info@project-prompt.org>"]
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/Dixter999/project-prompt"
 documentation = "https://docs.project-prompt.org"
 keywords = ["ai", "prompt-engineering", "documentation", "project-analysis"]
+packages = [
+    {include = "src", from = "."}
+]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Environment :: Console",
