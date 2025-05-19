@@ -125,27 +125,27 @@ def telemetry_command(func):
 @app.command()
 @telemetry_command
 def version():
-    """Mostrar la versión actual de ProjectPrompt."""
-    cli.print_header("Información de Versión")
+    """Show the current version of ProjectPrompt."""
+    cli.print_header("Version Information")
     cli.print_info(f"ProjectPrompt v{__version__}")
     
-    # Verificar estado de las APIs
+    # Check APIs status
     validator = get_api_validator()
     status = validator.get_status_summary()
     
-    # Mostrar información adicional
-    table = cli.create_table("Detalles", ["Componente", "Versión/Estado"])
+    # Show additional information
+    table = cli.create_table("Details", ["Component", "Version/Status"])
     table.add_row("Python", sys.version.split()[0])
-    table.add_row("API Anthropic", "Configurada ✅" if status.get("anthropic", False) else "No configurada ❌")
-    table.add_row("API GitHub", "Configurada ✅" if status.get("github", False) else "No configurada ❌")
+    table.add_row("API Anthropic", "Configured ✅" if status.get("anthropic", False) else "Not configured ❌")
+    table.add_row("API GitHub", "Configured ✅" if status.get("github", False) else "Not configured ❌")
     console.print(table)
 
 
 @app.command()
-def init(name: str = typer.Option(None, "--name", "-n", help="Nombre del proyecto"),
-         path: str = typer.Option(".", "--path", "-p", help="Ruta donde inicializar")):
-    """Inicializar un nuevo proyecto con ProjectPrompt."""
-    cli.print_header("Inicialización de Proyecto")
+def init(name: str = typer.Option(None, "--name", "-n", help="Project name"),
+         path: str = typer.Option(".", "--path", "-p", help="Path to initialize")):
+    """Initialize a new project with ProjectPrompt."""
+    cli.print_header("Project Initialization")
     
     # Si no se proporciona un nombre, solicitarlo
     if not name:
