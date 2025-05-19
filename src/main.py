@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """
 Punto de entrada principal para ProjectPrompt.
+
+Este script proporciona las funcionalidades principales de la herramienta ProjectPrompt,
+permitiendo analizar proyectos, generar sugerencias con IA, y gestionar configuraciones.
+
+Los resultados se guardan en la carpeta 'project-output'.
 """
 
 import os
@@ -8,6 +13,7 @@ import sys
 import json
 from enum import Enum
 from typing import Dict, List, Optional, Any
+from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -26,6 +32,16 @@ from src.ui.documentation_navigator import get_documentation_navigator
 from src.ui.subscription_view import show_subscription, activate_license, deactivate_license, show_plans
 from src.ui.dashboard import DashboardCLI
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
+
+# Define project directories
+PROJECT_ROOT = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+OUTPUT_DIR = PROJECT_ROOT / "project-output"
+ANALYSES_DIR = OUTPUT_DIR / "analyses"
+SUGGESTIONS_DIR = OUTPUT_DIR / "suggestions"
+
+# Create output directories if they don't exist
+os.makedirs(ANALYSES_DIR, exist_ok=True)
+os.makedirs(SUGGESTIONS_DIR, exist_ok=True)
 
 console = Console()
 app = typer.Typer(help="ProjectPrompt: Asistente inteligente para proyectos")

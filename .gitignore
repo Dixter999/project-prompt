@@ -60,6 +60,14 @@ commit_*.sh
 commit_message.txt
 cleanup_project.sh
 
+# Reorganization and temp files
+DIRECTORY_STRUCTURE.md
+REORGANIZATION_SUMMARY.md
+REORGANIZATION_COMPLETE.md
+README.md.new
+README.md.bak
+README.md.old
+
 # Backup and temp files
 *.bak
 *.original
