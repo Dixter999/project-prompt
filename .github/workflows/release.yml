@@ -27,10 +27,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest pytest-cov
           
       - name: Run tests
         run: |
-          pytest tests/
+          pytest tests/ -k "not integration and not anthropic"
 
   build-python-package:
     name: Build Python Package

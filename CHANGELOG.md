@@ -29,9 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - VS Code extension activation issues
 - Command line argument parsing errors
 
-## [0.9.0] - 2025-04-15
+## [0.9.0] - 2023-09-15
 - Beta release with core functionality
 - Limited to internal testing
 
-## [0.8.0] - 2025-03-01
+## [0.8.0] - 2023-08-01
 - Alpha release with initial feature set

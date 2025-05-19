@@ -38,6 +38,13 @@ chmod +x scripts/setup_environment.sh
 ./scripts/setup_environment.sh
 ```
 
+#### For Contributors
+If you're contributing to the project and need to create a release:
+1. Make your changes and commit them
+2. Update version in `pyproject.toml` and `src/__init__.py` 
+3. Update CHANGELOG.md with your changes
+4. Go to Actions tab on GitHub and run the "Manual Release Pipeline"
+
 #### For Windows
 ```powershell
 # Clone the repository
