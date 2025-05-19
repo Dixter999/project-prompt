@@ -9,7 +9,7 @@ def test_version_command():
     """Verificar que el comando version funcione."""
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
-    assert "ProjectPrompt v0.1.0" in result.stdout
+    assert "ProjectPrompt v1.0.0" in result.stdout
 
 def test_init_command():
     """Verificar que el comando init funcione."""
