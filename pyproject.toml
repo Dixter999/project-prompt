@@ -2,7 +2,7 @@
 name = "projectprompt"
 version = "1.0.0"
 description = "Intelligent assistant for project analysis and documentation using AI"
-authors = ["Daniel Lagowski Solé<daniel@lagowski.es>"]
+authors = ["Daniel Lagowski Solé <daniel@lagowski.es>"]
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/Dixter999/project-prompt"
