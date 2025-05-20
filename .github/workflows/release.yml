@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'  # Trigger on version tags
 
+permissions:
+  contents: write
+  packages: write
+  deployments: write
+
 jobs:
   test:
     name: Run Tests
