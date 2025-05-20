@@ -105,8 +105,9 @@ jobs:
           prerelease: false
           generate_release_notes: true
           files: |
-            artifacts/python-package/**/*
-            artifacts/vscode-extension/**/*
+            artifacts/python-package/*.tar.gz
+            artifacts/python-package/*.whl
+            artifacts/vscode-extension/*.vsix
           
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -123,11 +124,11 @@ jobs:
           TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
           TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
         run: |
-          twine upload artifacts/python-package/**/*
+          find artifacts/python-package -name "*.tar.gz" -o -name "*.whl" | xargs twine upload
           
       - name: Publish to VS Code Marketplace
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           npm install -g @vscode/vsce
-          find artifacts/vscode-extension -name "*.vsix" -exec vsce publish -p $VSCE_PAT -i {} \;
+          find artifacts/vscode-extension -name "*.vsix" -exec vsce publish -p $VSCE_PAT {} \;
