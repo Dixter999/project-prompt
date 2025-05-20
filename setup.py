@@ -20,8 +20,8 @@ setup(
     description="Asistente inteligente para análisis y documentación de proyectos usando IA",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author="ProjectPrompt Team",
-    author_email="info@project-prompt.org",
+    author="Daniel Lagowski Solé",
+    author_email="daniel@lagowski.es",
     url="https://github.com/project-prompt/project-prompt",
     packages=find_packages(),
     include_package_data=True,
@@ -57,7 +57,7 @@ setup(
     python_requires=">=3.8",
     project_urls={
         "Bug Tracker": "https://github.com/project-prompt/project-prompt/issues",
-        "Documentation": "https://docs.project-prompt.org",
+        "Documentation": "https://github.com/Dixter999/project-prompt?tab=readme-ov-file#readme",
         "Source Code": "https://github.com/project-prompt/project-prompt",
     },
 )
