@@ -16,6 +16,7 @@ SKIP_TESTS=false
 SKIP_FREEMIUM=false
 SKIP_ANTHROPIC=false
 SKIP_VSCODE=false
+SKIP_INSTALL=false
 
 # Parse command line arguments
 for arg in "$@"; do
@@ -32,6 +33,16 @@ for arg in "$@"; do
         --skip-vscode)
             SKIP_VSCODE=true
             ;;
+        --skip-install)
+            SKIP_INSTALL=true
+            ;;
+        --all-skip)
+            SKIP_TESTS=true
+            SKIP_FREEMIUM=true
+            SKIP_ANTHROPIC=true
+            SKIP_VSCODE=true
+            SKIP_INSTALL=true
+            ;;
         --help)
             echo "Usage: ./verify_and_deploy.sh [options]"
             echo "Options:"
@@ -39,6 +50,8 @@ for arg in "$@"; do
             echo "  --skip-freemium  Skip freemium system verification"
             echo "  --skip-anthropic Skip Anthropic integration verification"
             echo "  --skip-vscode    Skip building VS Code extension"
+            echo "  --skip-install   Skip package installation test"
+            echo "  --all-skip       Skip all verification steps (tests, freemium, Anthropic, VS Code, install)"
             echo "  --help           Show this help message"
             exit 0
             ;;
@@ -285,12 +298,15 @@ fi
 # ------------------------------------------------------------
 echo -e "\n${YELLOW}[7/7] Verifying package installation...${NC}"
 
-# Create virtual environment for installation testing
-echo "Creating test virtual environment..."
-python -m venv test_env || {
-    echo -e "${RED}[ERROR] Could not create virtual environment.${NC}"
-    exit 1
-}
+if [ "$SKIP_INSTALL" = true ]; then
+    echo -e "${YELLOW}[INFO] Skipping package installation verification as requested with --skip-install flag.${NC}"
+else
+    # Create virtual environment for installation testing
+    echo "Creating test virtual environment..."
+    python -m venv test_env || {
+        echo -e "${RED}[ERROR] Could not create virtual environment.${NC}"
+        exit 1
+    }
 
 # Activate virtual environment
 echo "Activating virtual environment..."
@@ -313,7 +329,7 @@ pip install dist/*.whl || {
 # Verify import
 echo "Verifying package import..."
 PACKAGE_NAME="project_prompt"  # Update this with your actual package name
-if python -c "import ${PACKAGE_NAME}; print(f'Installed version: ${${PACKAGE_NAME}.__version__}')" 2>/dev/null; then
+if python -c "import ${PACKAGE_NAME}; print(f'Installed version: {${PACKAGE_NAME}.__version__}')" 2>/dev/null; then
     echo -e "${GREEN}Package installed and verified successfully.${NC}"
 else
     echo -e "${RED}[ERROR] Could not import the installed package.${NC}"
@@ -327,6 +343,7 @@ deactivate
 # Clean up test environment
 echo "Cleaning up test environment..."
 rm -rf test_env/
+fi
 
 # ------------------------------------------------------------
 # FINAL SUMMARY
