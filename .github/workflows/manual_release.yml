@@ -130,5 +130,7 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
+          cd vscode-extension  # First change to the vscode-extension directory
           npm install -g @vscode/vsce
+          cd ..  # Go back to the root
           find artifacts/vscode-extension -name "*.vsix" -exec vsce publish -p $VSCE_PAT {} \;
