@@ -189,7 +189,18 @@ jobs:
         env:
           VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
-          cd vscode-extension  # First change to the vscode-extension directory
           npm install -g @vscode/vsce
-          cd ..  # Go back to the root
-          find artifacts/vscode-extension -name "*.vsix" -exec vsce publish -p $VSCE_PAT {} \;
+          
+          # Create a temporary directory for publishing
+          mkdir -p temp_publish
+          
+          # Copy the VSIX files to the temp directory
+          find artifacts/vscode-extension -name "*.vsix" -exec cp {} temp_publish/ \;
+          
+          # Publish each VSIX file
+          for file in temp_publish/*.vsix; do
+            if [ -f "$file" ]; then
+              echo "Publishing $file"
+              vsce publish --packagePath "$file" -p $VSCE_PAT
+            fi
+          done
