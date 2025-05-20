@@ -15,6 +15,7 @@ NC='\033[0m' # No Color
 SKIP_TESTS=false
 SKIP_FREEMIUM=false
 SKIP_ANTHROPIC=false
+SKIP_VSCODE=false
 
 # Parse command line arguments
 for arg in "$@"; do
@@ -28,12 +29,16 @@ for arg in "$@"; do
         --skip-anthropic)
             SKIP_ANTHROPIC=true
             ;;
+        --skip-vscode)
+            SKIP_VSCODE=true
+            ;;
         --help)
             echo "Usage: ./verify_and_deploy.sh [options]"
             echo "Options:"
             echo "  --skip-tests     Skip running unit and integration tests"
             echo "  --skip-freemium  Skip freemium system verification"
             echo "  --skip-anthropic Skip Anthropic integration verification"
+            echo "  --skip-vscode    Skip building VS Code extension"
             echo "  --help           Show this help message"
             exit 0
             ;;
@@ -244,18 +249,35 @@ fi
 
 # Build VS Code Extension
 echo -e "\nBuilding VS Code extension..."
-if [ -d "vscode-extension" ]; then
-    cd vscode-extension
-    npm install
-    npm install -g @vscode/vsce
-    vsce package || {
-        echo -e "${RED}[ERROR] VS Code extension package generation failed.${NC}"
-        exit 1
-    }
-    cd ..
-    echo -e "${GREEN}VS Code extension package generated successfully.${NC}"
+if [ "$SKIP_VSCODE" = true ]; then
+    echo -e "${YELLOW}[INFO] Skipping VS Code extension build as requested with --skip-vscode flag.${NC}"
 else
-    echo -e "${YELLOW}[WARNING] VS Code extension directory not found.${NC}"
+    if [ -d "vscode-extension" ]; then
+        cd vscode-extension
+        echo "Installing VS Code extension dependencies..."
+        npm install
+        
+        echo "Installing vsce globally..."
+        npm install -g @vscode/vsce
+        
+        echo "Packaging VS Code extension..."
+        if vsce package; then
+            cd ..
+            echo -e "${GREEN}VS Code extension package generated successfully.${NC}"
+        else
+            cd ..
+            echo -e "${YELLOW}[WARNING] VS Code extension package generation failed.${NC}"
+            echo -e "${YELLOW}This could be due to issues with the extension code. You can:${NC}"
+            echo -e "${YELLOW}- Fix the extension and try again${NC}"
+            echo -e "${YELLOW}- Use --skip-vscode flag to skip this step${NC}"
+            read -p "Continue anyway? [y/N] " -r
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
+        fi
+    else
+        echo -e "${YELLOW}[WARNING] VS Code extension directory not found.${NC}"
+    fi
 fi
 
 # ------------------------------------------------------------
