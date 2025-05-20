@@ -6,7 +6,7 @@
 .gitignore
 **/*.test.js
 
-# Ignore source files if bundling
+# Include only necessary source files (dist folder will contain the bundled code)
 src/**
 !src/index.js
 !src/panel.js
