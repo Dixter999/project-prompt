@@ -6,12 +6,9 @@
 .gitignore
 **/*.test.js
 
-# Include only necessary source files (dist folder will contain the bundled code)
+# Include only the necessary files for running the extension
+# The webpack bundle (dist/extension.js) will have all the necessary code
 src/**
-!src/index.js
-!src/panel.js
-!src/providers/**
-!src/integrations/**
 
 # Ignore node modules
 node_modules/**
