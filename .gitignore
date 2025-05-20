@@ -24,7 +24,13 @@ MANIFEST
 # Virtual environments
 venv/
 env/
+test_env/
 ENV/
+
+# VS Code extension specific
+vscode-extension/node_modules/
+vscode-extension/*.vsix
+vscode-extension/dist/
 
 # Poetry
 .poetry/

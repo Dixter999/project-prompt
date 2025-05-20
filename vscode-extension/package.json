@@ -4,6 +4,10 @@
   "description": "Asistente inteligente para proyectos usando IA",
   "version": "0.1.0",
   "publisher": "projectprompt",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/project-prompt.git"
+  },
   "engines": {
     "vscode": "^1.60.0"
   },
