@@ -64,7 +64,7 @@ jobs:
       - name: Build extension
         run: |
           cd vscode-extension
-          vsce package
+          vsce package --no-dependencies
           
       - name: Upload VS Code extension
         uses: actions/upload-artifact@v4

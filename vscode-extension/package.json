@@ -178,9 +178,8 @@
     "watch-tests": "tsc -p ./test/ --watch"
   },
   "dependencies": {
-    "path": "^0.12.7",
-    "fs-extra": "^11.1.1",
-    "axios": "^1.6.2",
+    "axios": "^1.6.0",
+    "fs-extra": "^11.1.0",
     "markdown-it": "^13.0.1",
     "vscode-languageclient": "^8.1.0"
   },
@@ -195,5 +194,13 @@
     "typescript": "^5.2.2",
     "webpack": "^5.88.2",
     "webpack-cli": "^5.1.4"
-  }
+  },
+  "files": [
+    "extension.js",
+    "dist/**",
+    "package.json",
+    "README.md",
+    "LICENSE.md",
+    "resources/**"
+  ]
 }
