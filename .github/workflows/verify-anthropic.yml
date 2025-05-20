@@ -1,0 +1,92 @@
+name: Anthropic Verification
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'src/integrations/anthropic/**'
+      - 'tests/anthropic/**'
+      - '.github/workflows/verify-anthropic.yml'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'src/integrations/anthropic/**'
+      - 'tests/anthropic/**'
+  workflow_dispatch:
+    inputs:
+      run_api_tests:
+        description: 'Run tests with Anthropic API'
+        required: true
+        default: 'false'
+        type: boolean
+      project_types:
+        description: 'Project types to test (comma separated)'
+        required: false
+        default: 'web-project'
+        type: string
+
+jobs:
+  verify-anthropic:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov
+      
+      - name: Run unit tests
+        run: |
+          python -m pytest tests/unit/test_anthropic_integration.py -v
+          
+      - name: Run integration tests (mock mode)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_api_tests == 'false' }}
+        run: |
+          python -m pytest tests/anthropic/ --mock -v
+          
+      - name: Run integration tests (API mode)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_api_tests == 'true' && secrets.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python -m pytest tests/anthropic/ -v
+      
+      - name: Run verification script
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_api_tests == 'true' && secrets.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          bash tests/run_anthropic_verification.sh
+      
+      - name: Run verification script (mock mode)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.run_api_tests == 'false' }} && ${{ secrets.ANTHROPIC_API_KEY == '' }}
+        run: |
+          bash tests/run_anthropic_verification.sh --mock
+      
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: success() || failure()
+        with:
+          name: anthropic-verification-results
+          path: tests/anthropic/results/*
+          retention-days: 7
+      
+      - name: Post summary
+        if: always()
+        run: |
+          echo "## Anthropic Verification Results" >> $GITHUB_STEP_SUMMARY
+          if [ -f tests/anthropic/results/summary.md ]; then
+            cat tests/anthropic/results/summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No summary file was generated" >> $GITHUB_STEP_SUMMARY
+          fi

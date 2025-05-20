@@ -11,6 +11,53 @@ YELLOW='\033[0;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Command line arguments
+SKIP_TESTS=false
+SKIP_FREEMIUM=false
+SKIP_ANTHROPIC=false
+SKIP_VSCODE=false
+SKIP_INSTALL=false
+
+# Parse command line arguments
+for arg in "$@"; do
+    case $arg in
+        --skip-tests)
+            SKIP_TESTS=true
+            ;;
+        --skip-freemium)
+            SKIP_FREEMIUM=true
+            ;;
+        --skip-anthropic)
+            SKIP_ANTHROPIC=true
+            ;;
+        --skip-vscode)
+            SKIP_VSCODE=true
+            ;;
+        --skip-install)
+            SKIP_INSTALL=true
+            ;;
+        --all-skip)
+            SKIP_TESTS=true
+            SKIP_FREEMIUM=true
+            SKIP_ANTHROPIC=true
+            SKIP_VSCODE=true
+            SKIP_INSTALL=true
+            ;;
+        --help)
+            echo "Usage: ./verify_and_deploy.sh [options]"
+            echo "Options:"
+            echo "  --skip-tests     Skip running unit and integration tests"
+            echo "  --skip-freemium  Skip freemium system verification"
+            echo "  --skip-anthropic Skip Anthropic integration verification"
+            echo "  --skip-vscode    Skip building VS Code extension"
+            echo "  --skip-install   Skip package installation test"
+            echo "  --all-skip       Skip all verification steps (tests, freemium, Anthropic, VS Code, install)"
+            echo "  --help           Show this help message"
+            exit 0
+            ;;
+    esac
+done
+
 # Print banner
 echo -e "${BLUE}"
 echo "=================================================================="
@@ -29,10 +76,19 @@ echo -e "\n${YELLOW}[1/7] Verifying environment and dependencies...${NC}"
 
 # Check Python
 python_version=$(python3 --version 2>&1)
-if [[ $python_version =~ Python\ 3\.[0-9]+\.[0-9]+ ]]; then
-    echo -e "✓ ${GREEN}Python detected: $python_version${NC}"
+if [[ $python_version =~ Python\ 3\.([0-9]+)\.[0-9]+ ]]; then
+    version="${BASH_REMATCH[1]}"
+    if (( version >= 11 )); then
+        echo -e "✓ ${GREEN}Python detected: $python_version${NC}"
+    else
+        echo -e "✗ ${YELLOW}Python version is lower than recommended. Python 3.11 or higher is recommended.${NC}"
+        read -p "Continue anyway? [y/N] " -r
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
 else
-    echo -e "✗ ${RED}Python 3.x not found. Please install Python 3.8 or higher.${NC}"
+    echo -e "✗ ${RED}Python 3.x not found. Please install Python 3.11 or higher.${NC}"
     exit 1
 fi
 
@@ -108,23 +164,28 @@ fi
 # ------------------------------------------------------------
 echo -e "\n${YELLOW}[3/7] Running unit tests...${NC}"
 
-# Check if tests directory exists
-if [ -d "tests" ]; then
-    echo "Running unit tests..."
-    python -m pytest tests/unit || {
-        echo -e "${RED}[ERROR] Unit tests failed.${NC}"
-        exit 1
-    }
-    echo -e "${GREEN}Unit tests completed successfully.${NC}"
-    
-    echo "Running integration tests..."
-    python -m pytest tests/integration || {
-        echo -e "${YELLOW}[WARNING] Some integration tests failed.${NC}"
-        echo -e "${YELLOW}Review the failures before proceeding.${NC}"
-        read -p "Press Enter to continue or Ctrl+C to abort... " -r
-    }
+if [ "$SKIP_TESTS" = true ]; then
+    echo -e "${YELLOW}[INFO] Skipping tests as requested with --skip-tests flag.${NC}"
 else
-    echo -e "${YELLOW}[WARNING] Tests directory not found.${NC}"
+    # Check if tests directory exists
+    if [ -d "tests" ]; then
+        echo "Running unit tests..."
+        python -m pytest tests/unit || {
+            echo -e "${RED}[ERROR] Unit tests failed.${NC}"
+            echo -e "${YELLOW}[TIP] You can skip tests with --skip-tests flag if needed.${NC}"
+            exit 1
+        }
+        echo -e "${GREEN}Unit tests completed successfully.${NC}"
+        
+        echo "Running integration tests..."
+        python -m pytest tests/integration || {
+            echo -e "${YELLOW}[WARNING] Some integration tests failed.${NC}"
+            echo -e "${YELLOW}Review the failures before proceeding.${NC}"
+            read -p "Press Enter to continue or Ctrl+C to abort... " -r
+        }
+    else
+        echo -e "${YELLOW}[WARNING] Tests directory not found.${NC}"
+    fi
 fi
 
 # ------------------------------------------------------------
@@ -132,15 +193,20 @@ fi
 # ------------------------------------------------------------
 echo -e "\n${YELLOW}[4/7] Verifying freemium system...${NC}"
 
-if [ -f "tests/run_freemium_tests.sh" ]; then
-    echo "Running freemium system verification..."
-    bash tests/run_freemium_tests.sh || {
-        echo -e "${RED}[ERROR] Freemium system verification failed.${NC}"
-        exit 1
-    }
-    echo -e "${GREEN}Freemium system verified successfully.${NC}"
+if [ "$SKIP_FREEMIUM" = true ]; then
+    echo -e "${YELLOW}[INFO] Skipping freemium verification as requested with --skip-freemium flag.${NC}"
 else
-    echo -e "${YELLOW}[WARNING] Freemium system verification script not found.${NC}"
+    if [ -f "tests/run_freemium_tests.sh" ]; then
+        echo "Running freemium system verification..."
+        bash tests/run_freemium_tests.sh || {
+            echo -e "${RED}[ERROR] Freemium system verification failed.${NC}"
+            echo -e "${YELLOW}[TIP] You can skip freemium verification with --skip-freemium flag if needed.${NC}"
+            exit 1
+        }
+        echo -e "${GREEN}Freemium system verified successfully.${NC}"
+    else
+        echo -e "${YELLOW}[WARNING] Freemium system verification script not found.${NC}"
+    fi
 fi
 
 # ------------------------------------------------------------
@@ -148,19 +214,23 @@ fi
 # ------------------------------------------------------------
 echo -e "\n${YELLOW}[5/7] Verifying Anthropic integration...${NC}"
 
-if [ -f "tests/run_anthropic_verification.sh" ]; then
-    # Check if API key is configured
-    if [ -f ".anthropic_api_key" ] || [ ! -z "$ANTHROPIC_API_KEY" ]; then
-        echo "Running Anthropic integration verification..."
-        bash tests/run_anthropic_verification.sh || {
-            echo -e "${YELLOW}[WARNING] Anthropic integration verification failed.${NC}"
-            echo -e "${YELLOW}This won't stop the process, but should be reviewed.${NC}"
-        }
-    else
-        echo -e "${YELLOW}[WARNING] Anthropic API key not found. Skipping integration tests.${NC}"
-    fi
+if [ "$SKIP_ANTHROPIC" = true ]; then
+    echo -e "${YELLOW}[INFO] Skipping Anthropic verification as requested with --skip-anthropic flag.${NC}"
 else
-    echo -e "${YELLOW}[WARNING] Anthropic integration verification script not found.${NC}"
+    if [ -f "tests/run_anthropic_verification.sh" ]; then
+        # Check if API key is configured
+        if [ -f ".anthropic_api_key" ] || [ ! -z "$ANTHROPIC_API_KEY" ]; then
+            echo "Running Anthropic integration verification..."
+            bash tests/run_anthropic_verification.sh || {
+                echo -e "${YELLOW}[WARNING] Anthropic integration verification failed.${NC}"
+                echo -e "${YELLOW}This won't stop the process, but should be reviewed.${NC}"
+            }
+        else
+            echo -e "${YELLOW}[WARNING] Anthropic API key not found. Skipping integration tests.${NC}"
+        fi
+    else
+        echo -e "${YELLOW}[WARNING] Anthropic integration verification script not found.${NC}"
+    fi
 fi
 
 # ------------------------------------------------------------
@@ -192,18 +262,35 @@ fi
 
 # Build VS Code Extension
 echo -e "\nBuilding VS Code extension..."
-if [ -d "vscode-extension" ]; then
-    cd vscode-extension
-    npm install
-    npm install -g @vscode/vsce
-    vsce package || {
-        echo -e "${RED}[ERROR] VS Code extension package generation failed.${NC}"
-        exit 1
-    }
-    cd ..
-    echo -e "${GREEN}VS Code extension package generated successfully.${NC}"
+if [ "$SKIP_VSCODE" = true ]; then
+    echo -e "${YELLOW}[INFO] Skipping VS Code extension build as requested with --skip-vscode flag.${NC}"
 else
-    echo -e "${YELLOW}[WARNING] VS Code extension directory not found.${NC}"
+    if [ -d "vscode-extension" ]; then
+        cd vscode-extension
+        echo "Installing VS Code extension dependencies..."
+        npm install
+        
+        echo "Installing vsce globally..."
+        npm install -g @vscode/vsce
+        
+        echo "Packaging VS Code extension..."
+        if vsce package; then
+            cd ..
+            echo -e "${GREEN}VS Code extension package generated successfully.${NC}"
+        else
+            cd ..
+            echo -e "${YELLOW}[WARNING] VS Code extension package generation failed.${NC}"
+            echo -e "${YELLOW}This could be due to issues with the extension code. You can:${NC}"
+            echo -e "${YELLOW}- Fix the extension and try again${NC}"
+            echo -e "${YELLOW}- Use --skip-vscode flag to skip this step${NC}"
+            read -p "Continue anyway? [y/N] " -r
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                exit 1
+            fi
+        fi
+    else
+        echo -e "${YELLOW}[WARNING] VS Code extension directory not found.${NC}"
+    fi
 fi
 
 # ------------------------------------------------------------
@@ -211,12 +298,15 @@ fi
 # ------------------------------------------------------------
 echo -e "\n${YELLOW}[7/7] Verifying package installation...${NC}"
 
-# Create virtual environment for installation testing
-echo "Creating test virtual environment..."
-python -m venv test_env || {
-    echo -e "${RED}[ERROR] Could not create virtual environment.${NC}"
-    exit 1
-}
+if [ "$SKIP_INSTALL" = true ]; then
+    echo -e "${YELLOW}[INFO] Skipping package installation verification as requested with --skip-install flag.${NC}"
+else
+    # Create virtual environment for installation testing
+    echo "Creating test virtual environment..."
+    python -m venv test_env || {
+        echo -e "${RED}[ERROR] Could not create virtual environment.${NC}"
+        exit 1
+    }
 
 # Activate virtual environment
 echo "Activating virtual environment..."
@@ -239,7 +329,7 @@ pip install dist/*.whl || {
 # Verify import
 echo "Verifying package import..."
 PACKAGE_NAME="project_prompt"  # Update this with your actual package name
-if python -c "import ${PACKAGE_NAME}; print(f'Installed version: ${${PACKAGE_NAME}.__version__}')" 2>/dev/null; then
+if python -c "import ${PACKAGE_NAME}; print(f'Installed version: {${PACKAGE_NAME}.__version__}')" 2>/dev/null; then
     echo -e "${GREEN}Package installed and verified successfully.${NC}"
 else
     echo -e "${RED}[ERROR] Could not import the installed package.${NC}"
@@ -253,6 +343,7 @@ deactivate
 # Clean up test environment
 echo "Cleaning up test environment..."
 rm -rf test_env/
+fi
 
 # ------------------------------------------------------------
 # FINAL SUMMARY

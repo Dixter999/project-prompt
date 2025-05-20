@@ -6,12 +6,14 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const { execSync } = require('child_process');
-const ProjectPromptPanel = require('./src/panel');
-const FeatureProvider = require('./src/providers/featureProvider');
-const DocumentationProvider = require('./src/providers/documentationProvider');
-const PromptProvider = require('./src/providers/promptProvider');
-const PremiumProvider = require('./src/providers/premiumProvider');
-const CopilotIntegration = require('./src/integrations/copilot');
+const { panel: ProjectPromptPanel, providers, integrations } = require('./src');
+
+// Extract providers for easier access
+const FeatureProvider = providers.featureProvider;
+const DocumentationProvider = providers.documentationProvider;
+const PromptProvider = providers.promptProvider;
+const PremiumProvider = providers.premiumProvider;
+const CopilotIntegration = integrations.copilot;
 
 /**
  * @param {vscode.ExtensionContext} context
