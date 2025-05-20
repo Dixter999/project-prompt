@@ -191,16 +191,13 @@ jobs:
         run: |
           npm install -g @vscode/vsce
           
-          # Create a temporary directory for publishing
-          mkdir -p temp_publish
-          
-          # Copy the VSIX files to the temp directory
-          find artifacts/vscode-extension -name "*.vsix" -exec cp {} temp_publish/ \;
-          
-          # Publish each VSIX file
-          for file in temp_publish/*.vsix; do
+          # Find and publish each VSIX file directly
+          for file in artifacts/vscode-extension/*.vsix; do
             if [ -f "$file" ]; then
               echo "Publishing $file"
               vsce publish --packagePath "$file" -p $VSCE_PAT
+            else
+              echo "No VSIX files found in artifacts/vscode-extension/"
+              exit 1
             fi
           done
