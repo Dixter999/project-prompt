@@ -79,13 +79,22 @@ class TestConfigManager:
     
     def test_get_nested_value(self):
         """Test getting nested configuration values"""
-        config = ConfigManager()
-        
-        # Test getting existing nested value
-        assert config.get('api.anthropic.enabled') is False
-        
-        # Test getting non-existent value with default
-        assert config.get('non.existent.key', 'default') == 'default'
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_path = os.path.join(temp_dir, 'config.yaml')
+            config = ConfigManager(config_path=config_path)
+            
+            # Reset to default to ensure consistent state
+            config.reset_to_defaults()
+            
+            # Test getting existing nested value
+            assert config.get('api.anthropic.enabled') is False
+            
+            # Test getting non-existent value with default
+            assert config.get('non.existent.key', 'default') == 'default'
+            
+            # Test setting and getting nested value
+            config.set('api.anthropic.enabled', True)
+            assert config.get('api.anthropic.enabled') is True
     
     @patch('src.utils.config.keyring')
     def test_api_key_management(self, mock_keyring):
