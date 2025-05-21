@@ -23,9 +23,9 @@ class TestDocumentationSystem(unittest.TestCase):
         self.templates_dir.mkdir()
         test_template = self.templates_dir / "test_template.md"
         with open(test_template, "w") as f:
-            f.write("# {{ title }}
+            f.write("""# {{ title }}
 
-{{ content }}")
+{{ content }}""")
 
     def tearDown(self):
         """Tear down test fixtures."""
