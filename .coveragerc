@@ -1,0 +1,25 @@
+[run]
+source = src
+omit = 
+    **/__init__.py
+    **/tests/**
+    **/conftest.py
+
+[report]
+show_missing = true
+skip_covered = true
+fail_under = 80
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    raise NotImplemented
+
+[html]
+directory = htmlcov
+
+[xml]
+output = coverage.xml

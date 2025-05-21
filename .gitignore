@@ -51,11 +51,23 @@ logs/
 config.yaml
 
 # Testing
-/tests/
 .coverage
 htmlcov/
 .pytest_cache/
 test_results/
+*.pyc
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.coverage.*
+coverage.xml
+.coverage.*
+htmlcov/
+.pytest_cache/
+*.egg-info/
+.eggs/
+test_output/
+*.log
 
 # OS specific
 .DS_Store
