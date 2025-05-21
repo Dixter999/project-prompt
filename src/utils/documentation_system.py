@@ -16,10 +16,10 @@ from typing import Dict, List, Optional, Union, Any, Tuple
 
 from src.utils.logger import get_logger
 from src.utils.markdown_manager import get_markdown_manager
-# Evitamos importación circular
+# Evitamos importaciones circulares - usando lazy loading en propiedades
 # from src.analyzers.project_scanner import get_project_scanner
 # from src.analyzers.functionality_detector import get_functionality_detector
-from src.generators.markdown_generator import get_markdown_generator
+# from src.generators.markdown_generator import get_markdown_generator
 
 logger = get_logger()
 
@@ -36,9 +36,34 @@ class DocumentationSystem:
     def __init__(self):
         """Inicializar el sistema de documentación."""
         self.markdown_manager = get_markdown_manager()
-        self.project_scanner = get_project_scanner()
-        self.functionality_detector = get_functionality_detector()
-        self.markdown_generator = get_markdown_generator()
+        self._project_scanner = None
+        self._functionality_detector = None 
+        self._markdown_generator = None
+        
+    @property
+    def project_scanner(self):
+        """Lazy load project_scanner to avoid circular imports."""
+        if self._project_scanner is None:
+            # Importar directamente para evitar problemas con src.factory que aún no está disponible
+            from src.analyzers.project_scanner import get_project_scanner
+            self._project_scanner = get_project_scanner()
+        return self._project_scanner
+        
+    @property
+    def functionality_detector(self):
+        """Lazy load functionality_detector to avoid circular imports."""
+        if self._functionality_detector is None:
+            from src.analyzers.functionality_detector import get_functionality_detector
+            self._functionality_detector = get_functionality_detector()
+        return self._functionality_detector
+        
+    @property
+    def markdown_generator(self):
+        """Lazy load markdown_generator to avoid circular imports."""
+        if self._markdown_generator is None:
+            from src.generators.markdown_generator import get_markdown_generator
+            self._markdown_generator = get_markdown_generator()
+        return self._markdown_generator
         
     def setup_documentation_structure(self, 
                                      project_path: str, 
@@ -420,20 +445,14 @@ class DocumentationSystem:
             Datos del análisis
         """
         try:
-            # Importamos aquí para evitar importación circular
-            from src.analyzers.project_scanner import get_project_scanner
-            from src.analyzers.functionality_detector import get_functionality_detector
-            
             logger.info(f"Analizando proyecto en: {project_path}")
             
-            # Escanear estructura del proyecto
-            scanner = get_project_scanner()
-            project_data = scanner.scan_project(project_path)
+            # Usar las propiedades con lazy loading para evitar importaciones circulares
+            project_data = self.project_scanner.scan_project(project_path)
             
             # Detectar funcionalidades
             if options.get('detect_functionalities', True):
-                detector = get_functionality_detector()
-                functionalities = detector.detect_functionalities(project_path, project_data)
+                functionalities = self.functionality_detector.detect_functionalities(project_path, project_data)
                 project_data['functionalities'] = functionalities
             
             return project_data
