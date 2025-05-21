@@ -71,9 +71,13 @@ jobs:
         run: |
           echo "ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}" >> $GITHUB_ENV
       
+      - name: Install test dependencies
+        run: |
+          python -m pip install pytest-cov
+          
       - name: Run unit tests
         run: |
-          python -m pytest tests/unit/test_anthropic_integration.py -v --cov=src --cov-report=xml
+          python -m pytest tests/unit/test_anthropic_integration.py -v --cov=src --cov-report=term-missing --cov-report=xml
           
       - name: Run verification script (mock mode)
         if: github.event_name != 'workflow_dispatch' || inputs.run_api_tests == 'false'

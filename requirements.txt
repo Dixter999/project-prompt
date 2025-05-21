@@ -14,9 +14,10 @@ tiktoken>=0.5.0
 
 # Dependencias de desarrollo
 pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.1
 black>=23.7.0
 isort>=5.12.0
-pytest-cov>=4.1.0
 mypy>=1.3.0
 sphinx>=7.0.0
 sphinx-rtd-theme>=1.2.0
