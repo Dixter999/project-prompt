@@ -337,7 +337,142 @@ class ConfigManager:
         self.config.update(loaded)
 
 
-# Instancia global del gestor de configuración
+class Config:
+    """Configuration class for ProjectPrompt.
+    
+    This class provides a simple interface to access configuration values
+    using dot notation (e.g., config.get('api.openai.key')).
+    """
+    
+    def __init__(self, config_path: Optional[str] = None):
+        """Initialize the Config instance.
+        
+        Args:
+            config_path: Optional path to the configuration file.
+        """
+        self._config_manager = ConfigManager(config_path=config_path)
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get a configuration value using dot notation.
+        
+        Args:
+            key: The configuration key in dot notation (e.g., 'api.openai.key').
+            default: Default value to return if the key is not found.
+            
+        Returns:
+            The configuration value, or the default if not found.
+        """
+        keys = key.split('.')
+        value = self._config_manager.config
+        
+        try:
+            for k in keys:
+                if isinstance(value, dict) and k in value:
+                    value = value[k]
+                else:
+                    return default
+            return value
+        except (KeyError, AttributeError):
+            return default
+    
+    def set(self, key: str, value: Any) -> None:
+        """Set a configuration value using dot notation.
+        
+        Args:
+            key: The configuration key in dot notation.
+            value: The value to set.
+        """
+        keys = key.split('.')
+        config = self._config_manager.config
+        
+        # Navigate to the parent dictionary
+        for k in keys[:-1]:
+            if k not in config or not isinstance(config[k], dict):
+                config[k] = {}
+            config = config[k]
+        
+        # Set the value
+        config[keys[-1]] = value
+        self._config_manager.save()
+    
+    def get_api_key(self, service_name: str) -> Optional[str]:
+        """Get an API key from the system keyring.
+        
+        Args:
+            service_name: Name of the service (e.g., 'openai', 'anthropic').
+            
+        Returns:
+            The API key if found, None otherwise.
+        """
+        key_name = self.get(f'api.{service_name}.key_name')
+        if not key_name:
+            return None
+            
+        # First try environment variable
+        env_key = os.environ.get(key_name)
+        if env_key:
+            return env_key
+            
+        # Then try keyring
+        try:
+            return keyring.get_password(SERVICE_NAME, key_name)
+        except Exception as e:
+            logger.warning(f"Failed to get API key from keyring: {e}")
+            return None
+    
+    def set_api_key(self, service_name: str, api_key: str) -> None:
+        """Set an API key in the system keyring.
+        
+        Args:
+            service_name: Name of the service (e.g., 'openai', 'anthropic').
+            api_key: The API key to store.
+        """
+        key_name = self.get(f'api.{service_name}.key_name')
+        if not key_name:
+            key_name = f"{service_name.upper()}_API_KEY"
+            self.set(f'api.{service_name}.key_name', key_name)
+        
+        try:
+            keyring.set_password(SERVICE_NAME, key_name, api_key)
+            self.set(f'api.{service_name}.enabled', True)
+        except Exception as e:
+            logger.error(f"Failed to set API key in keyring: {e}")
+            raise
+    
+    def delete_api_key(self, service_name: str) -> bool:
+        """Delete an API key from the system keyring.
+        
+        Args:
+            service_name: Name of the service.
+            
+        Returns:
+            True if the key was deleted, False otherwise.
+        """
+        key_name = self.get(f'api.{service_name}.key_name')
+        if not key_name:
+            return False
+            
+        try:
+            return keyring.delete_password(SERVICE_NAME, key_name)
+        except Exception as e:
+            logger.error(f"Failed to delete API key from keyring: {e}")
+            return False
+
+
+# Global configuration instance
+config = Config()
+
+
+def get_config() -> Config:
+    """Get the global configuration instance.
+    
+    Returns:
+        The global Config instance.
+    """
+    return config
+
+
+# Backward compatibility
 config_manager = ConfigManager()
 
 # Para uso más simple
