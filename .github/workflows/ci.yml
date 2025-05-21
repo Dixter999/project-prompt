@@ -28,14 +28,37 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install pytest pytest-cov
+        pip install pytest pytest-cov keyring
         # Install the package in development mode
         pip install -e .
         
     - name: Verify imports
       run: |
         # Create and run a simple import test to verify the environment
-        echo "import sys; sys.path.insert(0, '.'); from src.generators import implementation_prompt_generator_simple; print('Import test successful!')" > import_test.py
+        cat > import_test.py << 'EOL'
+        import sys
+        sys.path.insert(0, '.')
+        
+        # First check if keyring is available
+        try:
+            import keyring
+            print("✅ Keyring module is available")
+        except ImportError as e:
+            print(f"❌ ERROR: {e}")
+            sys.exit(1)
+        
+        # Now try the project imports
+        try:
+            from src.generators import implementation_prompt_generator_simple
+            print("✅ Import test successful!")
+        except ImportError as e:
+            print(f"❌ Import failed: {e}")
+            # Print the Python path to help debug
+            print("\nPython path:")
+            for p in sys.path:
+                print(f"  {p}")
+            sys.exit(1)
+        EOL
         python import_test.py
         
     - name: Run tests
