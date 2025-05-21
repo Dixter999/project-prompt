@@ -35,26 +35,27 @@ def test_generator():
     """
     Simple test to verify that the implementation prompt generator works.
     """
-    try:
-        print("==========================================")
-        print("Starting test for implementation prompt generator...")
-        
-        # Create an instance
-        generator = get_implementation_prompt_generator(is_premium=True)
-        print("✓ Successfully created generator instance")
-        
-        # Test the generate_implementation_prompt method
-        feature_name = "TestFeature"
-        result = generator.generate_implementation_prompt("test_path", feature_name)
-        print(f"✓ Generate implementation prompt test: {result['success']}")
-        print(f"Implementation prompt: {result['prompts']['implementation']}")
-        
-        print("All tests passed!")
-        print("==========================================")
-        return True
-    except Exception as e:
-        print(f"Error: {e}")
-        return False
+    print("==========================================")
+    print("Starting test for implementation prompt generator...")
+    
+    # Create an instance
+    generator = get_implementation_prompt_generator(is_premium=True)
+    print("✓ Successfully created generator instance")
+    
+    # Test the generate_implementation_prompt method
+    feature_name = "TestFeature"
+    result = generator.generate_implementation_prompt("test_path", feature_name)
+    print(f"✓ Generate implementation prompt test: {result['success']}")
+    print(f"Implementation prompt: {result['prompts']['implementation']}")
+    
+    # Assert the expected results
+    assert result["success"] is True
+    assert "prompts" in result
+    assert "implementation" in result["prompts"]
+    assert feature_name in result["prompts"]["implementation"]
+    
+    print("All tests passed!")
+    print("==========================================")
 
 if __name__ == "__main__":
     test_generator()

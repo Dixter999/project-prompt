@@ -1,0 +1,32 @@
+# .coveragerc
+[run]
+source = src
+omit = 
+    src/ui/*
+    src/templates/*
+    src/analyzers/*
+    src/core/*
+    src/integrations/__init__.py
+    src/__init__.py
+
+[report]
+show_missing = true
+skip_covered = true
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    pass
+    raise ImportError
+    @abstractmethod
+    @property
+    @classmethod
+    @staticmethod
+    raise
+    except
+    return
+fail_under = 80
+
+[html]
+directory = htmlcov

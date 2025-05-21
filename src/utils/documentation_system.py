@@ -16,10 +16,9 @@ from typing import Dict, List, Optional, Union, Any, Tuple
 
 from src.utils.logger import get_logger
 from src.utils.markdown_manager import get_markdown_manager
-# Evitamos importación circular
-# from src.analyzers.project_scanner import get_project_scanner
-# from src.analyzers.functionality_detector import get_functionality_detector
 from src.generators.markdown_generator import get_markdown_generator
+
+# Import inside methods to avoid circular imports
 
 logger = get_logger()
 
@@ -36,9 +35,25 @@ class DocumentationSystem:
     def __init__(self):
         """Inicializar el sistema de documentación."""
         self.markdown_manager = get_markdown_manager()
-        self.project_scanner = get_project_scanner()
-        self.functionality_detector = get_functionality_detector()
+        self._project_scanner = None
+        self._functionality_detector = None
         self.markdown_generator = get_markdown_generator()
+        
+    @property
+    def project_scanner(self):
+        """Lazy load project_scanner to avoid circular imports."""
+        if self._project_scanner is None:
+            from src.analyzers.project_scanner import get_project_scanner
+            self._project_scanner = get_project_scanner()
+        return self._project_scanner
+        
+    @property
+    def functionality_detector(self):
+        """Lazy load functionality_detector to avoid circular imports."""
+        if self._functionality_detector is None:
+            from src.analyzers.functionality_detector import get_functionality_detector
+            self._functionality_detector = get_functionality_detector()
+        return self._functionality_detector
         
     def setup_documentation_structure(self, 
                                      project_path: str, 

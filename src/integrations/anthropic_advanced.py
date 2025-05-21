@@ -16,7 +16,7 @@ import logging
 import requests
 import tiktoken
 
-from src.integrations.anthropic import AnthropicAPI, get_anthropic_client, ANTHROPIC_API_BASE_URL, ANTHROPIC_API_VERSION
+from src.integrations.anthropic import AnthropicAPI, get_anthropic_client, ANTHROPIC_API_BASE_URL
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
 from src.utils.subscription_manager import get_subscription_manager

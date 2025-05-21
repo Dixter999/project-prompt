@@ -16,8 +16,11 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from src.utils.config import ConfigManager
 from src.utils.logger import get_logger
-from src.integrations.anthropic import AnthropicAPI, get_anthropic_client
-from src.integrations.copilot import CopilotAPI, get_copilot_client
+# Lazy imports to avoid circular imports
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from src.integrations.anthropic import AnthropicAPI
+    from src.integrations.copilot import CopilotAPI
 
 # Configurar logger
 logger = get_logger()
@@ -110,25 +113,36 @@ class APIValidator:
         Returns:
             Diccionario con estado y mensaje
         """
-        client = get_anthropic_client(self.config)
-        self._api_clients["anthropic"] = client
+        # Lazy import to avoid circular imports
+        from src.integrations.anthropic import get_anthropic_client
         
-        if not client.is_configured:
+        try:
+            client = get_anthropic_client(self.config)
+            self._api_clients["anthropic"] = client
+            
+            if not client.is_configured:
+                return {
+                    "valid": False,
+                    "message": "No se ha configurado una clave API para Anthropic",
+                    "configured": False
+                }
+                
+            valid, message = client.verify_api_key()
+            usage_info = client.get_usage_info()
+            
+            return {
+                "valid": valid,
+                "message": message,
+                "configured": True,
+                "usage": usage_info
+            }
+        except Exception as e:
+            logger.error(f"Error al validar API de Anthropic: {e}")
             return {
                 "valid": False,
-                "message": "No se ha configurado una clave API para Anthropic",
+                "message": f"Error al validar API de Anthropic: {str(e)}",
                 "configured": False
             }
-            
-        valid, message = client.verify_api_key()
-        usage_info = client.get_usage_info()
-        
-        return {
-            "valid": valid,
-            "message": message,
-            "configured": True,
-            "usage": usage_info
-        }
         
     def _check_github(self) -> Dict:
         """
@@ -137,25 +151,36 @@ class APIValidator:
         Returns:
             Diccionario con estado y mensaje
         """
-        client = get_copilot_client(self.config)
-        self._api_clients["github"] = client
+        # Lazy import to avoid circular imports
+        from src.integrations.copilot import get_copilot_client
         
-        if not client.is_configured:
+        try:
+            client = get_copilot_client(self.config)
+            self._api_clients["github"] = client
+            
+            if not client.is_configured:
+                return {
+                    "valid": False,
+                    "message": "No se ha configurado un token para GitHub Copilot",
+                    "configured": False
+                }
+                
+            valid, message = client.verify_api_token()
+            usage_info = client.get_usage_info()
+            
+            return {
+                "valid": valid,
+                "message": message,
+                "configured": True,
+                "usage": usage_info
+            }
+        except Exception as e:
+            logger.error(f"Error al validar API de GitHub Copilot: {e}")
             return {
                 "valid": False,
-                "message": "No se ha configurado un token para GitHub Copilot",
+                "message": f"Error al validar API de GitHub Copilot: {str(e)}",
                 "configured": False
             }
-            
-        valid, message = client.verify_api_token()
-        usage_info = client.get_usage_info()
-        
-        return {
-            "valid": valid,
-            "message": message,
-            "configured": True,
-            "usage": usage_info
-        }
     
     def set_api_key(self, api_name: str, api_key: str) -> Tuple[bool, str]:
         """
@@ -179,11 +204,13 @@ class APIValidator:
                 
             # Actualizar en el cliente correspondiente
             if api_name == "anthropic":
+                from src.integrations.anthropic import get_anthropic_client
                 if "anthropic" not in self._api_clients:
                     self._api_clients["anthropic"] = get_anthropic_client(self.config)
                 self._api_clients["anthropic"].set_api_key(api_key)
                 
             elif api_name == "github":
+                from src.integrations.copilot import get_copilot_client
                 if "github" not in self._api_clients:
                     self._api_clients["github"] = get_copilot_client(self.config)
                 self._api_clients["github"].set_api_token(api_key)

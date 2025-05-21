@@ -120,7 +120,8 @@ class TestAIIntegration(unittest.TestCase):
         self.assertEqual(response, "Respuesta simulada de Anthropic")
         
     @patch('src.integrations.openai_integration.OpenAIService.generate_response')
-    def test_error_handling(self, mock_generate):
+    @patch('src.integrations.ai_manager.logger')
+    def test_error_handling(self, mock_logger, mock_generate):
         """Verificar el manejo de errores en las integraciones de IA."""
         # Configurar mock para simular error
         mock_generate.side_effect = Exception("Error de API simulado")
@@ -128,9 +129,14 @@ class TestAIIntegration(unittest.TestCase):
         # Crear el manager
         manager = AIManager()
         
-        # Verificar manejo de error
-        with self.assertRaises(Exception):
-            manager.generate_ai_response("Prompt que causa error")
+        # Llamar al método que debería manejar el error
+        result = manager.generate_ai_response("Prompt que causa error")
+        
+        # Verificar que se devuelve None en caso de error
+        self.assertIsNone(result)
+        
+        # Verificar que se registró el error
+        mock_logger.error.assert_called_once()
             
 
 if __name__ == '__main__':

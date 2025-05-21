@@ -21,7 +21,24 @@ class OpenAIService:
             config: Optional Config instance. If not provided, a new one will be created.
         """
         self.config = config or Config()
-        self.client = OpenAI(api_key=self._get_api_key())
+        self.client = None
+        self._api_key = None
+        self._is_configured = False
+    
+    def initialize(self, api_key: str) -> None:
+        """Initialize the OpenAI client with an API key.
+        
+        Args:
+            api_key: The OpenAI API key
+        """
+        self._api_key = api_key
+        self.client = OpenAI(api_key=api_key)
+        self._is_configured = True
+    
+    @property
+    def is_configured(self) -> bool:
+        """Check if the service is properly configured."""
+        return self._is_configured and self._api_key is not None
     
     def _get_api_key(self) -> str:
         """Get the OpenAI API key from configuration.
@@ -32,9 +49,14 @@ class OpenAIService:
         Raises:
             ValueError: If the API key is not configured.
         """
+        if self._api_key:
+            return self._api_key
+            
         api_key = self.config.get("api.openai.key") or os.getenv("OPENAI_API_KEY")
         if not api_key:
             raise ValueError("OpenAI API key not configured")
+            
+        self.initialize(api_key)
         return api_key
     
     def generate_response(
