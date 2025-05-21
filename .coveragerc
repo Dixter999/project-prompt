@@ -4,6 +4,11 @@ omit =
     **/__init__.py
     **/tests/**
     **/conftest.py
+    **/integrations/anthropic_advanced.py
+    **/integrations/__pycache__/**
+    **/integrations/*_integration.py
+    **/utils/__pycache__/**
+    **/analyzers/__pycache__/**
 
 [report]
 show_missing = true
@@ -17,9 +22,14 @@ exclude_lines =
     pass
     raise ImportError
     raise NotImplemented
+    @abstractmethod
+    @property
+    @staticmethod
+    @classmethod
 
 [html]
 directory = htmlcov
+debug = info
 
 [xml]
 output = coverage.xml

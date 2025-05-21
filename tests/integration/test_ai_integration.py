@@ -15,7 +15,7 @@ import json
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from src.integrations import openai_integration
-from src.integrations import anthropic_integration
+from src.integrations import anthropic
 from src.integrations.ai_manager import AIManager
 
 
@@ -43,7 +43,7 @@ class TestAIIntegration(unittest.TestCase):
         self.config_patcher.stop()
         
     @patch('src.integrations.openai_integration.OpenAIService.generate_response')
-    @patch('src.integrations.anthropic_integration.AnthropicService.generate_response')
+    @patch('src.integrations.anthropic.AnthropicAPI.generate_response')
     def test_ai_manager_service_selection(self, mock_anthropic_generate, mock_openai_generate):
         """Verificar que el AIManager selecciona el servicio correcto."""
         # Configurar mocks
@@ -67,7 +67,7 @@ class TestAIIntegration(unittest.TestCase):
         mock_anthropic_generate.assert_called_with("Prueba")
         
     @patch('src.integrations.openai_integration.OpenAIService.initialize')
-    @patch('src.integrations.anthropic_integration.AnthropicService.initialize')
+    @patch('src.integrations.anthropic.AnthropicAPI.initialize')
     def test_service_initialization(self, mock_anthropic_init, mock_openai_init):
         """Verificar que los servicios se inicializan correctamente."""
         # Crear el manager
@@ -98,16 +98,16 @@ class TestAIIntegration(unittest.TestCase):
         mock_generate.assert_called_once_with(prompt)
         self.assertEqual(response, "Respuesta simulada de OpenAI")
         
-    @patch.object(anthropic_integration.AnthropicService, '__init__', return_value=None)
-    @patch.object(anthropic_integration.AnthropicService, 'initialize')
-    @patch.object(anthropic_integration.AnthropicService, 'generate_response')
+    @patch.object(anthropic.AnthropicAPI, '__init__', return_value=None)
+    @patch.object(anthropic.AnthropicAPI, 'initialize')
+    @patch.object(anthropic.AnthropicAPI, 'generate_response')
     def test_anthropic_service_integration(self, mock_generate, mock_initialize, mock_init):
         """Verificar la integración con Anthropic."""
         # Configurar mock
         mock_generate.return_value = "Respuesta simulada de Anthropic"
         
         # Crear servicio
-        service = anthropic_integration.AnthropicService()
+        service = anthropic.AnthropicAPI()
         service.initialize("test-key")
         
         # Generar respuesta
