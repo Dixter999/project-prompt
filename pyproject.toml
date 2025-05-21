@@ -54,10 +54,11 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_functions = ["test_*"]
 python_classes = ["Test*"]
+pythonpath = ["src"]
 addopts = "-v --cov=src --cov-report=term-missing --cov-report=xml"
 filterwarnings = [
     "error",
-    "ignore::DeprecationWarning",
+    "ignore::DeprecationWarning"
 ]
 
 [coverage.run]
@@ -65,7 +66,7 @@ source = ["src"]
 omit = [
     "**/__init__.py",
     "**/tests/**",
-    "**/conftest.py",
+    "**/conftest.py"
 ]
 
 [coverage.report]
@@ -82,21 +83,6 @@ include = '\.pyi?$'
 profile = "black"
 line_length = 88
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
-project-prompt = "src.main:app"
-
-[tool.black]
-line-length = 88
-include = '\.pyi?$'
-
-[tool.isort]
-profile = "black"
-line_length = 88
-
 [tool.mypy]
 python_version = "3.8"
 warn_return_any = true
@@ -104,11 +90,12 @@ warn_unused_configs = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = "test_*.py"
-python_functions = "test_*"
-pythonpath = ["src"]
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+project-prompt = "src.main:app"
 
 [tool.poetry.urls]
 "Bug Tracker" = "https://github.com/project-prompt/project-prompt/issues"
