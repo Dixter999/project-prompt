@@ -73,12 +73,12 @@ show_missing = true
 skip_covered = true
 fail_under = 80
 
-tool.black
+[tool.black]
 target-version = ["py38"]
 line-length = 88
 include = '\.pyi?$'
 
-tool.isort
+[tool.isort]
 profile = "black"
 line_length = 88
 
