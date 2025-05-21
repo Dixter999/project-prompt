@@ -27,7 +27,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install keyring>=24.2.0  # Ensure keyring is installed first
+        # Install keyring and tiktoken first as they might be build dependencies
+        pip install keyring>=24.2.0 tiktoken>=0.5.0
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         pip install pytest coverage
         pip install -e .
