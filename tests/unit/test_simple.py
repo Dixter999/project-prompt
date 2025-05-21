@@ -6,14 +6,16 @@ Simple test script for checking the implementation prompt generator.
 This script directly imports the generator without going through the package system.
 """
 
-import sys
 import os
+import sys
+import pytest
 
-# Get the absolute path of the project root
-project_root = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, project_root)
+# Make sure src is in the path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
-# Direct import of the class, avoiding the circular import
+# Direct import of the class
 from src.generators.implementation_prompt_generator_simple import ImplementationPromptGenerator
 
 def test_simple():
@@ -33,6 +35,10 @@ def test_simple():
         
         print("All tests passed!")
     except Exception as e:
+        pytest.fail(f"Test failed with exception: {e}")
+        
+if __name__ == "__main__":
+    test_simple()
         print(f"Error: {e}")
         raise
 

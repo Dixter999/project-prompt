@@ -28,8 +28,31 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install pytest coverage
+        pip install pytest pytest-cov
+        # Install the package in development mode
+        pip install -e .
+        
+    - name: Verify imports
+      run: |
+        # Create and run a simple import test to verify the environment
+        echo "import sys; sys.path.insert(0, '.'); from src.generators import implementation_prompt_generator_simple; print('Import test successful!')" > import_test.py
+        python import_test.py
         
     - name: Run tests
       run: |
-        pytest tests/unit/
+        # Set PYTHONPATH to include the project root
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
+        # Run pytest with verbose output and specific config for GitHub
+        python -m pytest tests/unit/ -v -c github-pytest.ini --import-mode=importlib
+        
+    - name: Run coverage
+      run: |
+        # Set PYTHONPATH to include the project root
+        export PYTHONPATH=$PYTHONPATH:$(pwd)
+        python -m pytest --cov=src tests/unit/ --cov-report=xml -c github-pytest.ini --import-mode=importlib
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
