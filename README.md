@@ -25,30 +25,66 @@ Advanced tool that uses AI to analyze projects, generate documentation, and prov
 
 ## Installation
 
-### Automated Installation (Recommended)
+### Using pip (Recommended)
 
-#### For Linux/macOS
 ```bash
-# Clone the repository
-git clone https://github.com/Dixter999/project-prompt.git
-cd project-prompt
-
-# Run the setup script
-chmod +x scripts/setup_environment.sh
-./scripts/setup_environment.sh
+pip install project-prompt
 ```
 
-#### For Contributors
-If you're contributing to the project and need to create a release:
-1. Make your changes and commit them
-2. Update version in `pyproject.toml` and `src/__init__.py` 
-3. Update CHANGELOG.md with your changes
-4. Go to Actions tab on GitHub and run the "Manual Release Pipeline"
+### From Source
 
-#### For Windows
-```powershell
-# Clone the repository
+1. Clone the repository:
+```bash
 git clone https://github.com/Dixter999/project-prompt.git
+cd project-prompt
+```
+
+2. Install in development mode:
+```bash
+pip install -e .
+```
+
+### Dependencies
+
+Install required dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## Basic Usage
+
+### Command Line Interface
+
+```bash
+# Analyze a project
+project-prompt analyze /path/to/your/project
+
+# Generate documentation
+project-prompt document /path/to/your/project
+
+# Get help
+project-prompt --help
+```
+
+### Python API
+
+```python
+from projectprompt import analyze_project, generate_documentation
+
+# Analyze a project
+analysis = analyze_project("/path/to/your/project")
+
+# Generate documentation
+docs = generate_documentation("/path/to/your/project")
+```
+
+### For Contributors
+
+1. Fork the repository and clone your fork
+2. Install in development mode: `pip install -e .`
+3. Create a new branch for your changes
+4. Make your changes and run tests: `pytest`
+5. Submit a pull request
 cd project-prompt
 
 # Run the setup script
