@@ -35,6 +35,8 @@ setup(
         "jinja2>=3.0.0",
         "tabulate>=0.9.0",
         "requests>=2.28.0",
+        "keyring>=24.0.0",
+        "tiktoken>=0.5.0",
     ],
     entry_points={
         "console_scripts": [
