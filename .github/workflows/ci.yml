@@ -36,7 +36,7 @@ jobs:
       run: |
         # Use our improved import verification script
         # This checks all core modules can be imported without circular dependencies
-        python tests/verify_imports.py
+        PYTHONPATH=$PYTHONPATH:$(pwd) python -m tests.verify_imports
         
     - name: Run tests
       run: |
@@ -44,7 +44,7 @@ jobs:
         export PYTHONPATH=$PYTHONPATH:$(pwd)
         
         # Run our simple CI test that verifies basic functionality
-        python tests/ci_simple_test.py
+        PYTHONPATH=$PYTHONPATH:$(pwd) python -m tests.ci_simple_test
         
         # Now run only the test_config.py which we've already fixed
         PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/test_config.py -v
