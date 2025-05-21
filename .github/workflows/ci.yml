@@ -43,67 +43,8 @@ jobs:
         # Set PYTHONPATH to include the project root
         export PYTHONPATH=$PYTHONPATH:$(pwd)
         
-        # Create simplified keyring patch directly in the file
-        cat > simple_test.py << 'EOL'
-import sys
-import unittest
-import os
-import types
-
-# Create a mock keyring module to avoid backend issues
-mock_keyring = types.ModuleType('keyring')
-
-# Add mock functions
-class MemoryKeyring:
-    def __init__(self):
-        self.store = {}
-        
-    def get_password(self, service_name, username):
-        key = f"{service_name}:{username}"
-        return self.store.get(key)
-        
-    def set_password(self, service_name, username, password):
-        key = f"{service_name}:{username}"
-        self.store[key] = password
-        
-    def delete_password(self, service_name, username):
-        key = f"{service_name}:{username}"
-        if key in self.store:
-            del self.store[key]
-            return True
-        return False
-
-_keyring = MemoryKeyring()
-mock_keyring.get_password = _keyring.get_password
-mock_keyring.set_password = _keyring.set_password
-mock_keyring.delete_password = _keyring.delete_password
-
-# Replace the real keyring with our mock
-sys.modules['keyring'] = mock_keyring
-print("✅ Keyring module patched for CI tests")
-
-# Simple verification test that doesn't depend on complex imports
-class SimpleConfigTest(unittest.TestCase):
-    def test_config_import(self):
-        """Test that we can import the config module"""
-        from src.utils.config import ConfigManager
-        self.assertTrue(True, "Import succeeded")
-        
-    def test_keyring_mock(self):
-        """Test that our keyring mock works"""
-        import keyring
-        keyring.set_password("test", "user", "password")
-        self.assertEqual(keyring.get_password("test", "user"), "password")
-        self.assertTrue(keyring.delete_password("test", "user"))
-        self.assertIsNone(keyring.get_password("test", "user"))
-
-# Run the test
-if __name__ == "__main__":
-    unittest.main(verbosity=2)
-EOL
-        
-        # Run our simple tests first to verify everything works
-        python simple_test.py
+        # Run our simple CI test that verifies basic functionality
+        python tests/ci_simple_test.py
         
         # Now run only the test_config.py which we've already fixed
         PYTHONPATH=$PYTHONPATH:$(pwd) python -m pytest tests/test_config.py -v
@@ -112,8 +53,8 @@ EOL
       run: |
         # Set PYTHONPATH to include the project root
         export PYTHONPATH=$PYTHONPATH:$(pwd)
-        # Use the same keyring patch for coverage
-        python -c "exec(open('patch_keyring.py').read()); import pytest; pytest.main(['--cov=src', '-xvs', '-c', 'github-pytest.ini', '--import-mode=importlib', 'tests/test_config.py', 'tests/test_utils/test_config.py', '--cov-report=xml'])"
+        # Import the keyring patch and run pytest coverage
+        python -c "import patch_keyring; import pytest; pytest.main(['--cov=src', '-xvs', '-c', 'github-pytest.ini', '--import-mode=importlib', 'tests/test_config.py', 'tests/test_utils/test_config.py', '--cov-report=xml'])"
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
