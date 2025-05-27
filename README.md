@@ -3,52 +3,41 @@
 ![CI Status](https://github.com/Dixter999/project-prompt/actions/workflows/ci.yml/badge.svg)
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Release](https://img.shields.io/github/v/release/Dixter999/project-prompt)](https://github.com/Dixter999/project-prompt/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-green)](https://github.com/Dixter999/project-prompt/releases)
 
 Advanced tool that uses AI to analyze projects, generate documentation, and provide improvement suggestions.
 
 ## Features
 
-- Analysis of project structure and architecture
-- Automatic detection of technologies and frameworks
-- Detailed documentation generation
-- AI-powered improvement suggestions (Anthropic Claude)
-- Integration with existing IDEs and workflows
-- Support for multiple programming languages and frameworks
+- **Project Analysis**: Comprehensive analysis of project structure and architecture
+- **Technology Detection**: Automatic detection of technologies and frameworks
+- **Documentation Generation**: Intelligent documentation creation
+- **AI Integration**: Powered by Anthropic Claude and OpenAI
+- **CLI Interface**: Easy-to-use command-line interface
+- **Multi-language Support**: Works with multiple programming languages and frameworks
 
 ## Prerequisites
 
-* Python 3.8 or higher
-* Git (for cloning the repository)
+* Python 3.8+ (tested on Python 3.8, 3.9, 3.10, 3.11)
 * pip (Python package manager)
-* Internet access (for installing dependencies)
+* Internet access (for AI features)
 
 ## Installation
 
-### Automated Installation (Recommended)
-
-#### For Linux/macOS
+### Quick Installation
 ```bash
-# Clone the repository
+# Install from source (recommended for v1.0.0)
 git clone https://github.com/Dixter999/project-prompt.git
 cd project-prompt
-
-# Run the setup script
-chmod +x scripts/setup_environment.sh
-./scripts/setup_environment.sh
+pip install -e .
 ```
 
-#### For Contributors
-If you're contributing to the project and need to create a release:
-1. Make your changes and commit them
-2. Update version in `pyproject.toml` and `src/__init__.py` 
-3. Update CHANGELOG.md with your changes
-4. Go to Actions tab on GitHub and run the "Manual Release Pipeline"
-
-#### For Windows
-```powershell
-# Clone the repository
-git clone https://github.com/Dixter999/project-prompt.git
+### Verify Installation
+```bash
+# Test the installation
+project-prompt --help
+project-prompt version
+```
 cd project-prompt
 
 # Run the setup script
@@ -60,56 +49,49 @@ cd project-prompt
 1. Clone the repository:
    ```bash
    git clone https://github.com/Dixter999/project-prompt.git
-   cd project-prompt
-   ```
+   ## Quick Start
 
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## Quick Start
-
-To analyze a project:
-
+### Basic Usage
 ```bash
-# Basic analysis
-python -m src.main analyze /path/to/your/project
+# Analyze current project
+project-prompt analyze
 
-# AI-powered analysis (requires Anthropic API key)
-python -m src.main analyze /path/to/your/project --ai
+# Analyze specific project
+project-prompt analyze /path/to/project
+
+# Get help for any command
+project-prompt --help
+project-prompt analyze --help
 ```
 
-Results will be saved in the `project-output/analyses` directory.
-
-## Command Line Interface
-
-ProjectPrompt can be used with two command formats:
-
+### Available Commands
 ```bash
-# Full command
-project-prompt analyze --project /path/to/your/project
+# Core Commands
+project-prompt version          # Show version information
+project-prompt analyze          # Analyze project structure  
+project-prompt init             # Initialize new project
+project-prompt config           # Manage configuration
 
-# Short alias
-pp analyze --project /path/to/your/project
+# AI Commands (requires API keys)
+project-prompt ai               # AI-powered features
+project-prompt set-api          # Configure API keys
+project-prompt verify-api       # Verify API configuration
+
+# Additional Commands  
+project-prompt menu             # Interactive menu
+project-prompt dashboard        # Project dashboard
+project-prompt help             # Detailed help
 ```
 
-Common commands:
-
+### Configuration
 ```bash
-# Analyze a project with advanced model
-pp analyze --project /path/to/your/project --model advanced
+# Set up AI API keys (optional)
+project-prompt set-api anthropic YOUR_API_KEY
+project-prompt set-api openai YOUR_API_KEY
 
-# Generate documentation
-pp generate-docs --project /path/to/your/project --output docs/
-
-# Get help
+# Verify configuration
+project-prompt verify-api
+```
 pp --help
 ```
 

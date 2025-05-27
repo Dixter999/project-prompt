@@ -54,7 +54,7 @@ class ConsentManager:
         Returns:
             Estado actual del consentimiento
         """
-        config = config_manager.get_config()
+        config = config_manager.config
         
         # Verificar si hay una decisión explícita
         if "telemetry" in config:
@@ -253,14 +253,14 @@ class ConsentManager:
             
         elif choice == "l":
             # Posponer decisión
-            config = config_manager.get_config()
+            config = config_manager.config
             if "telemetry" not in config:
                 config["telemetry"] = {}
                 
             # Posponer por 7 días
             deferred_until = time.time() + (7 * 24 * 60 * 60)
             config["telemetry"]["deferred_until"] = deferred_until
-            config_manager.save_config(config)
+            config_manager.save_config()
             
             self.console.print("[blue]Decisión pospuesta. Te preguntaremos más adelante.[/blue]")
             return ConsentStatus.DEFERRED
