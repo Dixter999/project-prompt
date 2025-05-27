@@ -1,0 +1,21 @@
+[run]
+source = src/utils/config.py,src/utils/logger.py
+omit = 
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */venv/*
+    */env/*
+    src/utils/mock_keyring.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if __name__ == .__main__.:
+
+fail_under = 70
+show_missing = True
+
+[html]
+directory = htmlcov

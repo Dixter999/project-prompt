@@ -1,0 +1,2 @@
+[33m5fdb6b2[m[33m ([m[1;36mHEAD -> [m[1;32mcleanup-branch[m[33m, [m[1;31morigin/cleanup-branch[m[33m)[m feat: Add coverage testing tools and updated config
+[33md1a746a[m fix: Resolve GitHub CI coverage failure from 0.0% to 68.33%

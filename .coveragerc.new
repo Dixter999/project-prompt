@@ -1,0 +1,31 @@
+[run]
+source = src/utils
+omit = 
+    */tests/*
+    */test_*
+    */__pycache__/*
+    */venv/*
+    */env/*
+    */site-packages/*
+    setup.py
+    src/utils/mock_keyring.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    if self.debug:
+    if settings.DEBUG
+    raise AssertionError
+    raise NotImplementedError
+    if 0:
+    if __name__ == .__main__.:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+fail_under = 80
+show_missing = True
+skip_covered = False
+
+[html]
+directory = htmlcov
