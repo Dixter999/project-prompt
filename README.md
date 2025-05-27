@@ -78,18 +78,34 @@ project-prompt menu
 
 ### Set Up AI API Keys (Optional)
 
-To use advanced AI features, configure your API keys:
+ProjectPrompt uses the secure .env file approach for API key configuration:
 
 ```bash
-# Set Anthropic API key
-project-prompt set-api anthropic --key YOUR_API_KEY
+# Configure Anthropic API (guides you through .env setup)
+project-prompt set-api anthropic
 
-# Set OpenAI API key  
-project-prompt set-api openai --key YOUR_API_KEY
+# Configure GitHub API (guides you through .env setup)
+project-prompt set-api github
 
-# Verify API configuration
+# Check your current .env configuration
+project-prompt check-env
+
+# Verify API configuration and functionality
 project-prompt verify-api
 ```
+
+**Secure .env Method (Recommended):**
+1. Create a `.env` file in your project root
+2. Add your API keys:
+   ```
+   # Anthropic Claude API
+   anthropic_API=your_anthropic_key_here
+   
+   # GitHub API (optional)
+   GITHUB_API_KEY=your_github_key_here
+   ```
+3. Ensure `.env` is in your `.gitignore`
+4. Run `project-prompt verify-api` to test
 
 ### Configuration Commands
 
@@ -218,15 +234,24 @@ If you see "Not configured ❌" for APIs:
 
 **Solution:**
 ```bash
-# Configure Anthropic API
-project-prompt set-api anthropic --key YOUR_API_KEY
+# Configure Anthropic API with secure .env method
+project-prompt set-api anthropic
 
-# Configure GitHub API
-project-prompt set-api github --key YOUR_API_KEY
+# Configure GitHub API with secure .env method
+project-prompt set-api github
+
+# Check your .env configuration
+project-prompt check-env
 
 # Verify configuration
 project-prompt verify-api
 ```
+
+**Alternative: Manual .env setup**
+1. Create `.env` file in your project root
+2. Add: `anthropic_API=your_key_here`
+3. Ensure `.env` is in `.gitignore`
+4. Run `project-prompt verify-api`
 
 ## Requirements
 

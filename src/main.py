@@ -327,30 +327,206 @@ def config(key: Optional[str] = None, value: Optional[str] = None, list_all: boo
 @app.command()
 def set_api(
     api_name: str = typer.Argument(..., help="Nombre de la API (anthropic, github)"),
-    api_key: Optional[str] = typer.Option(None, "--key", "-k", help="Clave o token de API"),
 ):
-    """Configurar una clave API para servicios."""
-    validator = get_api_validator()
-    cli.print_header("Configuración de API")
+    """Configurar una clave API para servicios usando archivos .env (recomendado por seguridad)."""
+    cli.print_header("Configuración de API - Método Seguro con .env")
     
-    # Si no se proporciona clave, pedirla de forma segura
-    if not api_key:
-        api_key = typer.prompt(f"Introduce la clave para {api_name}", hide_input=True)
-        
-    # Guardar y validar la clave
-    success, message = validator.set_api_key(api_name, api_key)
+    # Deprecar el método directo y guiar hacia .env
+    cli.print_info("🔒 Para mayor seguridad, ProjectPrompt usa archivos .env para las claves API")
+    cli.print_info("📝 Este método es más seguro que almacenar claves en el sistema keyring")
     
-    if success:
-        cli.print_success(message)
-        
-        # Verificar que la clave funciona
-        result = validator.validate_api(api_name)
-        if result.get("valid", False):
-            cli.print_success(f"✅ Verificación exitosa para {api_name}")
-        else:
-            cli.print_warning(f"⚠️ La clave se guardó pero no pasó la verificación: {result.get('message')}")
+    # Determinar las rutas del archivo .env
+    current_dir = os.getcwd()
+    project_env = os.path.join(current_dir, ".env")
+    home_env = os.path.expanduser("~/.env")
+    
+    # Verificar si ya existe un .env
+    env_exists = os.path.exists(project_env)
+    
+    cli.print_info("\n📂 Ubicaciones recomendadas para el archivo .env:")
+    cli.print_info(f"  1. Proyecto actual: {project_env} {'✅ (existe)' if env_exists else '❌ (no existe)'}")
+    cli.print_info(f"  2. Directorio home: {home_env}")
+    
+    # Mensaje específico por API
+    if api_name == "anthropic":
+        env_var = "anthropic_API"
+        cli.print_info(f"\n🤖 Para configurar Anthropic Claude:")
+    elif api_name == "github":
+        env_var = "GITHUB_API_KEY"
+        cli.print_info(f"\n🐙 Para configurar GitHub API:")
     else:
-        cli.print_error(f"❌ Error: {message}")
+        env_var = f"{api_name.upper()}_API_KEY"
+        cli.print_info(f"\n🔧 Para configurar {api_name}:")
+    
+    cli.print_info(f"   Variable requerida: {env_var}")
+    
+    # Instrucciones paso a paso
+    console.print("\n[bold green]📋 Instrucciones paso a paso:[/bold green]")
+    console.print("\n[bold]1. Crear archivo .env[/bold]")
+    console.print(f"   Ejecuta: [cyan]touch {project_env}[/cyan]")
+    
+    console.print("\n[bold]2. Agregar tu clave API[/bold]")
+    console.print(f"   Edita el archivo y agrega: [cyan]{env_var}=tu_clave_api_aquí[/cyan]")
+    
+    console.print("\n[bold]3. Verificar configuración[/bold]")
+    console.print(f"   Ejecuta: [cyan]project-prompt verify-api {api_name}[/cyan]")
+    
+    console.print("\n[bold yellow]⚠️  Importante:[/bold yellow]")
+    console.print("   • Nunca compartas tu archivo .env")
+    console.print("   • Agrega .env a tu .gitignore")
+    console.print("   • Las claves API son sensibles y deben mantenerse privadas")
+    
+    # Ofrecer crear el archivo automáticamente
+    if typer.confirm(f"\n¿Quieres que cree el archivo .env en {project_env}?"):
+        try:
+            # Crear o actualizar .env
+            env_content = ""
+            if env_exists:
+                with open(project_env, 'r') as f:
+                    env_content = f.read()
+            
+            # Verificar si la variable ya existe
+            if env_var not in env_content:
+                if env_content and not env_content.endswith('\n'):
+                    env_content += '\n'
+                env_content += f"# {api_name.title()} API Configuration\n"
+                env_content += f"{env_var}=your_api_key_here\n"
+                
+                with open(project_env, 'w') as f:
+                    f.write(env_content)
+                
+                cli.print_success(f"✅ Archivo .env creado en {project_env}")
+                cli.print_info(f"📝 Edita el archivo y reemplaza 'your_api_key_here' con tu clave real")
+            else:
+                cli.print_info(f"ℹ️  La variable {env_var} ya existe en {project_env}")
+                
+        except Exception as e:
+            cli.print_error(f"❌ Error al crear .env: {e}")
+    
+    # Verificar si ya está configurado
+    console.print(f"\n[bold]🔍 Verificando configuración actual...[/bold]")
+    validator = get_api_validator()
+    result = validator.validate_api(api_name)
+    
+    if result.get("valid", False):
+        cli.print_success(f"✅ {api_name} ya está configurado y funcionando")
+        if "usage" in result:
+            cli.print_info("📊 Información de uso:")
+            for key, value in result["usage"].items():
+                console.print(f"  - {key}: {value}")
+    else:
+        cli.print_warning(f"⚠️  {api_name} no está configurado o la clave no es válida")
+        cli.print_info(f"💡 Después de editar el .env, ejecuta: project-prompt verify-api {api_name}")
+    
+    # Consejos de seguridad adicionales
+    console.print(f"\n[bold blue]🛡️  Consejos de seguridad:[/bold blue]")
+    console.print("   • Usa variables de entorno en producción")
+    console.print("   • Rota tus claves API regularmente")
+    console.print("   • Revisa los permisos de tu archivo .env (debe ser 600)")
+    console.print("   • Considera usar herramientas como direnv para gestión automática")
+
+
+@app.command()
+def check_env(
+    api_name: Optional[str] = typer.Argument(None, help="API específica a verificar (anthropic, github). Si no se especifica, verifica todas.")
+):
+    """Verificar configuración de archivos .env y variables de entorno."""
+    cli.print_header("Verificación de Configuración .env")
+    
+    # Definir APIs y sus variables de entorno
+    api_vars = {
+        "anthropic": "anthropic_API",
+        "github": "GITHUB_API_KEY",
+        "openai": "OPENAI_API_KEY"
+    }
+    
+    # Si se especifica una API, solo verificar esa
+    if api_name:
+        if api_name not in api_vars:
+            cli.print_error(f"❌ API no soportada: {api_name}")
+            cli.print_info(f"APIs soportadas: {', '.join(api_vars.keys())}")
+            return
+        apis_to_check = {api_name: api_vars[api_name]}
+    else:
+        apis_to_check = api_vars
+    
+    # Determinar ubicaciones de archivos .env
+    current_dir = os.getcwd()
+    env_locations = [
+        os.path.join(current_dir, ".env"),
+        os.path.expanduser("~/.env"),
+        os.path.join(current_dir, "test-projects", ".env")
+    ]
+    
+    console.print(f"\n[bold]📂 Buscando archivos .env en:[/bold]")
+    found_envs = []
+    for env_path in env_locations:
+        exists = os.path.exists(env_path)
+        status = "✅ (existe)" if exists else "❌ (no existe)"
+        console.print(f"   {env_path} {status}")
+        if exists:
+            found_envs.append(env_path)
+    
+    if not found_envs:
+        cli.print_warning("⚠️  No se encontraron archivos .env")
+        cli.print_info("💡 Usa 'project-prompt set-api' para crear uno")
+        return
+    
+    # Verificar cada API
+    console.print(f"\n[bold]🔍 Verificando configuración de APIs:[/bold]")
+    
+    for api, env_var in apis_to_check.items():
+        console.print(f"\n[bold blue]{api.title()}:[/bold blue]")
+        
+        # Verificar variable de entorno
+        env_value = os.getenv(env_var)
+        if env_value:
+            masked_value = f"{env_value[:4]}...{env_value[-4:]}" if len(env_value) > 8 else "***"
+            console.print(f"   🌍 Variable de entorno: ✅ {env_var}={masked_value}")
+        else:
+            console.print(f"   🌍 Variable de entorno: ❌ {env_var} no establecida")
+        
+        # Verificar archivos .env
+        found_in_env = False
+        for env_path in found_envs:
+            try:
+                with open(env_path, 'r') as f:
+                    content = f.read()
+                    for line in content.split('\n'):
+                        if line.strip().startswith(env_var):
+                            parts = line.split('=', 1)
+                            if len(parts) == 2:
+                                value = parts[1].strip().strip('"\'')
+                                if value and value != "your_api_key_here":
+                                    masked_value = f"{value[:4]}...{value[-4:]}" if len(value) > 8 else "***"
+                                    console.print(f"   📄 {env_path}: ✅ {env_var}={masked_value}")
+                                    found_in_env = True
+                                else:
+                                    console.print(f"   📄 {env_path}: ⚠️  Variable encontrada pero sin valor válido")
+                                break
+            except Exception as e:
+                console.print(f"   📄 {env_path}: ❌ Error al leer archivo: {e}")
+        
+        if not found_in_env and not env_value:
+            console.print(f"   ❌ {api.title()} no está configurado")
+        elif found_in_env or env_value:
+            # Verificar con el validador
+            try:
+                validator = get_api_validator()
+                result = validator.validate_api(api)
+                if result.get("valid", False):
+                    console.print(f"   ✅ Validación exitosa - API funcional")
+                else:
+                    console.print(f"   ⚠️  Configurado pero no válido: {result.get('message', 'Error desconocido')}")
+            except Exception as e:
+                console.print(f"   ⚠️  Error al validar: {e}")
+    
+    # Consejos finales
+    console.print(f"\n[bold green]💡 Consejos:[/bold green]")
+    console.print("   • Las variables de entorno tienen prioridad sobre archivos .env")
+    console.print("   • Usa 'project-prompt verify-api' para validación completa")
+    console.print("   • Verifica permisos del archivo .env: chmod 600 .env")
+    console.print("   • Agrega .env a tu .gitignore para evitar commits accidentales")
 
 
 @app.command()
