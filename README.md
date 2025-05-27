@@ -189,6 +189,45 @@ project-prompt analyze --help
 project-prompt config --help
 ```
 
+## Troubleshooting
+
+### Common Issues
+
+#### License Server Connection Error
+
+If you see the following error:
+```
+WARNING: No se pudo contactar al servidor de licencias: 
+         HTTPSConnectionPool(host='api.projectprompt.dev', port=443): Max retries exceeded...
+```
+
+**Solution:** This is normal when running offline. ProjectPrompt works completely offline with basic features. Premium features only require API keys, not an online license verification.
+
+#### Telemetry Initialization Error
+
+If you see the following error:
+```
+ERROR: Error al inicializar telemetría: 'ConfigManager' object has no attribute 'get_config'
+```
+
+**Solution:** This is a harmless error and doesn't affect any functionality. Telemetry is optional and ProjectPrompt will continue to work normally without it.
+
+#### API Not Configured
+
+If you see "Not configured ❌" for APIs:
+
+**Solution:**
+```bash
+# Configure Anthropic API
+project-prompt set-api anthropic --key YOUR_API_KEY
+
+# Configure GitHub API
+project-prompt set-api github --key YOUR_API_KEY
+
+# Verify configuration
+project-prompt verify-api
+```
+
 ## Requirements
 
 - Python 3.8+ (tested on 3.8, 3.9, 3.10, 3.11)

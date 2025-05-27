@@ -11,6 +11,7 @@ Los resultados se guardan en la carpeta 'project-output'.
 import os
 import sys
 import json
+from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Any
 from pathlib import Path
@@ -136,9 +137,28 @@ def version():
     # Show additional information
     table = cli.create_table("Details", ["Component", "Version/Status"])
     table.add_row("Python", sys.version.split()[0])
-    table.add_row("API Anthropic", "Configured ✅" if status.get("anthropic", False) else "Not configured ❌")
-    table.add_row("API GitHub", "Configured ✅" if status.get("github", False) else "Not configured ❌")
+    
+    # API Status with helpful guidance messages
+    anthropic_configured = status.get("anthropic", False)
+    github_configured = status.get("github", False)
+    
+    table.add_row("API Anthropic", "Configured ✅" if anthropic_configured else "Not configured ❌")
+    table.add_row("API GitHub", "Configured ✅" if github_configured else "Not configured ❌")
     console.print(table)
+    
+    # Show helpful guidance if APIs are not configured
+    if not anthropic_configured or not github_configured:
+        console.print("\n[bold yellow]💡 Consejos para resolución de problemas:[/bold yellow]")
+        
+        if not anthropic_configured:
+            console.print("  • Para configurar Anthropic API: [bold]project-prompt set-api anthropic[/bold]")
+        
+        if not github_configured:
+            console.print("  • Para configurar GitHub API: [bold]project-prompt set-api github[/bold]")
+            
+        console.print("  • Para verificar el estado de las APIs: [bold]project-prompt verify-api[/bold]")
+        console.print("  • Las advertencias de conexión con el servidor son normales si no hay conexión a Internet")
+        console.print("    ProjectPrompt funciona completamente sin conexión con sus características básicas.")
 
 
 @app.command()
@@ -1651,7 +1671,15 @@ def app_callback():
         
     except Exception as e:
         # No queremos que un error en la telemetría impida el uso de la aplicación
-        logger.error(f"Error al inicializar telemetría: {e}")
+        error_message = str(e)
+        logger.error(f"Error al inicializar telemetría: {error_message}")
+        
+        # Proporcionar información adicional sobre los errores comunes
+        if "get_config" in error_message:
+            logger.info("💡 Este error es inofensivo y no afecta a la funcionalidad principal del programa.")
+            logger.info("   La telemetría es opcional y el programa funcionará normalmente sin ella.")
+        elif "connection" in error_message.lower() or "connect" in error_message.lower():
+            logger.info("💡 Error de conexión en telemetría - funcionamiento sin conexión habilitado.")
     
     # El callback de Typer no debe retornar nada para continuar con la ejecución normal
     return
@@ -1660,17 +1688,16 @@ def check_first_run_telemetry_consent():
     """
     Verifica si es la primera ejecución para solicitar consentimiento de telemetría.
     """
-    config = config_manager.get_config()
+    # Acceder directamente a la configuración
+    prompted = config_manager.get("telemetry", {}).get("prompted", False)
     
     # Verificar si ya se ha mostrado el prompt de telemetría
-    if config.get("telemetry", {}).get("prompted", False):
+    if prompted:
         return
         
     # Marcar que ya se ha solicitado consentimiento
-    if "telemetry" not in config:
-        config["telemetry"] = {}
-    config["telemetry"]["prompted"] = True
-    config_manager.save_config(config)
+    config_manager.set("telemetry.prompted", True)
+    config_manager.save_config()
     
     # Mostrar prompt de consentimiento
     try:
@@ -1683,6 +1710,268 @@ def check_first_run_telemetry_consent():
 # Registrar cierre de telemetría al finalizar el programa
 import atexit
 atexit.register(shutdown_telemetry)
+
+
+@app.command()
+def init_project_folder(
+    project_name: Optional[str] = typer.Argument(None, help="Nombre del proyecto (opcional)")
+):
+    """Inicializa una carpeta project-prompt organizada en el directorio actual.
+    
+    Crea una estructura de carpetas organizadas para gestionar los archivos generados por ProjectPrompt.
+    """
+    try:
+        # Crear la carpeta principal project-prompt
+        project_prompt_dir = os.path.join(os.getcwd(), "project-prompt")
+        
+        if os.path.exists(project_prompt_dir):
+            cli.print_warning("La carpeta 'project-prompt' ya existe en este directorio.")
+            overwrite = typer.confirm("¿Deseas sobrescribir la estructura existente?")
+            if not overwrite:
+                cli.print_info("Operación cancelada.")
+                return
+        
+        # Crear estructura de carpetas
+        folders_to_create = [
+            "analyses",
+            "suggestions", 
+            "documentation",
+            "prompts",
+            "exports",
+            "backups"
+        ]
+        
+        os.makedirs(project_prompt_dir, exist_ok=True)
+        
+        for folder in folders_to_create:
+            folder_path = os.path.join(project_prompt_dir, folder)
+            os.makedirs(folder_path, exist_ok=True)
+            
+            # Crear archivo README en cada carpeta
+            readme_path = os.path.join(folder_path, "README.md")
+            with open(readme_path, 'w', encoding='utf-8') as f:
+                f.write(get_directory_description(folder))
+        
+        # Crear archivo de configuración del proyecto
+        config_file = os.path.join(project_prompt_dir, "project-config.json")
+        project_config = {
+            "project_name": project_name or os.path.basename(os.getcwd()),
+            "created_at": datetime.now().isoformat(),
+            "version": __version__,
+            "structure": {
+                "analyses": "Análisis automáticos del proyecto",
+                "suggestions": "Sugerencias de mejora generadas por IA",
+                "documentation": "Documentación generada automáticamente",
+                "prompts": "Prompts personalizados para el proyecto",
+                "exports": "Exportaciones en diferentes formatos",
+                "backups": "Copias de seguridad de archivos importantes"
+            }
+        }
+        
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(project_config, f, indent=2, ensure_ascii=False)
+        
+        # Crear archivo principal README
+        main_readme = os.path.join(project_prompt_dir, "README.md")
+        with open(main_readme, 'w', encoding='utf-8') as f:
+            f.write(f"""# {project_config['project_name']} - ProjectPrompt
+
+Este directorio contiene todos los archivos generados por ProjectPrompt para el proyecto **{project_config['project_name']}**.
+
+## Estructura del directorio
+
+- **analyses/**: Análisis automáticos del código y estructura del proyecto
+- **suggestions/**: Sugerencias de mejora generadas por inteligencia artificial
+- **documentation/**: Documentación generada automáticamente
+- **prompts/**: Prompts personalizados para este proyecto específico
+- **exports/**: Exportaciones en diferentes formatos (PDF, HTML, etc.)
+- **backups/**: Copias de seguridad de archivos importantes
+
+## Configuración
+
+La configuración del proyecto se encuentra en `project-config.json`.
+
+## Comandos útiles
+
+```bash
+# Analizar el proyecto
+project-prompt analyze
+
+# Generar sugerencias
+project-prompt suggest
+
+# Ver documentación
+project-prompt docs
+
+# Limpiar archivos generados
+project-prompt delete all
+```
+
+---
+*Generado por ProjectPrompt v{__version__} el {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
+""")
+
+        cli.print_success(f"Carpeta 'project-prompt' inicializada correctamente en {project_prompt_dir}")
+        cli.print_info(f"Proyecto: {project_config['project_name']}")
+        cli.print_info(f"Estructura creada con {len(folders_to_create)} directorios organizados")
+        
+    except Exception as e:
+        cli.print_error(f"Error al inicializar la carpeta del proyecto: {e}")
+
+
+def get_directory_description(directory_name: str) -> str:
+    """Obtiene la descripción para un directorio específico."""
+    descriptions = {
+        "analyses": """# Análisis del Proyecto
+
+Este directorio contiene análisis automáticos del proyecto generados por ProjectPrompt.
+
+## Tipos de análisis incluidos:
+- Análisis de estructura del código
+- Análisis de dependencias
+- Análisis de calidad del código
+- Análisis de patrones de diseño
+- Análisis de arquitectura
+
+Los archivos se nombran con timestamp para mantener un historial de análisis.
+""",
+        "suggestions": """# Sugerencias de Mejora
+
+Este directorio contiene sugerencias de mejora generadas por inteligencia artificial.
+
+## Tipos de sugerencias incluidas:
+- Mejoras de rendimiento
+- Refactorización de código
+- Optimizaciones de arquitectura
+- Mejores prácticas
+- Corrección de problemas potenciales
+
+Las sugerencias se organizan por categoría y prioridad.
+""",
+        "documentation": """# Documentación Generada
+
+Este directorio contiene documentación generada automáticamente por ProjectPrompt.
+
+## Tipos de documentación incluida:
+- API Documentation
+- README automáticos
+- Guías de instalación
+- Documentación de arquitectura
+- Diagramas de flujo
+
+La documentación se mantiene actualizada con cada análisis.
+""",
+        "prompts": """# Prompts Personalizados
+
+Este directorio contiene prompts personalizados para este proyecto específico.
+
+## Uso de prompts:
+- Prompts para análisis específicos
+- Plantillas de sugerencias
+- Configuraciones de IA personalizadas
+- Contexto específico del proyecto
+
+Los prompts permiten adaptar ProjectPrompt a las necesidades específicas del proyecto.
+""",
+        "exports": """# Exportaciones
+
+Este directorio contiene exportaciones de análisis y documentación en diferentes formatos.
+
+## Formatos disponibles:
+- PDF para informes
+- HTML para visualización web
+- Markdown para documentación
+- JSON para integración con otras herramientas
+- CSV para análisis de datos
+
+Las exportaciones facilitan el compartir resultados con el equipo.
+""",
+        "backups": """# Copias de Seguridad
+
+Este directorio contiene copias de seguridad de archivos importantes del proyecto.
+
+## Contenido de backups:
+- Configuraciones importantes
+- Análisis históricos
+- Versiones anteriores de archivos críticos
+- Snapshots del estado del proyecto
+
+Las copias de seguridad se crean automáticamente antes de cambios importantes.
+"""
+    }
+    
+    return descriptions.get(directory_name, f"# {directory_name.title()}\n\nDirectorio para {directory_name} del proyecto.\n")
+
+
+@app.command()
+def delete(
+    scope: str = typer.Argument(..., 
+                              help="Tipo de datos a eliminar: 'all', 'analyses', 'suggestions', 'project-prompt-folder'"),
+    force: bool = typer.Option(False, "--force", "-f", 
+                              help="Forzar eliminación sin confirmación")
+):
+    """Elimina archivos generados por ProjectPrompt.
+    
+    Puede eliminar análisis, sugerencias, todos los archivos generados, o la carpeta project-prompt completa.
+    """
+    import shutil
+    
+    if scope not in ["all", "analyses", "suggestions", "project-prompt-folder"]:
+        cli.print_error(f"Ámbito no válido: {scope}. Use 'all', 'analyses', 'suggestions' o 'project-prompt-folder'.")
+        return
+    
+    # Determinar qué eliminar
+    if scope == "project-prompt-folder":
+        # Eliminar toda la carpeta project-prompt en el directorio actual
+        project_prompt_dir = os.path.join(os.getcwd(), "project-prompt")
+        if not os.path.exists(project_prompt_dir):
+            cli.print_warning("No se encontró la carpeta 'project-prompt' en el directorio actual.")
+            return
+        
+        if not force:
+            console.print(f"[yellow]¿Estás seguro de que deseas eliminar completamente la carpeta 'project-prompt' y todo su contenido?[/yellow]")
+            confirmation = typer.confirm("Esta acción no se puede deshacer")
+            if not confirmation:
+                cli.print_info("Operación cancelada.")
+                return
+        
+        try:
+            shutil.rmtree(project_prompt_dir)
+            cli.print_success("Carpeta 'project-prompt' eliminada completamente.")
+        except Exception as e:
+            cli.print_error(f"Error al eliminar la carpeta: {e}")
+        return
+    
+    # Determinar directorios a eliminar (comportamiento original)
+    dirs_to_clean = []
+    if scope == "all" or scope == "analyses":
+        dirs_to_clean.append(ANALYSES_DIR)
+    if scope == "all" or scope == "suggestions":
+        dirs_to_clean.append(SUGGESTIONS_DIR)
+    
+    if not force:
+        # Pedir confirmación
+        dirs_str = ", ".join([os.path.basename(d) for d in dirs_to_clean])
+        console.print(f"[yellow]¿Estás seguro de que deseas eliminar los archivos en {dirs_str}?[/yellow]")
+        confirmation = typer.confirm("Confirmar eliminación")
+        if not confirmation:
+            cli.print_info("Operación cancelada.")
+            return
+    
+    # Proceder con la eliminación
+    for directory in dirs_to_clean:
+        if os.path.exists(directory):
+            try:
+                # Eliminar todos los archivos del directorio pero mantener el directorio
+                for filename in os.listdir(directory):
+                    file_path = os.path.join(directory, filename)
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                cli.print_success(f"Archivos en {os.path.basename(directory)} eliminados correctamente.")
+            except Exception as e:
+                cli.print_error(f"Error al eliminar archivos en {directory}: {e}")
+    
+    cli.print_success("Limpieza completada exitosamente.")
 
 
 # Punto de entrada principal para ejecución directa

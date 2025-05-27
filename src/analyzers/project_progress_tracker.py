@@ -600,14 +600,15 @@ class ProjectProgressTracker:
             Diccionario con métricas avanzadas
         """
         # Analizar dependencias entre archivos
-        self.dependency_graph.build_graph()
+        graph_data = self.dependency_graph.build_dependency_graph(self.project_path)
         
         # Identificar módulos centrales (alto número de dependientes)
         central_modules = []
-        for node in self.dependency_graph.get_central_nodes(limit=5):
+        central_files = graph_data.get('central_files', [])
+        for central_file in central_files[:5]:  # Limitar a 5
             central_modules.append({
-                "file": node,
-                "dependents": len(self.dependency_graph.get_dependents(node))
+                "file": central_file.get('file', ''),
+                "dependents": central_file.get('in_degree', 0)  # in_degree represents dependents
             })
         
         # Identificar arquitectura del proyecto
@@ -684,7 +685,7 @@ class ProjectProgressTracker:
                     content = f.read()
                 
                 # Detectar lenguaje
-                ext = os.path.splitext(file)[1].lower()
+                ext = os.path.splitext(file_path)[1].lower()
                 
                 # Para Python
                 if ext == '.py':

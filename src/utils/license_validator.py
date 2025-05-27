@@ -84,6 +84,14 @@ class LicenseValidator:
             return None
         except Exception as e:
             logger.warning(f"No se pudo contactar al servidor de licencias: {e}")
+            
+            # Mostrar información útil al usuario sobre cómo resolver el problema
+            if "NameResolutionError" in str(e) or "Failed to resolve" in str(e):
+                logger.info("💡 Esto es normal - ProjectPrompt funciona completamente sin conexión.")
+                logger.info("   Las funciones premium solo requieren claves API, no verificación de licencia online.")
+            elif "Max retries exceeded" in str(e):
+                logger.info("💡 Sin conexión a internet - ProjectPrompt continuará funcionando normalmente.")
+                
             return None
     
     def _verify_offline(self, license_key: str) -> LicenseStatus:

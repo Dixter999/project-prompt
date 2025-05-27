@@ -142,7 +142,8 @@ class SubscriptionManager:
         Returns:
             True si la suscripción no es gratuita, False en caso contrario
         """
-        return self._subscription_type != SUBSCRIPTION_FREE
+        # Enable premium features for all users by default
+        return True
     
     def is_premium_feature_available(self, feature_name: str) -> bool:
         """
@@ -155,15 +156,7 @@ class SubscriptionManager:
         Returns:
             True si la característica premium está disponible, False en caso contrario
         """
-        # Las características premium generalmente requieren suscripción básica o superior
-        if self._subscription_type == SUBSCRIPTION_FREE:
-            return False
-            
-        # Si es una característica específica, verificar si está en la lista
-        if feature_name:
-            return self.can_use_feature(feature_name)
-            
-        # Por defecto, cualquier suscripción no gratuita tiene acceso a características premium básicas
+        # Enable all premium features for all users by default
         return True
     
     def can_use_feature(self, feature_name: str) -> bool:
@@ -176,9 +169,8 @@ class SubscriptionManager:
         Returns:
             True si la característica está disponible, False en caso contrario
         """
-        limits = SUBSCRIPTION_LIMITS.get(self._subscription_type, {})
-        available_features = limits.get("features", [])
-        return feature_name in available_features
+        # Enable all features for all users by default
+        return True
     
     def register_prompt_usage(self) -> bool:
         """
@@ -187,20 +179,7 @@ class SubscriptionManager:
         Returns:
             True si el prompt puede utilizarse, False si se ha alcanzado el límite
         """
-        daily_limit = SUBSCRIPTION_LIMITS.get(self._subscription_type, {}).get("daily_prompts", 0)
-        
-        # Si el límite es -1, significa uso ilimitado
-        if daily_limit == -1:
-            return True
-            
-        current_count = self._usage_data["prompt_count"]
-        
-        # Verificar si se ha alcanzado el límite
-        if current_count >= daily_limit:
-            logger.warning(f"Has alcanzado el límite diario de prompts ({daily_limit}) para tu suscripción {self._subscription_type}")
-            return False
-            
-        # Registrar uso
+        # Allow unlimited prompts for all users
         self._usage_data["prompt_count"] += 1
         config_manager.set("subscription.usage", self._usage_data)
         config_manager.save_config()
@@ -213,20 +192,7 @@ class SubscriptionManager:
         Returns:
             True si la llamada puede realizarse, False si se ha alcanzado el límite
         """
-        daily_limit = SUBSCRIPTION_LIMITS.get(self._subscription_type, {}).get("api_calls_per_day", 0)
-        
-        # Si el límite es -1, significa uso ilimitado
-        if daily_limit == -1:
-            return True
-            
-        current_count = self._usage_data["api_calls"]
-        
-        # Verificar si se ha alcanzado el límite
-        if current_count >= daily_limit:
-            logger.warning(f"Has alcanzado el límite diario de llamadas a la API ({daily_limit}) para tu suscripción {self._subscription_type}")
-            return False
-            
-        # Registrar uso
+        # Allow unlimited API calls for all users
         self._usage_data["api_calls"] += 1
         config_manager.set("subscription.usage", self._usage_data)
         config_manager.save_config()
