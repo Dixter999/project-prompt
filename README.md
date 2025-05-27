@@ -11,9 +11,12 @@ An intelligent CLI tool that uses AI to analyze code projects, generate document
 
 - **Smart Project Analysis**: Automatically detects technologies, frameworks, and project structure
 - **AI-Powered Insights**: Leverages Anthropic Claude and OpenAI for intelligent analysis
-- **Interactive CLI**: Beautiful command-line interface with rich output
+- **Interactive CLI**: Beautiful command-line interface with rich output and interactive menus
 - **Documentation Tools**: Generate and navigate project documentation
+- **Visual Dashboard**: Generate comprehensive project status dashboards
 - **Multi-Language Support**: Works with Python, JavaScript, TypeScript, and more
+- **Secure Configuration**: Safe API key storage and configuration management
+- **Premium Features**: Advanced AI capabilities with subscription management
 
 ## Installation
 
@@ -53,13 +56,13 @@ To use advanced AI features, configure your API keys:
 
 ```bash
 # Set Anthropic API key
-project-prompt set-api anthropic YOUR_API_KEY
+project-prompt set-api anthropic --key YOUR_API_KEY
 
 # Set OpenAI API key  
-project-prompt set-api openai YOUR_API_KEY
+project-prompt set-api openai --key YOUR_API_KEY
 
 # Verify API configuration
-project-prompt config
+project-prompt verify-api
 ```
 
 ### Configuration Commands
@@ -84,7 +87,22 @@ project-prompt menu
 | `project-prompt init` | Initialize new project or configuration |
 | `project-prompt config` | View and manage configuration |
 | `project-prompt set-api` | Configure API keys for AI features |
+| `project-prompt verify-api` | Verify API configuration status |
 | `project-prompt menu` | Launch interactive menu |
+| `project-prompt dashboard` | Generate visual project dashboard |
+| `project-prompt docs` | Navigate project documentation |
+| `project-prompt help` | Show detailed help information |
+
+### Additional Commands
+
+| Command | Description |
+|---------|-------------|
+| `project-prompt ai` | Access premium AI features |
+| `project-prompt premium` | Manage premium features |
+| `project-prompt subscription` | Manage subscription settings |
+| `project-prompt telemetry` | Configure anonymous telemetry |
+| `project-prompt update` | Check for updates and sync |
+| `project-prompt set-log-level` | Change logging verbosity |
 
 ## Usage Examples
 
@@ -99,6 +117,39 @@ project-prompt analyze /path/to/project --max-files 1000 --max-size 10.0
 
 # Save analysis to file
 project-prompt analyze --output analysis.json
+
+# Generate project dashboard
+project-prompt dashboard
+```
+
+### Configuration and Setup
+
+```bash
+# Interactive setup
+project-prompt init
+
+# View configuration
+project-prompt config
+
+# Set API keys with prompts
+project-prompt set-api anthropic
+project-prompt set-api openai
+
+# Verify API status
+project-prompt verify-api
+```
+
+### Interactive Features
+
+```bash
+# Launch interactive menu
+project-prompt menu
+
+# Access documentation browser
+project-prompt docs
+
+# View detailed help
+project-prompt help
 ```
 
 ### Get Help
