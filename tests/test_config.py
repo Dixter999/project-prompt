@@ -63,8 +63,7 @@ class TestConfigManager(unittest.TestCase):
         # Skip this test in CI environment - it requires keyring which is problematic in CI
         import os
         if os.environ.get('CI') or os.environ.get('GITHUB_ACTIONS'):
-            import unittest
-            raise unittest.SkipTest("Skipping test_api_key_management in CI environment")
+            self.skipTest("Skipping test_api_key_management in CI environment")
             
         # Configurar clave API
         self.config_manager.set_api_key("openai", "sk-test-key")
