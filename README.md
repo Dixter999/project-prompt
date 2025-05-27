@@ -20,6 +20,8 @@ An intelligent CLI tool that uses AI to analyze code projects, generate document
 
 ## Installation
 
+Install ProjectPrompt using pip:
+
 ```bash
 pip install projectprompt
 ```
@@ -28,6 +30,30 @@ pip install projectprompt
 ```bash
 project-prompt version
 ```
+
+## Getting Started
+
+1. **Install the package**:
+   ```bash
+   pip install projectprompt
+   ```
+
+2. **Navigate to your project directory**:
+   ```bash
+   cd /path/to/your/project
+   ```
+
+3. **Run your first analysis**:
+   ```bash
+   project-prompt analyze
+   ```
+
+4. **Explore with the interactive menu**:
+   ```bash
+   project-prompt menu
+   ```
+
+That's it! ProjectPrompt will analyze your project structure, detect technologies, and provide insights.
 
 ## Quick Start
 
