@@ -1429,7 +1429,8 @@ def ai_explain_code(
 @app.command()
 def dashboard(
     project: str = typer.Argument(".", help="Ruta al proyecto para generar el dashboard"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta donde guardar el dashboard HTML"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta donde guardar el dashboard"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Formato de salida (html/markdown)"),
     no_browser: bool = typer.Option(False, "--no-browser", help="No abrir automáticamente en el navegador")
 ):
     """Generar un dashboard visual con el estado y progreso del proyecto."""
@@ -1451,6 +1452,8 @@ def dashboard(
             args.extend(["--project", project])
         if output:
             args.extend(["--output", output])
+        if format:
+            args.extend(["--format", format])
         if no_browser:
             args.append("--no-browser")
             

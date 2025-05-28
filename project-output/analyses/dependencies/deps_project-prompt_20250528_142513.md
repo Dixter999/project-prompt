@@ -1,0 +1,1 @@
+Error al generar visualización: 'description'

@@ -66,6 +66,7 @@ class MarkdownDashboardGenerator:
             "progress": self.tracker.get_progress_metrics(),
             "branches": self.tracker.get_branch_status(),
             "features": self.tracker.get_feature_progress(),
+            "dependencies": self._get_dependency_analysis(),
             "recommendations": self.tracker.get_recommendations(),
             "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
@@ -92,6 +93,18 @@ class MarkdownDashboardGenerator:
         except Exception as e:
             logger.error(f"Error al guardar el dashboard: {str(e)}")
             raise
+    
+    def generate_dashboard(self, output_path: Optional[str] = None) -> str:
+        """
+        Alias para generate_markdown_dashboard para compatibilidad.
+        
+        Args:
+            output_path: Ruta donde guardar el Markdown (opcional)
+            
+        Returns:
+            Ruta al archivo Markdown generado
+        """
+        return self.generate_markdown_dashboard(output_path)
     
     def _generate_free_markdown_dashboard(self, output_path: Optional[str] = None) -> str:
         """
@@ -144,21 +157,61 @@ class MarkdownDashboardGenerator:
         """
         project_name = os.path.basename(self.project_path)
         
+        try:
+            overview_section = self._generate_overview_section(data['overview'])
+        except Exception as e:
+            logger.error(f"Error generando sección overview: {str(e)}")
+            overview_section = "## 📋 Visión General del Proyecto\n\nError al generar sección de overview."
+        
+        try:
+            metrics_section = self._generate_metrics_section(data.get('progress', {}))
+        except Exception as e:
+            logger.error(f"Error generando sección metrics: {str(e)}")
+            metrics_section = "## 📈 Métricas de Progreso\n\nError al generar métricas de progreso."
+        
+        try:
+            branches_section = self._generate_branches_section(data.get('branches', {}))
+        except Exception as e:
+            logger.error(f"Error generando sección branches: {str(e)}")
+            branches_section = "## 🌿 Estado de Branches\n\nError al generar estado de branches."
+        
+        try:
+            features_section = self._generate_features_section(data.get('features', {}))
+        except Exception as e:
+            logger.error(f"Error generando sección features: {str(e)}")
+            logger.error(f"Features data type: {type(data.get('features', {}))}")
+            logger.error(f"Features data content: {data.get('features', {})}")
+            features_section = "## 🎯 Grupos Funcionales\n\nError al generar grupos funcionales."
+        
+        try:
+            dependencies_section = self._generate_dependencies_section(data.get('dependencies', {}))
+        except Exception as e:
+            logger.error(f"Error generando sección dependencies: {str(e)}")
+            dependencies_section = "## 🔗 Análisis de Dependencias\n\nError al generar análisis de dependencias."
+        
+        try:
+            recommendations_section = self._generate_recommendations_section(data.get('recommendations', []))
+        except Exception as e:
+            logger.error(f"Error generando sección recommendations: {str(e)}")
+            recommendations_section = "## 💡 Recomendaciones\n\nError al generar recomendaciones."
+        
         markdown = f"""# 📊 Dashboard del Proyecto: {project_name}
 
 *Generado por ProjectPrompt Premium el {data.get('generated_at')}*
 
 ---
 
-{self._generate_overview_section(data['overview'])}
+{overview_section}
 
-{self._generate_metrics_section(data.get('progress', {}))}
+{metrics_section}
 
-{self._generate_branches_section(data.get('branches', {}))}
+{branches_section}
 
-{self._generate_features_section(data.get('features', {}))}
+{features_section}
 
-{self._generate_recommendations_section(data.get('recommendations', []))}
+{dependencies_section}
+
+{recommendations_section}
 
 ---
 
@@ -319,27 +372,71 @@ Para más información, ejecuta: `project-prompt subscription plans`
     
     def _generate_branches_section(self, branches_data: Dict[str, Any]) -> str:
         """Generar sección de estado de branches."""
-        if not branches_data or not branches_data.get('branches'):
-            return "## 🌿 Estado de Branches\n\nNo se detectó información de control de versiones Git."
-        
-        branches = branches_data.get('branches', {})
-        current_branch = branches_data.get('current_branch', 'N/A')
-        
-        branches_content = ""
-        
-        for category, branch_list in branches.items():
-            if branch_list:
-                branches_content += f"\n### {category.capitalize()} ({len(branch_list)})\n\n"
-                
-                for branch in branch_list:
-                    name = branch.get('name', '')
-                    date = branch.get('last_commit_date', 'N/A')
-                    msg = branch.get('last_commit_message', 'N/A')
+        try:
+            if not branches_data:
+                return "## 🌿 Estado de Branches\n\nNo se detectó información de control de versiones Git."
+            
+            # Comprobar si tenemos una lista de branches o una estructura de datos con categorías
+            if 'branches' in branches_data:
+                if isinstance(branches_data['branches'], list):
+                    # Formato con lista plana de branches
+                    branches_list = branches_data['branches']
+                    current_branch = next((b['name'] for b in branches_list if b.get('current', False)), 'N/A')
                     
-                    current_indicator = " 🌟 (actual)" if name == current_branch else ""
-                    branches_content += f"- **{name}**{current_indicator}\n"
-                    branches_content += f"  - Último commit: {date}\n"
-                    branches_content += f"  - Mensaje: {msg}\n\n"
+                    branches_content = "\n### Todas las Branches\n\n"
+                    
+                    for branch in branches_list:
+                        name = branch.get('name', '')
+                        date = branch.get('last_commit_date', 'N/A')
+                        msg = branch.get('last_commit_msg', 'N/A')
+                        
+                        current_indicator = " 🌟 (actual)" if branch.get('current', False) else ""
+                        branches_content += f"- **{name}**{current_indicator}\n"
+                        branches_content += f"  - Último commit: {date}\n"
+                        branches_content += f"  - Mensaje: {msg}\n\n"
+                    
+                elif isinstance(branches_data['branches'], dict):
+                    # Formato alternativo con branches como diccionario
+                    branches_content = ""
+                    current_branch = branches_data.get('current_branch', 'N/A')
+                    
+                    for branch_name, branch_info in branches_data['branches'].items():
+                        branches_content += f"- **{branch_name}**\n"
+                        if isinstance(branch_info, dict):
+                            for key, value in branch_info.items():
+                                branches_content += f"  - {key}: {value}\n"
+                        branches_content += "\n"
+                else:
+                    branches_content = "\nFormato de branches desconocido.\n"
+                    current_branch = "N/A"
+            
+            # Si hay categorías, mostrarlas
+            if 'categories' in branches_data and isinstance(branches_data['categories'], dict):
+                categories = branches_data['categories']
+                current_branch = branches_data.get('current_branch', 'N/A')
+                branches_content = ""
+                
+                for category, branch_list in categories.items():
+                    if branch_list:
+                        branches_content += f"\n### {category.capitalize()} ({len(branch_list)})\n\n"
+                        
+                        for branch in branch_list:
+                            name = branch.get('name', '')
+                            date = branch.get('last_commit_date', 'N/A')
+                            msg = branch.get('last_commit_msg', 'N/A')
+                            
+                            current_indicator = " 🌟 (actual)" if branch.get('current', False) else ""
+                            branches_content += f"- **{name}**{current_indicator}\n"
+                            branches_content += f"  - Último commit: {date}\n"
+                            branches_content += f"  - Mensaje: {msg}\n\n"
+            
+            return f"""## 🌿 Estado de Branches
+
+**Branch actual**: {current_branch}
+
+{branches_content}"""
+        except Exception as e:
+            return f"## 🌿 Estado de Branches\n\nError al analizar branches: {str(e)}"
         
         return f"""## 🌿 Estado de Branches
 
@@ -349,28 +446,97 @@ Para más información, ejecuta: `project-prompt subscription plans`
 """
     
     def _generate_features_section(self, features_data: Dict[str, Any]) -> str:
-        """Generar sección de progreso por características."""
+        """Generar sección de grupos funcionales."""
         if not features_data or not features_data.get('features'):
-            return "## 🎯 Progreso por Características\n\nNo se detectaron características específicas para seguimiento."
+            return "## 🎯 Grupos Funcionales\n\nNo se detectaron grupos funcionales específicos para seguimiento."
         
-        features = features_data.get('features', [])
+        features = features_data.get('features', {})
         
-        features_table = "| Característica | Estado | Progreso | Archivos |\n|----------------|--------|----------|----------|\n"
+        # Handle different data structures for features
+        items = []
         
-        for feature in features:
-            name = feature.get('name', 'N/A')
-            status = feature.get('status', 'Unknown')
-            progress = feature.get('progress', 0)
-            files_count = len(feature.get('files', []))
-            
-            # Convertir progreso a barra visual
-            progress_bar = "▓" * int(progress / 10) + "░" * (10 - int(progress / 10))
-            
-            features_table += f"| {name} | {status} | {progress}% {progress_bar} | {files_count} |\n"
-        
-        return f"""## 🎯 Progreso por Características
+        if isinstance(features, dict):
+            # If features is a dict, iterate over its items
+            items = list(features.items())
+        elif isinstance(features, list):
+            # If it's a list, convert to (name, data) pairs
+            for i, data in enumerate(features):
+                if isinstance(data, dict):
+                    name = data.get('name', f'Grupo {i+1}')
+                    items.append((name, data))
+                else:
+                    # Handle non-dict items in the list
+                    items.append((f'Grupo {i+1}', {'name': str(data), 'type': 'unknown', 'completion_estimate': 0, 'files': 0}))
+        else:
+            # Handle unexpected data types
+            logger.warning(f"Unexpected features data type: {type(features)}")
+            return "## 🎯 Grupos Funcionales\n\nError al procesar datos de grupos funcionales."
 
-{features_table}
+        if not items:
+            return "## 🎯 Grupos Funcionales\n\nNo se encontraron grupos funcionales para mostrar."
+
+        # Sort items by importance if available
+        items.sort(key=lambda x: x[1].get('importance', 0) if isinstance(x[1], dict) else 0, reverse=True)
+
+        functional_groups_content = ""
+        
+        for name, group_data in items:
+            # Defensive: ensure group_data is a dict
+            if not isinstance(group_data, dict):
+                logger.warning(f"Skipping non-dict group data for {name}: {type(group_data)}")
+                continue
+                
+            # Extract group information with fallbacks
+            group_name = group_data.get('name', name)
+            group_type = group_data.get('type', 'unknown')
+            description = group_data.get('description', f"Grupo funcional: {group_name}")
+            completion = group_data.get('completion_estimate', 0)
+            files_count = group_data.get('files', 0)
+            importance = group_data.get('importance', 0)
+            
+            # Ensure completion is numeric
+            if not isinstance(completion, (int, float)):
+                completion = 0
+            
+            # Create progress bar
+            progress_bar = "▓" * int(completion / 10) + "░" * (10 - int(completion / 10))
+            
+            # Determine group icon based on type and name
+            icon = "📁"
+            if "test" in group_name.lower() or group_type == "test":
+                icon = "🧪"
+            elif "doc" in group_name.lower() or group_type == "documentation":
+                icon = "📖"
+            elif "core" in group_name.lower() or "main" in group_name.lower():
+                icon = "⚙️"
+            elif "ui" in group_name.lower() or "frontend" in group_name.lower():
+                icon = "🎨"
+            elif "api" in group_name.lower() or group_type == "api":
+                icon = "🔗"
+            elif "config" in group_name.lower() or group_type == "configuration":
+                icon = "⚙️"
+            elif group_type == "functionality":
+                icon = "🔧"
+            elif group_type == "directory":
+                icon = "📁"
+            
+            functional_groups_content += f"""### {icon} {group_name}
+
+**Tipo**: {group_type.capitalize()}  
+**Descripción**: {description}  
+**Completitud**: {completion}% {progress_bar}  
+**Archivos**: {files_count}  
+**Importancia**: {importance:.1f}
+
+"""
+
+        return f"""## 🎯 Grupos Funcionales
+
+Los siguientes grupos funcionales han sido identificados en el proyecto:
+
+{functional_groups_content}
+
+*Los grupos funcionales representan áreas lógicas del código organizadas por funcionalidad, no por estructura de directorios.*
 """
     
     def _generate_recommendations_section(self, recommendations: List[Dict[str, Any]]) -> str:
@@ -417,7 +583,236 @@ Para más información, ejecuta: `project-prompt subscription plans`
 
 {recommendations_content}
 """
+    
+    def _get_dependency_analysis(self) -> Dict[str, Any]:
+        """
+        Obtener análisis de dependencias del proyecto.
+        
+        Returns:
+            Dict con información sobre dependencias
+        """
+        try:
+            # Intentar usar análisis en caché para evitar análisis duplicados
+            from src.analyzers.analysis_cache import get_analysis_cache
+            cache = get_analysis_cache()
+            
+            # Usar cache primero si está disponible
+            cached_result = cache.get(self.project_path, 'dependencies')
+            if cached_result:
+                logger.info(f"✅ Usando análisis de dependencias en caché para {self.project_path}")
+                analysis_result = cached_result
+            else:
+                # Sin caché, ejecutar análisis
+                from src.analyzers.dependency_graph import DependencyGraph
+                
+                dep_analyzer = DependencyGraph()
+                analysis_result = dep_analyzer.build_dependency_graph(self.project_path)
+                
+                # Guardar en caché para futuras llamadas
+                cache.set(self.project_path, 'dependencies', analysis_result)
+            
+            logger.info("✅ Análisis de dependencias completado")
+            
+            # Extraer datos relevantes
+            metrics = analysis_result.get('metrics', {})
+            if 'edges' in metrics and 'nodes' in metrics and 'nodes' > 0:
+                # Calcular dependencias promedio si no están ya calculadas
+                metrics['average_dependencies_per_file'] = metrics.get(
+                    'average_dependencies_per_file', 
+                    metrics.get('edges', 0) / max(metrics.get('nodes', 1), 1)
+                )
+                metrics['total_dependencies'] = metrics.get('total_dependencies', metrics.get('edges', 0))
+                metrics['total_files'] = metrics.get('total_files', metrics.get('nodes', 0))
+            
+            return {
+                "graph_data": analysis_result,
+                "functionality_groups": analysis_result.get('functionality_groups', []),
+                "central_files": analysis_result.get('central_files', []),
+                "metrics": metrics,
+                "files_excluded": analysis_result.get('files_excluded', {})
+            }
+            
+        except Exception as e:
+            logger.error(f"Error al analizar dependencias: {e}")
+            return {
+                "error": str(e),
+                "graph_data": {},
+                "functionality_groups": [],
+                "central_files": [],
+                "metrics": {},
+                "files_excluded": {}
+            }
+    
+    def _generate_dependencies_section(self, dependencies_data: Dict[str, Any]) -> str:
+        """Generar sección de análisis de dependencias con representación textual del grafo."""
+        if not dependencies_data or dependencies_data.get('error'):
+            error_msg = dependencies_data.get('error', 'Error desconocido')
+            return f"## 🔗 Análisis de Dependencias\n\nError al analizar dependencias: {error_msg}"
+        
+        graph_data = dependencies_data.get('graph_data', {})
+        functionality_groups = dependencies_data.get('functionality_groups', [])
+        central_files = dependencies_data.get('central_files', [])
+        metrics = dependencies_data.get('metrics', {})
+        files_excluded = dependencies_data.get('files_excluded', {})
+        
+        section_content = "## 🔗 Análisis de Dependencias\n\n"
+        
+        # Métricas generales
+        if metrics:
+            total_files = metrics.get('total_files', 0)
+            total_dependencies = metrics.get('total_dependencies', 0)
+            avg_dependencies = metrics.get('average_dependencies_per_file', 0)
+            
+            section_content += f"""### 📊 Métricas del Grafo de Dependencias
 
+- **Total de archivos analizados**: {total_files}
+- **Total de dependencias**: {total_dependencies}  
+- **Promedio de dependencias por archivo**: {avg_dependencies:.1f}
+
+"""
+
+        # Archivos centrales/críticos
+        if central_files:
+            section_content += "### 🎯 Archivos Centrales\n\n"
+            section_content += "Archivos con alto número de dependencias (críticos para el proyecto):\n\n"
+            
+            for file_info in central_files[:10]:  # Mostrar top 10
+                if isinstance(file_info, dict):
+                    file_path = file_info.get('file', 'archivo desconocido')
+                    dep_count = file_info.get('dependencies', 0)
+                    reverse_dep_count = file_info.get('reverse_dependencies', 0)
+                else:
+                    file_path = str(file_info)
+                    dep_count = 0
+                    reverse_dep_count = 0
+                
+                # Extraer solo el nombre del archivo y directorio inmediato
+                file_display = "/".join(file_path.split("/")[-2:]) if "/" in file_path else file_path
+                
+                section_content += f"- **{file_display}**: {dep_count} dependencias, {reverse_dep_count} dependencias inversas\n"
+            
+            section_content += "\n"
+
+        # Representación textual del grafo por grupos funcionales
+        if functionality_groups:
+            section_content += "### 🗂️ Estructura de Dependencias por Grupos Funcionales\n\n"
+            
+            for group in functionality_groups:
+                if not isinstance(group, dict):
+                    continue
+                    
+                group_name = group.get('name', 'Grupo sin nombre')
+                group_files = group.get('files', [])
+                group_type = group.get('type', 'unknown')
+                
+                if not group_files:
+                    continue
+                
+                # Determinar icono del grupo
+                icon = "📁"
+                if "test" in group_name.lower():
+                    icon = "🧪"
+                elif "doc" in group_name.lower():
+                    icon = "📖"
+                elif "core" in group_name.lower() or "main" in group_name.lower():
+                    icon = "⚙️"
+                elif "ui" in group_name.lower():
+                    icon = "🎨"
+                elif "api" in group_name.lower():
+                    icon = "🔗"
+                
+                section_content += f"#### {icon} {group_name} ({len(group_files)} archivos)\n\n"
+                
+                # Crear representación textual de las conexiones dentro del grupo
+                connections_found = False
+                dependencies_graph = graph_data.get('dependencies', {})
+                
+                for file_item in group_files[:8]:  # Limitar a 8 archivos por grupo
+                    # Comprobar si es un diccionario o una cadena
+                    if isinstance(file_item, dict):
+                        file_path = file_item.get('path', file_item.get('file', ''))
+                    else:
+                        file_path = str(file_item)
+                        
+                    file_display = file_path.split("/")[-1] if "/" in file_path else file_path
+                    file_deps = dependencies_graph.get(file_path, [])
+                    
+                    # Obtener rutas normalizadas para comparar
+                    group_file_paths = []
+                    for gf in group_files:
+                        if isinstance(gf, dict):
+                            gf_path = gf.get('path', gf.get('file', ''))
+                            if gf_path:
+                                group_file_paths.append(gf_path)
+                        else:
+                            group_file_paths.append(str(gf))
+                    
+                    # Filtrar dependencias que estén en el mismo grupo
+                    internal_deps = [dep for dep in file_deps if dep in group_file_paths]
+                    external_deps = [dep for dep in file_deps if dep not in group_file_paths]
+                    
+                    if internal_deps or external_deps:
+                        connections_found = True
+                        section_content += f"```\n{file_display}\n"
+                        
+                        # Dependencias internas del grupo
+                        for dep in internal_deps[:3]:  # Máximo 3 por claridad
+                            dep_display = dep.split("/")[-1] if "/" in dep else dep
+                            section_content += f"├── 🔗 {dep_display}\n"
+                        
+                        # Dependencias externas
+                        if external_deps:
+                            section_content += f"└── 🌐 {len(external_deps)} deps externas\n"
+                        
+                        section_content += "```\n\n"
+                
+                if not connections_found:
+                    section_content += "*No se detectaron dependencias internas significativas en este grupo.*\n\n"
+
+        # Archivos excluidos
+        if files_excluded:
+            section_content += "### 🚫 Manejo de .gitignore\n\n"
+            total_excluded = sum(files_excluded.values()) if isinstance(files_excluded, dict) else 0
+            
+            if total_excluded > 0:
+                section_content += f"**Total de archivos excluidos**: {total_excluded}\n\n"
+                
+                if isinstance(files_excluded, dict):
+                    for pattern, count in files_excluded.items():
+                        if count > 0:
+                            section_content += f"- `{pattern}`: {count} archivos excluidos\n"
+                    section_content += "\n"
+            else:
+                section_content += "✅ No se encontraron archivos excluidos por .gitignore que afecten el análisis.\n\n"
+
+        # Agregar representación textual del grafo
+        graph_data_for_textual = dependencies_data.get('graph_data', {})
+        
+        if graph_data_for_textual:
+            section_content += "### 📊 Representación Textual del Grafo de Dependencias\n\n"
+            try:
+                from src.analyzers.dependency_graph import DependencyGraph
+                dep_analyzer = DependencyGraph()
+                textual_representation = dep_analyzer._generate_text_visualization(graph_data_for_textual, max_nodes=15)
+                
+                if textual_representation and textual_representation.strip():
+                    section_content += "```\n"
+                    section_content += textual_representation
+                    section_content += "\n```\n\n"
+                else:
+                    section_content += "*No se pudieron encontrar conexiones significativas para la representación textual.*\n\n"
+                    
+            except Exception as e:
+                section_content += f"*Error al generar representación textual: {str(e)}*\n\n"
+
+        # Nota explicativa
+        section_content += """*Este análisis muestra la estructura de dependencias del proyecto, ayudando a identificar:*
+- *Archivos centrales críticos para el funcionamiento*
+- *Organización lógica del código por funcionalidad*  
+- *Posibles puntos de refactorización o mejora arquitectural*
+"""
+
+        return section_content
 
 def main():
     """Punto de entrada cuando se ejecuta como script."""

@@ -284,9 +284,13 @@ class DependencyGraph:
                 
                 for i, group in enumerate(graph_data['functionality_groups'], 1):
                     markdown.append(f"\n### {i}. {group['name']}")
-                    markdown.append(f"**Tipo:** {group['type']}")
-                    markdown.append(f"**Archivos:** {group['size']}")
-                    markdown.append(f"**Descripción:** {group['description']}")
+                    markdown.append(f"**Tipo:** {group.get('type', 'Unknown')}")
+                    markdown.append(f"**Archivos:** {group.get('size', len(group.get('files', [])))}") 
+                    
+                    # Fix f-string syntax issue by extracting fallback description
+                    default_desc = f"Grupo funcional: {group['name']}"
+                    description = group.get('description', default_desc)
+                    markdown.append(f"**Descripción:** {description}")
                     
                     # Mostrar archivos en el grupo (máximo 8)
                     markdown.append("\n**Archivos en el grupo:**")

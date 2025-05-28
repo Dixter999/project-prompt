@@ -233,10 +233,10 @@ class ProjectProgressTracker:
     
     def get_feature_progress(self) -> Dict[str, Any]:
         """
-        Analiza el progreso de las distintas características del proyecto.
+        Analizar el progreso de las características del proyecto usando grupos funcionales.
         
         Returns:
-            Diccionario con el progreso por característica
+            Dict con información sobre el progreso de características funcionales
         """
         # Esta función requiere acceso premium
         if not self.premium_access:
@@ -245,25 +245,56 @@ class ProjectProgressTracker:
                 "features": []
             }
         
-        features = {}
-        
-        # Intentar detectar características basándose en directorios y archivos
-        dirs = [d for d in os.listdir(self.project_path) 
-                if os.path.isdir(os.path.join(self.project_path, d)) 
-                and not d.startswith('.') and d not in ('node_modules', 'venv', 'env', '__pycache__')]
-        
-        for dir_name in dirs:
-            # Analizar este directorio como una posible característica
-            feature_files = self._get_files_in_dir(os.path.join(self.project_path, dir_name))
+        try:
+            # Intentar usar análisis en caché para evitar análisis duplicados
+            from src.analyzers.analysis_cache import get_analysis_cache
+            cache = get_analysis_cache()
             
-            # Calcular métricas para esta característica
-            features[dir_name] = {
-                "files": len(feature_files),
-                "code_lines": sum(self._count_code_lines(f) for f in feature_files),
-                "test_lines": sum(self._count_test_lines(f) for f in feature_files),
-                "has_tests": any("test" in os.path.basename(f).lower() for f in feature_files),
-                "completion_estimate": self._estimate_feature_completion(dir_name, feature_files)
-            }
+            # Usar cache primero si está disponible
+            cached_result = cache.get(self.project_path, 'dependencies')
+            
+            if cached_result:
+                logger.info(f"✅ Usando análisis de dependencias en caché para grupos funcionales")
+                analysis_result = cached_result
+            else:
+                # Sin caché, ejecutar análisis
+                from src.analyzers.dependency_graph import DependencyGraph
+                
+                dep_analyzer = DependencyGraph()
+                analysis_result = dep_analyzer.build_dependency_graph(self.project_path)
+                
+                # Guardar en caché para futuras llamadas
+                cache.set(self.project_path, 'dependencies', analysis_result)
+            
+            # Extraer grupos funcionales del análisis
+            functional_groups = analysis_result.get('functionality_groups', [])
+            
+            features = {}
+            
+            # Convertir grupos funcionales en formato de características
+            for group in functional_groups:
+                group_name = group.get('name', 'Unknown Group')
+                group_files = group.get('files', [])
+                group_type = group.get('type', 'unknown')
+                
+                # Crear métricas para este grupo funcional
+                features[group_name] = {
+                    "type": group_type,
+                    "files": len(group_files),
+                    "description": group.get('description', f"Grupo funcional: {group_name}"),
+                    "importance": group.get('total_importance', 0),
+                    "size": group.get('size', len(group_files)),
+                    "completion_estimate": self._estimate_group_completion(group_files)
+                }
+            
+            # Si no hay grupos funcionales, crear grupos básicos basados en funcionalidades detectadas
+            if not functional_groups:
+                features = self._create_basic_functional_groups()
+                
+        except Exception as e:
+            logger.error(f"Error al analizar grupos funcionales: {e}")
+            # Fallback a grupos básicos
+            features = self._create_basic_functional_groups()
         
         # Detectar características basadas en archivos de especificación
         feature_specs = self._find_feature_specs()
@@ -1351,7 +1382,197 @@ class ProjectProgressTracker:
             return file
         else:
             return str(file)  # Intentar convertir a string como último recurso
-
+    
+    def _create_basic_functional_groups(self) -> Dict[str, Any]:
+        """
+        Crear grupos funcionales básicos basados en funcionalidades detectadas.
+        
+        Returns:
+            Dict con grupos funcionales básicos
+        """
+        features = {}
+        
+        try:
+            # Usar detector de funcionalidades para crear grupos básicos
+            from src.analyzers.functionality_detector import get_functionality_detector
+            
+            detector = get_functionality_detector()
+            functionality_result = detector.detect_functionalities(self.project_path)
+            
+            detected_functionalities = functionality_result.get('detected', {})
+            
+            for func_name, func_data in detected_functionalities.items():
+                if func_data.get('present', False):
+                    evidence = func_data.get('evidence', {})
+                    files = evidence.get('files', [])
+                    
+                    # Clean up and format the functionality name
+                    clean_name = func_name.capitalize().strip()
+                    
+                    # Add appropriate emoji based on functionality type
+                    icon_map = {
+                        'authentication': '🔐',
+                        'database': '🗄️',
+                        'api': '🔗',
+                        'frontend': '🎨',
+                        'testing': '🧪',
+                        'configuration': '⚙️',
+                        'documentation': '📚',
+                        'security': '🛡️',
+                        'logging': '📋',
+                        'deployment': '🚀',
+                        'monitoring': '📊'
+                    }
+                    
+                    icon = icon_map.get(func_name.lower(), '🔧')
+                    display_name = f"{icon} {clean_name}"
+                    
+                    features[display_name] = {
+                        "type": "functionality",
+                        "files": len(files),
+                        "description": f"Funcionalidad {func_name}",
+                        "importance": func_data.get('confidence', 0),
+                        "size": len(files),
+                        "completion_estimate": min(func_data.get('confidence', 0), 100)
+                    }
+                    
+        except Exception as e:
+            logger.error(f"Error al crear grupos funcionales básicos: {e}")
+            # Fallback a estructura de directorios simple
+            features = self._create_directory_based_groups()
+            
+        return features
+    
+    def _create_directory_based_groups(self) -> Dict[str, Any]:
+        """
+        Crear grupos basados en estructura de directorios como último recurso.
+        
+        Returns:
+            Dict con grupos basados en directorios
+        """
+        features = {}
+        
+        # Mapeo de directorios a tipos funcionales
+        directory_mapping = {
+            'src': '📁 Código Fuente Principal',
+            'tests': '🧪 Pruebas y Testing',
+            'docs': '📖 Documentación',
+            'examples': '💡 Ejemplos y Demos',
+            'config': '⚙️ Configuración',
+            'scripts': '🔧 Scripts y Herramientas',
+            'assets': '📦 Recursos y Assets',
+            'public': '🌐 Archivos Públicos',
+            'static': '📄 Archivos Estáticos'
+        }
+        
+        try:
+            dirs = [d for d in os.listdir(self.project_path) 
+                    if os.path.isdir(os.path.join(self.project_path, d)) 
+                    and not d.startswith('.') and d not in ('node_modules', 'venv', 'env', '__pycache__')]
+            
+            for dir_name in dirs:
+                # Usar nombre mapeado si existe, sino usar el nombre del directorio
+                display_name = directory_mapping.get(dir_name, f"📁 {dir_name.capitalize()}")
+                
+                dir_path = os.path.join(self.project_path, dir_name)
+                feature_files = self._get_files_in_dir(dir_path)
+                
+                features[display_name] = {
+                    "type": "directory",
+                    "files": len(feature_files),
+                    "description": f"Archivos en directorio {dir_name}",
+                    "importance": len(feature_files) * 10,  # Importancia basada en número de archivos
+                    "size": len(feature_files),
+                    "completion_estimate": self._estimate_group_completion(feature_files)
+                }
+                
+        except Exception as e:
+            logger.error(f"Error al crear grupos de directorios: {e}")
+            
+        return features
+    
+    def _estimate_group_completion(self, group_files: List[str]) -> int:
+        """
+        Estimar porcentaje de completitud de un grupo funcional.
+        
+        Args:
+            group_files: Lista de archivos en el grupo
+            
+        Returns:
+            Porcentaje de completitud estimado
+        """
+        if not group_files:
+            return 0
+            
+        # Señales de completitud
+        completion_signals = {
+            "has_tests": False,
+            "has_docs": False,
+            "has_implementation": False,
+            "has_todo_marks": False,
+            "has_issue_marks": False
+        }
+        
+        # Analizar archivos del grupo
+        for file_info in group_files:
+            try:
+                if isinstance(file_info, dict):
+                    file_path = file_info.get('path', '')
+                else:
+                    file_path = str(file_info)
+                
+                if not file_path:
+                    continue
+                    
+                file_name = os.path.basename(file_path).lower()
+                
+                # Detectar tipos de archivos
+                if "test" in file_name:
+                    completion_signals["has_tests"] = True
+                
+                if file_path.endswith(('.md', '.txt', '.html', '.rst')):
+                    completion_signals["has_docs"] = True
+                
+                if self._is_code_file(file_path):
+                    completion_signals["has_implementation"] = True
+                    
+                    # Buscar marcas TODO o FIXME si es un archivo de texto
+                    if self._is_text_file(file_name):
+                        try:
+                            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                                content = f.read()
+                            
+                            if re.search(r'TODO|FIXME|XXX|PENDING', content, re.IGNORECASE):
+                                completion_signals["has_todo_marks"] = True
+                            
+                            if re.search(r'ISSUE|BUG|PROBLEM', content, re.IGNORECASE):
+                                completion_signals["has_issue_marks"] = True
+                        except Exception:
+                            pass
+                
+            except Exception as e:
+                logger.debug(f"Error al analizar archivo {file_info}: {e}")
+                continue
+        
+        # Calcular puntuación
+        score = 0
+        if completion_signals["has_implementation"]:
+            score += 50  # Base por tener implementación
+        
+        if completion_signals["has_tests"]:
+            score += 25  # Bonus por tests
+        
+        if completion_signals["has_docs"]:
+            score += 15  # Bonus por documentación
+        
+        if completion_signals["has_todo_marks"]:
+            score -= 15  # Penalización por TODOs
+        
+        if completion_signals["has_issue_marks"]:
+            score -= 20  # Penalización por issues conocidas
+        
+        # Limitar entre 0 y 100
+        return max(0, min(100, score))
 
 def get_project_progress_tracker(project_path: str, config: Optional[ConfigManager] = None) -> ProjectProgressTracker:
     """
