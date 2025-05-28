@@ -1316,13 +1316,17 @@ class DashboardCLI:
         """
         parser = argparse.ArgumentParser(description="Generar dashboard de progreso del proyecto")
         parser.add_argument("--project", "-p", help="Ruta al proyecto (por defecto: directorio actual)")
-        parser.add_argument("--output", "-o", help="Ruta donde guardar el HTML generado")
-        parser.add_argument("--no-browser", dest="browser", action="store_false", help="No abrir automáticamente en el navegador")
+        parser.add_argument("--output", "-o", help="Ruta donde guardar el archivo generado")
+        parser.add_argument("--format", "-f", choices=["html", "markdown", "md"], default="markdown", help="Formato de salida (html/markdown)")
+        parser.add_argument("--no-browser", dest="browser", action="store_false", help="No abrir automáticamente en el navegador (solo para HTML)")
         
         parsed_args = parser.parse_args(args)
         
         # Determinar ruta del proyecto
         project_path = parsed_args.project or os.getcwd()
+        
+        # Normalizar formato
+        format_type = "markdown" if parsed_args.format in ["markdown", "md"] else "html"
         
         try:
             # Verificar acceso premium
@@ -1334,19 +1338,32 @@ class DashboardCLI:
                 print("    y recomendaciones proactivas requieren una suscripción premium.")
                 print("    Ejecuta 'project-prompt subscription plans' para más información.\n")
             
-            print(f"📊 Generando dashboard para el proyecto en {project_path}")
+            print(f"📊 Generando dashboard {format_type.upper()} para el proyecto en {project_path}")
             
-            # Generar dashboard
-            dashboard = DashboardGenerator(project_path, self.config)
-            output_file = dashboard.generate_dashboard(
-                output_path=parsed_args.output,
-                open_browser=parsed_args.browser
-            )
-            
-            print(f"✅ Dashboard generado correctamente en: {output_file}")
-            
-            if parsed_args.browser:
-                print("📱 Abriendo dashboard en el navegador...")
+            # Generar dashboard según el formato
+            if format_type == "markdown":
+                # Importar y usar el generador de markdown
+                from src.ui.markdown_dashboard import MarkdownDashboardGenerator
+                
+                markdown_generator = MarkdownDashboardGenerator(project_path, self.config)
+                output_file = markdown_generator.generate_markdown_dashboard(
+                    output_path=parsed_args.output
+                )
+                
+                print(f"✅ Dashboard markdown generado correctamente en: {output_file}")
+                
+            else:
+                # Usar el generador HTML existente
+                dashboard = DashboardGenerator(project_path, self.config)
+                output_file = dashboard.generate_dashboard(
+                    output_path=parsed_args.output,
+                    open_browser=parsed_args.browser
+                )
+                
+                print(f"✅ Dashboard HTML generado correctamente en: {output_file}")
+                
+                if parsed_args.browser:
+                    print("📱 Abriendo dashboard en el navegador...")
             
         except Exception as e:
             print(f"❌ Error al generar dashboard: {str(e)}")

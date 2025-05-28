@@ -398,7 +398,11 @@ class ConnectionAnalyzer:
         module_map = {}
         
         for file_path, file_data in file_imports.items():
-            language = file_data['language']
+            language = file_data.get('language')
+            
+            # Skip if language is None or not detected
+            if not language:
+                continue
             
             # Convertir ruta relativa a posible módulo según el lenguaje
             if language.lower() == 'python':

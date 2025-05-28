@@ -349,3 +349,6 @@ set_api_key = config_manager.set_api_key
 delete_api_key = config_manager.delete_api_key
 is_premium = config_manager.is_premium
 set_premium = config_manager.set_premium
+
+# Alias for backward compatibility
+Config = ConfigManager

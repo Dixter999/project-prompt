@@ -17,7 +17,7 @@ import json
 import textwrap
 
 from src.utils.logger import get_logger
-from src.analyzers.connection_analyzer import ConnectionAnalyzer, get_connection_analyzer
+from src.analyzers.analysis_cache import get_analysis_cache
 
 logger = get_logger()
 
@@ -33,27 +33,91 @@ class DependencyGraph:
     
     def __init__(self):
         """Inicializar el generador de grafo de dependencias."""
+        # Import dinamically to avoid circular imports
+        from src.analyzers.connection_analyzer import get_connection_analyzer
+        from src.analyzers.madge_analyzer import MadgeAnalyzer
+        
         self.connection_analyzer = get_connection_analyzer()
+        self.madge_analyzer = MadgeAnalyzer()
+        self.cache = get_analysis_cache()
     
-    def build_dependency_graph(self, project_path: str, max_files: int = 5000) -> Dict[str, Any]:
+    def build_dependency_graph(self, project_path: str, max_files: int = 5000, 
+                              use_madge: bool = True) -> Dict[str, Any]:
         """
         Construir un grafo de dependencias para un proyecto.
         
         Args:
             project_path: Ruta al proyecto
             max_files: Número máximo de archivos a analizar
+            use_madge: Si usar Madge para análisis eficiente
             
         Returns:
             Diccionario con datos del grafo
         """
-        # Analizar conexiones entre archivos
+        logger.info(f"🔍 Iniciando análisis de dependencias: {os.path.basename(project_path)}")
+        
+        # Verificar caché primero
+        cache_config = {'max_files': max_files, 'use_madge': use_madge}
+        cached_result = self.cache.get(project_path, 'dependencies', cache_config)
+        if cached_result:
+            logger.info(f"✅ Usando análisis en caché para {os.path.basename(project_path)}")
+            return cached_result
+        
+        # Intentar usar Madge primero para eficiencia
+        if use_madge:
+            logger.info("🔄 Ejecutando análisis con Madge...")
+            madge_result = self.madge_analyzer.get_dependency_graph(project_path)
+            
+            if madge_result['analysis_type'] == 'madge':
+                logger.info("✅ Análisis Madge exitoso - procesando resultados optimizados")
+                result = self._enhance_madge_results(madge_result, project_path, max_files)
+                # Almacenar en caché
+                self.cache.set(project_path, 'dependencies', result, cache_config)
+                return result
+            else:
+                logger.info("⚠️  Madge no disponible - usando análisis tradicional")
+        
+        # Análisis tradicional usando ConnectionAnalyzer
+        logger.info("🔄 Ejecutando análisis tradicional de conexiones...")
         connections = self.connection_analyzer.analyze_connections(project_path, max_files)
+        
+        # Obtener estadísticas de gitignore usando ProjectScanner
+        from src.analyzers.project_scanner import get_project_scanner
+        scanner = get_project_scanner(max_files=max_files)
+        
+        # Realizar un escaneo rápido solo para obtener estadísticas de gitignore
+        try:
+            logger.info("📊 Obteniendo estadísticas de archivos excluidos por .gitignore...")
+            scan_result = scanner.scan_project(project_path)
+            gitignore_stats = scan_result.get('stats', {}).get('gitignore_excluded', 0)
+            if gitignore_stats > 0:
+                logger.info(f"📋 {gitignore_stats} archivos excluidos por .gitignore")
+        except Exception as e:
+            logger.warning(f"No se pudieron obtener estadísticas de gitignore: {e}")
+            gitignore_stats = 0
+        
+        # Agregar estadísticas de gitignore a files_excluded
+        if 'files_excluded' not in connections:
+            connections['files_excluded'] = {}
+        connections['files_excluded']['by_gitignore'] = gitignore_stats
+        
+        # Recalcular total_excluded
+        excluded = connections['files_excluded']
+        total_excluded = (excluded.get('by_extension', 0) + 
+                         excluded.get('by_pattern', 0) + 
+                         excluded.get('html_presentational', 0) + 
+                         excluded.get('by_gitignore', 0))
+        connections['files_excluded']['total_excluded'] = total_excluded
         
         # Construir grafo dirigido
         graph = self._build_directed_graph(connections['file_connections'])
         
         # Calcular métricas del grafo
         metrics = self._calculate_graph_metrics(graph, connections['file_imports'])
+        
+        # Detectar grupos de funcionalidad 
+        logger.info("🔍 Detectando grupos de funcionalidad...")
+        functionality_groups = self._detect_functionality_groups(connections['file_imports'], graph)
         
         # Estructura final del grafo de dependencias
         dependency_graph = {
@@ -64,12 +128,18 @@ class DependencyGraph:
             'connected_components': connections['connected_components'],
             'disconnected_files': connections['disconnected_files'],
             'central_files': self._identify_central_files(graph),
+            'important_files': self._identify_important_files(connections['file_imports'], graph),
+            'functionality_groups': functionality_groups,
             'language_stats': connections['language_stats'],
             'file_cycles': self._detect_cycles(graph),
             'files_excluded': connections.get('files_excluded', {})
         }
         
-        logger.info(f"Grafo de dependencias construido: {len(dependency_graph['nodes'])} nodos, {len(dependency_graph['edges'])} enlaces")
+        logger.info(f"✅ Grafo de dependencias construido: {len(dependency_graph['nodes'])} nodos, {len(dependency_graph['edges'])} enlaces, {len(functionality_groups)} grupos funcionales")
+        
+        # Almacenar en caché
+        self.cache.set(project_path, 'dependencies', dependency_graph, cache_config)
+        
         return dependency_graph
     
     def export_graph_json(self, graph_data: Dict[str, Any], output_path: str) -> str:
@@ -118,13 +188,26 @@ class DependencyGraph:
             # Información sobre archivos excluidos
             if 'files_excluded' in graph_data:
                 excluded = graph_data['files_excluded']
-                markdown.append(f"Total de archivos excluidos: {excluded.get('total_excluded', 0)}")
-                markdown.append("\n## Archivos Excluidos")
+                total_excluded = excluded.get('total_excluded', 0)
+                gitignore_excluded = excluded.get('by_gitignore', 0)
+                
+                markdown.append(f"Total de archivos excluidos: {total_excluded}")
+                markdown.append("\n## 📋 Archivos Excluidos por .gitignore")
+                
+                if gitignore_excluded > 0:
+                    markdown.append(f"✅ **{gitignore_excluded} archivos excluidos** por las reglas de .gitignore")
+                    markdown.append("Esto ayuda a mantener el análisis enfocado en el código fuente relevante.")
+                else:
+                    markdown.append("ℹ️  No se encontraron archivos excluidos por .gitignore o no existe archivo .gitignore")
+                
+                markdown.append("\n### Desglose de Exclusiones")
                 markdown.append("| Tipo de exclusión | Cantidad |")
                 markdown.append("|---|---|")
                 markdown.append(f"| Por extensión (multimedia, binarios, etc.) | {excluded.get('by_extension', 0)} |")
                 markdown.append(f"| Por patrón (directorios/archivos no relevantes) | {excluded.get('by_pattern', 0)} |")
                 markdown.append(f"| HTML puramente presentacional | {excluded.get('html_presentational', 0)} |")
+                if gitignore_excluded > 0:
+                    markdown.append(f"| **Por .gitignore** | **{gitignore_excluded}** |")
             
             # Métricas
             markdown.append("\n## Métricas del Grafo")
@@ -163,10 +246,11 @@ class DependencyGraph:
             markdown.append("Archivos con mayor número de dependencias (entrada/salida):")
             
             for file_info in graph_data['central_files'][:10]:  # Top 10
-                file_path = file_info['file']
-                in_degree = file_info['in_degree']
-                out_degree = file_info['out_degree']
-                total = file_info['total']
+                # Compatibilidad con diferentes estructuras de datos
+                file_path = file_info.get('file', file_info.get('path', 'unknown'))
+                in_degree = file_info.get('in_degree', file_info.get('dependencies_in', 0))
+                out_degree = file_info.get('out_degree', file_info.get('dependencies_out', 0))
+                total = file_info.get('total', file_info.get('importance_score', in_degree + out_degree))
                 markdown.append(f"- `{file_path}`: {total} conexiones ({in_degree} entrantes, {out_degree} salientes)")
             
             # Archivos desconectados
@@ -193,6 +277,35 @@ class DependencyGraph:
                 if len(graph_data['file_cycles']) > 5:
                     markdown.append(f"... y {len(graph_data['file_cycles']) - 5} ciclos más.")
             
+            # Grupos funcionales detectados
+            if 'functionality_groups' in graph_data and graph_data['functionality_groups']:
+                markdown.append("\n## 📊 Grupos Funcionales Detectados")
+                markdown.append("Los siguientes grupos funcionales fueron identificados en el proyecto:")
+                
+                for i, group in enumerate(graph_data['functionality_groups'], 1):
+                    markdown.append(f"\n### {i}. {group['name']}")
+                    markdown.append(f"**Tipo:** {group['type']}")
+                    markdown.append(f"**Archivos:** {group['size']}")
+                    markdown.append(f"**Descripción:** {group['description']}")
+                    
+                    # Mostrar archivos en el grupo (máximo 8)
+                    markdown.append("\n**Archivos en el grupo:**")
+                    files_to_show = group['files'][:8]
+                    for file_info in files_to_show:
+                        file_path = file_info.get('path', file_info.get('file', 'unknown'))
+                        importance = file_info.get('importance_score', 0)
+                        markdown.append(f"- `{file_path}` (importancia: {importance:.2f})")
+                    
+                    if len(group['files']) > 8:
+                        markdown.append(f"- ... y {len(group['files']) - 8} archivos más")
+                    
+                    # Grafo textual del grupo si hay conexiones
+                    markdown.append(f"\n**Grafo del grupo {group['name']}:**")
+                    markdown.append("```")
+                    group_graph = self._generate_group_text_visualization(group)
+                    markdown.append(group_graph)
+                    markdown.append("```")
+
             # Representación textual del grafo
             markdown.append("\n## Representación Textual del Grafo")
             markdown.append("```")
@@ -425,7 +538,8 @@ class DependencyGraph:
         # Preparar estructura para la visualización
         node_map = {}
         for i, file_info in enumerate(central_files):
-            file_path = file_info['file']
+            # Compatibilidad con diferentes estructuras de datos
+            file_path = file_info.get('file', file_info.get('path', f'unknown_{i}'))
             short_name = os.path.basename(file_path)
             node_map[file_path] = f"[{i+1}] {short_name}"
             
@@ -450,7 +564,376 @@ class DependencyGraph:
                     shown_edges.add(edge_str)
         
         return "\n".join(lines)
-
+    
+    def _enhance_madge_results(self, madge_result: Dict[str, Any], 
+                               project_path: str, max_files: int) -> Dict[str, Any]:
+        """
+        Mejorar resultados de Madge con análisis adicional.
+        
+        Args:
+            madge_result: Resultados del análisis de Madge
+            project_path: Ruta al proyecto
+            max_files: Número máximo de archivos
+            
+        Returns:
+            Diccionario mejorado con datos adicionales
+        """
+        logger.info("Mejorando resultados de Madge con análisis adicional...")
+        
+        # Obtener estadísticas de gitignore usando ProjectScanner
+        from src.analyzers.project_scanner import get_project_scanner
+        scanner = get_project_scanner(max_files=max_files)
+        
+        # Realizar un escaneo rápido solo para obtener estadísticas de gitignore
+        gitignore_stats = 0
+        try:
+            scan_result = scanner.scan_project(project_path)
+            gitignore_stats = scan_result.get('stats', {}).get('gitignore_excluded', 0)
+        except Exception as e:
+            logger.warning(f"No se pudieron obtener estadísticas de gitignore: {e}")
+        
+        # Convertir formato de Madge al formato esperado
+        nodes = []
+        edges = []
+        
+        # Construir nodos desde archivos importantes
+        for file_info in madge_result['important_files']:
+            nodes.append({
+                'id': file_info['path'],
+                'path': file_info['path'],
+                'full_path': file_info['full_path'],
+                'type': file_info['file_info']['type'],
+                'size': file_info['file_info']['size'],
+                'directory': file_info['file_info']['directory'],
+                'dependencies_count': file_info['dependencies_out'],
+                'dependents_count': file_info['dependencies_in'],
+                'importance_score': file_info['importance_score']
+            })
+        
+        # Construir edges desde el grafo de dependencias
+        dependency_graph = madge_result['dependency_graph']
+        edge_id = 0
+        for source, targets in dependency_graph.items():
+            for target in targets:
+                edges.append({
+                    'id': edge_id,
+                    'source': source,
+                    'target': target,
+                    'weight': 1
+                })
+                edge_id += 1
+        
+        # Calcular métricas adicionales
+        enhanced_metrics = {
+            **madge_result['metrics'],
+            'analysis_method': 'madge_enhanced',
+            'performance_optimized': True,
+            'files_analyzed': len(madge_result['important_files']),
+            'groups_detected': len(madge_result['functionality_groups'])
+        }
+        
+        # Estructura final mejorada
+        enhanced_result = {
+            'project_path': project_path,
+            'nodes': nodes,
+            'edges': edges,
+            'metrics': enhanced_metrics,
+            'important_files': madge_result['important_files'],
+            'functionality_groups': madge_result['functionality_groups'],
+            'connected_components': [],  # Se puede calcular si es necesario
+            'disconnected_files': [],
+            'central_files': self._identify_central_files_from_madge(madge_result['important_files']),
+            'language_stats': self._calculate_language_stats_from_madge(madge_result['important_files']),
+            'file_cycles': self._extract_cycles_from_groups(madge_result['functionality_groups']),
+            'files_excluded': {
+                'by_gitignore': gitignore_stats,
+                'total_excluded': gitignore_stats  # Para Madge, solo consideramos gitignore exclusions
+            },
+            'madge_analysis': True,
+            'performance_summary': self._generate_performance_summary(madge_result)
+        }
+        
+        logger.info(f"Análisis mejorado completado: {len(nodes)} archivos importantes analizados")
+        return enhanced_result
+    
+    def _identify_central_files_from_madge(self, important_files: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Identificar archivos centrales desde resultados de Madge.
+        
+        Args:
+            important_files: Lista de archivos importantes
+            
+        Returns:
+            Lista de archivos centrales
+        """
+        # Ordenar por puntuación de importancia
+        sorted_files = sorted(important_files, key=lambda x: x['importance_score'], reverse=True)
+        
+        # Tomar los top archivos como centrales
+        central_count = min(10, len(sorted_files) // 3)  # Top 1/3 o máximo 10
+        central_files = []
+        
+        for file_info in sorted_files[:central_count]:
+            central_files.append({
+                'path': file_info['path'],
+                'importance_score': file_info['importance_score'],
+                'dependencies_out': file_info['dependencies_out'],
+                'dependencies_in': file_info['dependencies_in'],
+                'centrality_type': 'importance_based'
+            })
+        
+        return central_files
+    
+    def _calculate_language_stats_from_madge(self, important_files: List[Dict[str, Any]]) -> Dict[str, int]:
+        """
+        Calcular estadísticas de lenguajes desde archivos importantes.
+        
+        Args:
+            important_files: Lista de archivos importantes
+            
+        Returns:
+            Diccionario con estadísticas por tipo de archivo
+        """
+        stats = {}
+        for file_info in important_files:
+            file_type = file_info['file_info']['type']
+            stats[file_type] = stats.get(file_type, 0) + 1
+        
+        return stats
+    
+    def _extract_cycles_from_groups(self, groups: List[Dict[str, Any]]) -> List[List[str]]:
+        """
+        Extraer ciclos desde grupos de funcionalidad.
+        
+        Args:
+            groups: Lista de grupos de funcionalidad
+            
+        Returns:
+            Lista de ciclos detectados
+        """
+        cycles = []
+        for group in groups:
+            if group['type'] == 'circular' and 'cycle_path' in group:
+                cycles.append(group['cycle_path'])
+        
+        return cycles
+    
+    def _generate_performance_summary(self, madge_result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Generar resumen de rendimiento del análisis.
+        
+        Args:
+            madge_result: Resultados del análisis de Madge
+            
+        Returns:
+            Diccionario con resumen de rendimiento
+        """
+        return {
+            'analysis_type': madge_result['analysis_type'],
+            'files_filtered': True,
+            'important_files_count': len(madge_result['important_files']),
+            'groups_detected': len(madge_result['functionality_groups']),
+            'complexity_level': madge_result['metrics']['complexity'],
+            'optimization_applied': 'dependency_filtering'
+        }
+    
+    def _detect_functionality_groups(self, file_imports: Dict[str, Any], 
+                                   graph: Dict[str, List[str]]) -> List[Dict[str, Any]]:
+        """
+        Detectar grupos de funcionalidad en el proyecto.
+        
+        Args:
+            file_imports: Información de importaciones de archivos
+            graph: Grafo de dependencias
+            
+        Returns:
+            Lista de grupos de funcionalidad detectados
+        """
+        groups = []
+        
+        # Obtener archivos importantes primero
+        important_files = self._identify_important_files(file_imports, graph)
+        
+        # Crear grupos basados en patrones de directorio
+        directory_groups = {}
+        for file_info in important_files:
+            file_path = file_info['path']
+            directory = os.path.dirname(file_path)
+            
+            # Normalizar nombre del directorio
+            dir_parts = directory.replace('\\', '/').split('/')
+            if len(dir_parts) > 1:
+                group_name = '/'.join(dir_parts[-2:])  # Últimos 2 niveles
+            else:
+                group_name = dir_parts[-1] if dir_parts and dir_parts[-1] else 'root'
+            
+            if group_name not in directory_groups:
+                directory_groups[group_name] = []
+            directory_groups[group_name].append(file_info)
+        
+        # Convertir a formato de grupos
+        for group_name, files in directory_groups.items():
+            if len(files) >= 2:  # Solo grupos con múltiples archivos
+                total_importance = sum(f.get('importance_score', 0) for f in files)
+                groups.append({
+                    'name': f"📁 {group_name}",
+                    'type': 'directory',
+                    'files': files,
+                    'size': len(files),
+                    'total_importance': total_importance,
+                    'description': f"Archivos en {group_name}"
+                })
+        
+        # Detectar grupos por tipo de archivo
+        type_groups = {}
+        for file_info in important_files:
+            file_type = file_info.get('file_info', {}).get('type', 'unknown')
+            if file_type not in type_groups:
+                type_groups[file_type] = []
+            type_groups[file_type].append(file_info)
+        
+        # Añadir grupos por tipo si son significativos
+        for file_type, files in type_groups.items():
+            if len(files) >= 3 and file_type != 'unknown':  # Solo tipos significativos
+                total_importance = sum(f.get('importance_score', 0) for f in files)
+                groups.append({
+                    'name': f"🔧 Archivos {file_type}",
+                    'type': 'filetype',
+                    'files': files,
+                    'size': len(files),
+                    'total_importance': total_importance,
+                    'description': f"Archivos de tipo {file_type}"
+                })
+        
+        # Detectar dependencias circulares
+        cycles = self._detect_cycles(graph)
+        if cycles:
+            cycle_files = []
+            for cycle in cycles[:3]:  # Solo primeros 3 ciclos
+                for file_path in cycle:
+                    # Buscar info del archivo en important_files
+                    file_info = next((f for f in important_files if f['path'] == file_path), None)
+                    if file_info and file_info not in cycle_files:
+                        cycle_files.append(file_info)
+            
+            if cycle_files:
+                groups.append({
+                    'name': f"🔄 Dependencias circulares",
+                    'type': 'circular',
+                    'files': cycle_files,
+                    'size': len(cycle_files),
+                    'total_importance': sum(f.get('importance_score', 0) for f in cycle_files),
+                    'description': f"Archivos con dependencias circulares"
+                })
+        
+        # Ordenar grupos por importancia
+        groups.sort(key=lambda x: x['total_importance'], reverse=True)
+        
+        return groups[:10]  # Límite de 10 grupos
+    
+    def _identify_important_files(self, file_imports: Dict[str, Any], 
+                                graph: Dict[str, List[str]]) -> List[Dict[str, Any]]:
+        """
+        Identificar archivos importantes basado en dependencias.
+        
+        Args:
+            file_imports: Información de importaciones
+            graph: Grafo de dependencias
+            
+        Returns:
+            Lista de archivos importantes ordenada por importancia
+        """
+        important_files = []
+        
+        for file_path, imports_info in file_imports.items():
+            # Contar dependencias entrantes y salientes
+            deps_out = len(imports_info.get('imports', []))
+            deps_in = sum(1 for deps in graph.values() if file_path in deps)
+            
+            # Calcular score de importancia
+            importance_score = deps_out + (deps_in * 2)  # Dependencias entrantes valen más
+            
+            if importance_score >= 3:  # Umbral mínimo
+                important_files.append({
+                    'path': file_path,
+                    'dependencies_out': deps_out,
+                    'dependencies_in': deps_in,
+                    'importance_score': importance_score,
+                    'file_info': imports_info.get('file_info', {})
+                })
+        
+        # Ordenar por importancia
+        important_files.sort(key=lambda x: x['importance_score'], reverse=True)
+        
+        return important_files[:50]  # Límite de 50 archivos importantes
+    
+    def _generate_group_text_visualization(self, group: Dict[str, Any]) -> str:
+        """
+        Generar representación textual de un grupo funcional.
+        
+        Args:
+            group: Información del grupo funcional
+            
+        Returns:
+            Representación textual del grupo
+        """
+        try:
+            lines = []
+            files = group.get('files', [])
+            
+            if not files:
+                return "Grupo vacío"
+            
+            # Título del grupo
+            lines.append(f"Grupo: {group['name']} ({group['size']} archivos)")
+            lines.append("=" * 50)
+            
+            # Si es un grupo de directorio, mostrar estructura
+            if group['type'] == 'directory':
+                lines.append("Estructura de directorio:")
+                for file_info in files[:6]:  # Máximo 6 archivos
+                    file_path = file_info.get('path', file_info.get('file', 'unknown'))
+                    basename = os.path.basename(file_path)
+                    importance = file_info.get('importance_score', 0)
+                    lines.append(f"  📄 {basename} (importancia: {importance:.1f})")
+                    
+            elif group['type'] == 'filetype':
+                lines.append(f"Archivos de tipo {group['name']}:")
+                for file_info in files[:6]:
+                    file_path = file_info.get('path', file_info.get('file', 'unknown'))
+                    basename = os.path.basename(file_path)
+                    importance = file_info.get('importance_score', 0)
+                    lines.append(f"  🔧 {basename} (importancia: {importance:.1f})")
+                    
+            elif group['type'] == 'circular':
+                lines.append("Archivos con dependencias circulares:")
+                for file_info in files[:6]:
+                    file_path = file_info.get('path', file_info.get('file', 'unknown'))
+                    basename = os.path.basename(file_path)
+                    lines.append(f"  🔄 {basename}")
+                    
+            # Mostrar conexiones si hay pocas
+            if len(files) <= 4:
+                lines.append("\nConexiones internas:")
+                for i, file_info in enumerate(files):
+                    file_path = file_info.get('path', file_info.get('file', 'unknown'))
+                    basename = os.path.basename(file_path)
+                    # Simplificar conexiones
+                    connected_to = [os.path.basename(f.get('path', f.get('file', ''))) 
+                                  for j, f in enumerate(files) if i != j]
+                    if connected_to:
+                        lines.append(f"  {basename} → {', '.join(connected_to[:3])}")
+                    else:
+                        lines.append(f"  {basename} (sin conexiones internas)")
+            
+            if len(files) > 6:
+                lines.append(f"  ... y {len(files) - 6} archivos más")
+            
+            return "\n".join(lines)
+            
+        except Exception as e:
+            return f"Error al generar visualización del grupo: {str(e)}"
+        
 
 def get_dependency_graph() -> DependencyGraph:
     """

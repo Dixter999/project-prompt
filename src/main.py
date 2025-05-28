@@ -11,6 +11,9 @@ Los resultados se guardan en la carpeta 'project-output'.
 import os
 import sys
 import json
+import time
+import functools
+import inspect
 from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Any
@@ -20,7 +23,8 @@ import typer
 from rich.console import Console
 
 from src import __version__
-from src.utils import logger, config_manager, LogLevel, set_level
+from src.utils import logger, LogLevel, set_level
+from src.utils.config import config_manager
 from src.utils.api_validator import get_api_validator
 from src.utils.updater import Updater, check_and_notify_updates
 from src.utils.sync_manager import SyncManager, get_sync_manager
@@ -206,12 +210,75 @@ def analyze(
     cli.print_info(f"Analizando proyecto en: {project_path}")
     
     try:
-        # Crear escáner de proyectos
-        scanner = get_project_scanner(max_file_size_mb=max_size, max_files=max_files)
+        # Crear función de callback para el progreso
+        progress_info = {}
         
-        # Realizar análisis de estructura
-        with cli.status("Escaneando archivos y directorios..."):
-            project_data = scanner.scan_project(project_path)
+        def update_progress(info):
+            progress_info.update(info)
+        
+        # Crear escáner de proyectos con callback de progreso
+        scanner = get_project_scanner(
+            max_file_size_mb=max_size, 
+            max_files=max_files,
+            progress_callback=update_progress
+        )
+        
+        # Realizar análisis de estructura con indicadores de progreso
+        with cli.progress_bar("Escaneando proyecto", total=100) as progress:
+            # Configurar task de progreso
+            task = progress.add_task("Escaneando archivos y directorios...", total=100)
+            
+            # Iniciar el análisis en un hilo separado para poder actualizar el progreso
+            import threading
+            import time
+            
+            project_data = None
+            analysis_complete = False
+            error = None
+            
+            def run_analysis():
+                nonlocal project_data, analysis_complete, error
+                try:
+                    project_data = scanner.scan_project(project_path)
+                    analysis_complete = True
+                except Exception as e:
+                    error = e
+                    analysis_complete = True
+            
+            # Iniciar análisis en hilo separado
+            analysis_thread = threading.Thread(target=run_analysis)
+            analysis_thread.start()
+            
+            # Actualizar progreso mientras el análisis está en curso
+            while not analysis_complete:
+                time.sleep(0.1)
+                
+                if progress_info:
+                    total_files = progress_info.get('total_files', 1)
+                    analyzed_files = progress_info.get('analyzed_files', 0)
+                    current_file = progress_info.get('current_file', '')
+                    message = progress_info.get('message', 'Escaneando...')
+                    
+                    # Calcular progreso como porcentaje
+                    if total_files > 0:
+                        progress_percent = min(95, (analyzed_files / total_files) * 95)  # Máximo 95% hasta completar
+                    else:
+                        progress_percent = 10
+                    
+                    # Actualizar tarea con información actual
+                    if current_file:
+                        status_msg = f"{message}: {current_file}"
+                    else:
+                        status_msg = message
+                    
+                    progress.update(task, completed=progress_percent, description=status_msg)
+            
+            # Completar el progreso
+            progress.update(task, completed=100, description="Análisis completado")
+            analysis_thread.join()
+            
+            if error:
+                raise error
         
         # Mostrar resumen general
         cli.print_success(f"Análisis completado en {project_data.get('scan_time', 0)} segundos")
@@ -298,7 +365,8 @@ def analyze(
 @app.command()
 def menu():
     """Iniciar el menú interactivo de ProjectPrompt."""
-    menu.show()
+    from src.ui.menu import menu as interactive_menu
+    interactive_menu.show()
 
 
 @app.command()
@@ -585,6 +653,231 @@ def verify_api(
             )
             
         console.print(table)
+
+
+@app.command(name="deps")
+def analyze_dependencies(
+    path: str = typer.Argument(".", help="Ruta del proyecto a analizar"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Archivo de salida personalizado (auto-guardado si no se especifica)"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Formato de salida: markdown, json, html"),
+    max_files: int = typer.Option(100, "--max-files", help="Máximo número de archivos importantes a analizar"),
+    min_deps: int = typer.Option(3, "--min-deps", help="Mínimo número de dependencias para considerar archivo importante"),
+    use_madge: bool = typer.Option(True, "--madge/--no-madge", help="Usar Madge para análisis eficiente"),
+    show_groups: bool = typer.Option(True, "--groups/--no-groups", help="Mostrar grupos de funcionalidad"),
+    show_cycles: bool = typer.Option(True, "--cycles/--no-cycles", help="Detectar dependencias circulares")
+):
+    """Análisis eficiente de dependencias usando Madge (comando directo optimizado).
+    
+    Los resultados se guardan automáticamente en project-output/analyses/dependencies/ 
+    a menos que se especifique un archivo de salida personalizado con --output.
+    """
+    
+    project_path = os.path.abspath(path)
+    
+    if not os.path.isdir(project_path):
+        cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
+        return
+        
+    cli.print_header("📊 Análisis Eficiente de Dependencias")
+    cli.print_info(f"🔍 Analizando proyecto en: {project_path}")
+    cli.print_info(f"⚙️  Configuración: max_files={max_files}, min_deps={min_deps}, madge={use_madge}")
+    
+    try:
+        # Importar analizador de dependencias
+        from src.analyzers.dependency_graph import DependencyGraph
+        
+        # Crear analizador con configuración personalizada
+        analyzer = DependencyGraph()
+        if hasattr(analyzer, 'madge_analyzer'):
+            analyzer.madge_analyzer.min_dependencies = min_deps
+            analyzer.madge_analyzer.max_files_to_analyze = max_files
+        
+        # Realizar análisis con indicador de progreso
+        with cli.status("🔄 Ejecutando análisis de dependencias..."):
+            start_time = time.time()
+            dependency_data = analyzer.build_dependency_graph(
+                project_path, 
+                max_files=max_files * 10,  # Permitir más archivos para el análisis inicial
+                use_madge=use_madge
+            )
+            analysis_time = time.time() - start_time
+        
+        # Mostrar resultados del análisis
+        cli.print_success(f"✅ Análisis completado en {analysis_time:.2f} segundos")
+        
+        # Mostrar métricas generales
+        metrics = dependency_data.get('metrics', {})
+        if metrics:
+            cli.print_info("\n📈 Métricas del proyecto:")
+            
+            metrics_table = cli.create_table("Métricas", ["Métrica", "Valor"])
+            metrics_table.add_row("Método de análisis", metrics.get('analysis_method', 'tradicional'))
+            metrics_table.add_row("Archivos totales", str(metrics.get('total_files', 0)))
+            metrics_table.add_row("Archivos importantes", str(metrics.get('files_analyzed', len(dependency_data.get('important_files', [])))))
+            metrics_table.add_row("Grupos funcionales", str(len(dependency_data.get('functionality_groups', []))))
+            metrics_table.add_row("Dependencias totales", str(metrics.get('total_dependencies', 0)))
+            metrics_table.add_row("Promedio dependencias", str(metrics.get('average_dependencies', 0)))
+            metrics_table.add_row("Complejidad", metrics.get('complexity', 'desconocida'))
+            
+            if metrics.get('performance_optimized'):
+                metrics_table.add_row("Optimización", "✅ Filtrado inteligente aplicado")
+            
+            console.print(metrics_table)
+        
+        # Mostrar archivos importantes
+        important_files = dependency_data.get('important_files', [])
+        if important_files:
+            cli.print_info(f"\n🎯 Top {min(10, len(important_files))} archivos más importantes:")
+            
+            files_table = cli.create_table("Archivos Importantes", 
+                                         ["Archivo", "Deps Out", "Deps In", "Score", "Tipo"])
+            
+            for file_info in important_files[:10]:
+                path_display = file_info['path']
+                if len(path_display) > 50:
+                    path_display = "..." + path_display[-47:]
+                    
+                files_table.add_row(
+                    path_display,
+                    str(file_info.get('dependencies_out', 0)),
+                    str(file_info.get('dependencies_in', 0)),
+                    str(file_info.get('importance_score', 0)),
+                    file_info.get('file_info', {}).get('type', 'unknown')
+                )
+            
+            console.print(files_table)
+        
+        # Mostrar grupos de funcionalidad
+        if show_groups:
+            groups = dependency_data.get('functionality_groups', [])
+            if groups:
+                cli.print_info(f"\n🏗️  Grupos funcionales detectados ({len(groups)}):")
+                
+                for i, group in enumerate(groups[:5]):  # Mostrar solo los top 5
+                    group_name = group['name']
+                    group_size = group['size']
+                    group_importance = group['total_importance']
+                    group_type = group.get('type', 'unknown')
+                    
+                    console.print(f"  {i+1}. {group_name}")
+                    console.print(f"     📁 {group_size} archivos, Score: {group_importance}")
+                    
+                    if group_type == 'circular':
+                        console.print(f"     🔄 [yellow]Dependencia circular detectada[/yellow]")
+                    elif group_type == 'directory':
+                        console.print(f"     📂 [blue]Agrupación por directorio[/blue]")
+                    elif group_type == 'filetype':
+                        console.print(f"     🔧 [green]Agrupación por tipo de archivo[/green]")
+            else:
+                cli.print_info(f"\n🏗️  No se detectaron grupos funcionales significativos")
+        
+        # Mostrar ciclos si se detectaron
+        if show_cycles:
+            cycles = dependency_data.get('file_cycles', [])
+            if cycles:
+                cli.print_warning(f"\n🔄 Dependencias circulares detectadas ({len(cycles)}):")
+                for i, cycle in enumerate(cycles[:3]):  # Mostrar solo los primeros 3
+                    cycle_display = " → ".join(cycle[:4])
+                    if len(cycle) > 4:
+                        cycle_display += " → ..."
+                    console.print(f"  {i+1}. {cycle_display}")
+        
+        # Generar archivo de salida (automático o solicitado)
+        if output:
+            output_path = output
+            
+            # Determinar formato basándose en extensión o parámetro
+            if not output.endswith(('.json', '.md', '.html')):
+                if format == 'json':
+                    output_path = f"{output}.json"
+                elif format == 'html':
+                    output_path = f"{output}.html"
+                else:
+                    output_path = f"{output}.md"
+            
+            # Asegurar que el directorio existe
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        else:
+            # Auto-generar nombre de archivo y guardarlo en directorio estructurado
+            project_name = os.path.basename(project_path)
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            
+            # Crear subdirectorio para dependencias dentro de ANALYSES_DIR
+            dependencies_dir = ANALYSES_DIR / "dependencies"
+            os.makedirs(dependencies_dir, exist_ok=True)
+            
+            # Generar nombre de archivo basado en formato
+            if format == 'json':
+                filename = f"deps_{project_name}_{timestamp}.json"
+            elif format == 'html':
+                filename = f"deps_{project_name}_{timestamp}.html"
+            else:
+                filename = f"deps_{project_name}_{timestamp}.md"
+            
+            output_path = str(dependencies_dir / filename)
+            
+            with cli.status(f"💾 Generando archivo {format}..."):
+                if output_path.endswith('.json'):
+                    # Guardar en formato JSON
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        json.dump(dependency_data, f, indent=2, default=str)
+                        
+                elif output_path.endswith('.md'):
+                    # Generar Markdown
+                    markdown_content = analyzer.generate_markdown_visualization(dependency_data)
+                    with open(output_path, 'w', encoding='utf-8') as f:
+                        f.write(markdown_content)
+                        
+                elif output_path.endswith('.html'):
+                    # Generar HTML (si está disponible)
+                    try:
+                        from src.ui.dashboard import DashboardCLI
+                        dashboard = DashboardCLI()
+                        html_content = dashboard.generate_dependencies_html(dependency_data)
+                        with open(output_path, 'w', encoding='utf-8') as f:
+                            f.write(html_content)
+                    except Exception as e:
+                        cli.print_warning(f"No se pudo generar HTML: {e}")
+                        # Fallback a JSON
+                        output_path = output_path.replace('.html', '.json')
+                        with open(output_path, 'w', encoding='utf-8') as f:
+                            json.dump(dependency_data, f, indent=2, default=str)
+            
+            if output:
+                cli.print_success(f"📄 Análisis guardado en: {output_path}")
+            else:
+                cli.print_success(f"📄 Análisis guardado automáticamente en: {output_path}")
+                cli.print_info(f"💡 Para especificar ubicación personalizada, usa: --output <archivo>")
+        
+        # Sugerir siguientes pasos
+        cli.print_info("\n💡 Sugerencias para análisis más profundo:")
+        
+        if not use_madge:
+            console.print("  • Prueba con --madge para análisis más rápido")
+            
+        if important_files and len(important_files) == max_files:
+            console.print(f"  • Aumenta --max-files para analizar más archivos importantes")
+            
+        if output:
+            console.print("  • Usa --format html para visualización interactiva")
+        else:
+            console.print("  • Usa --output <archivo> para especificar ubicación personalizada")
+            console.print("  • Usa --format html para visualización interactiva")
+            
+        console.print("  • Usa 'project-prompt premium dashboard' para análisis completo con IA")
+        
+        # Registro de telemetría si está habilitado
+        record_command("analyze_dependencies", {
+            "files_analyzed": len(important_files),
+            "analysis_time": analysis_time,
+            "use_madge": use_madge,
+            "complexity": metrics.get('complexity', 'unknown')
+        })
+            
+    except Exception as e:
+        cli.print_error(f"❌ Error durante el análisis: {e}")
+        logger.error(f"Error en analyze_dependencies: {e}", exc_info=True)
+        record_error("analyze_dependencies", str(e))
 
 
 @app.command()
@@ -1205,7 +1498,8 @@ def subscription_plans():
 @premium_app.command("dashboard")
 def premium_dashboard(
     project: str = typer.Argument(".", help="Ruta al proyecto para generar el dashboard"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta donde guardar el dashboard HTML"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Formato de salida (html/markdown/md)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta donde guardar el dashboard"),
     no_browser: bool = typer.Option(False, "--no-browser", help="No abrir automáticamente en el navegador")
 ):
     """Genera un dashboard visual interactivo con el estado y progreso del proyecto (característica premium)."""
@@ -1226,6 +1520,8 @@ def premium_dashboard(
     args = []
     if project != ".":
         args.extend(["--project", project])
+    if format != "html":
+        args.extend(["--format", format])
     if output:
         args.extend(["--output", output])
     if no_browser:
@@ -1830,32 +2126,38 @@ def sync_status():
         console.print(install_table)
 
 
+
+
+
 # Configurar callbacks para inicialización y cierre de telemetría
 
 @app.callback()
 def app_callback():
     """
     Callback que se ejecuta al iniciar la aplicación.
-    Configura el entorno y la telemetría.
+    Configura el entorno y la telemetría de forma no bloqueante.
     """
     try:
-        # Inicializar telemetría
-        initialize_telemetry()
+        # Inicializar telemetría de forma no bloqueante
+        import threading
+        def initialize_telemetry_async():
+            try:
+                initialize_telemetry()
+                check_first_run_telemetry_consent()
+            except Exception as e:
+                # Registro silencioso para no interferir con la CLI
+                pass
         
-        # Verificar si es la primera ejecución para solicitar consentimiento
-        check_first_run_telemetry_consent()
+        # Ejecutar en hilo separado para no bloquear la CLI
+        telemetry_thread = threading.Thread(
+            target=initialize_telemetry_async, 
+            daemon=True
+        )
+        telemetry_thread.start()
         
-    except Exception as e:
-        # No queremos que un error en la telemetría impida el uso de la aplicación
-        error_message = str(e)
-        logger.error(f"Error al inicializar telemetría: {error_message}")
-        
-        # Proporcionar información adicional sobre los errores comunes
-        if "get_config" in error_message:
-            logger.info("💡 Este error es inofensivo y no afecta a la funcionalidad principal del programa.")
-            logger.info("   La telemetría es opcional y el programa funcionará normalmente sin ella.")
-        elif "connection" in error_message.lower() or "connect" in error_message.lower():
-            logger.info("💡 Error de conexión en telemetría - funcionamiento sin conexión habilitado.")
+    except Exception:
+        # Ignorar completamente errores de telemetría para no bloquear la CLI
+        pass
     
     # El callback de Typer no debe retornar nada para continuar con la ejecución normal
     return
@@ -2148,8 +2450,3 @@ def delete(
                 cli.print_error(f"Error al eliminar archivos en {directory}: {e}")
     
     cli.print_success("Limpieza completada exitosamente.")
-
-
-# Punto de entrada principal para ejecución directa
-if __name__ == "__main__":
-    app()

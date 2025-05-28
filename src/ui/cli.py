@@ -23,7 +23,8 @@ from rich.layout import Layout
 from rich.live import Live
 
 from src import __version__
-from src.utils import logger, config_manager, LogLevel, set_level
+from src.utils import logger, LogLevel, set_level
+from src.utils.config import config_manager
 from src.ui.themes import get_current_theme, apply_theme_to_console
 
 # Console para output estándar con tema aplicado

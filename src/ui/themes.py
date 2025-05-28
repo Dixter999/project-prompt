@@ -216,9 +216,12 @@ def get_current_theme() -> Theme:
         Tema actual
     """
     # Lazy import to avoid circular dependencies
-    from src.utils.config import config_manager
-    
-    theme_name = config_manager.get("theme", "default")
+    try:
+        from src.utils.config import config_manager
+        theme_name = config_manager.get("theme", "default")
+    except (ImportError, AttributeError):
+        # Fall back to default theme if config_manager is not available
+        theme_name = "default"
     
     return THEMES.get(theme_name, THEMES["default"])
 

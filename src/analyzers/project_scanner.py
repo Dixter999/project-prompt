@@ -18,6 +18,7 @@ from collections import Counter
 
 from src.analyzers.file_analyzer import FileAnalyzer, get_file_analyzer
 from src.utils.logger import get_logger
+from src.utils.gitignore_parser import GitignoreParser, get_gitignore_parser
 
 # Configurar logger
 logger = get_logger()
@@ -46,7 +47,8 @@ class ProjectScanner:
                  ignore_dirs: Optional[List[str]] = None,
                  ignore_files: Optional[List[str]] = None,
                  max_file_size_mb: float = 5.0,
-                 max_files: int = 10000):
+                 max_files: int = 10000,
+                 progress_callback=None):
         """
         Inicializar el escáner de proyectos.
         
@@ -55,12 +57,17 @@ class ProjectScanner:
             ignore_files: Lista de patrones de archivos a ignorar
             max_file_size_mb: Tamaño máximo de archivo a analizar en MB
             max_files: Número máximo de archivos a procesar
+            progress_callback: Función de callback para reportar progreso
         """
         self.ignore_dirs = ignore_dirs or DEFAULT_IGNORE_DIRS
         self.ignore_files = ignore_files or DEFAULT_IGNORE_FILES
         self.max_file_size = max_file_size_mb
         self.max_files = max_files
         self.file_analyzer = get_file_analyzer(max_file_size_mb)
+        self.progress_callback = progress_callback
+        
+        # Parser de gitignore - se inicializará en scan_project
+        self.gitignore_parser: Optional[GitignoreParser] = None
         
         # Atributos para almacenar resultados
         self.structure = {}
@@ -75,10 +82,43 @@ class ProjectScanner:
             'binary_files': 0,
             'skipped_files': 0,
             'total_size_kb': 0,
+            'gitignore_excluded': 0,  # Nuevo contador para archivos excluidos por gitignore
         }
     
-    def _should_ignore_dir(self, dir_name: str) -> bool:
-        """Comprobar si se debe ignorar un directorio."""
+    def _report_progress(self, current_file: str = None, message: str = None):
+        """
+        Reportar progreso del escaneo si hay un callback configurado.
+        
+        Args:
+            current_file: Archivo actualmente siendo procesado
+            message: Mensaje de estado personalizado
+        """
+        if self.progress_callback:
+            progress_info = {
+                'total_files': self.stats['total_files'],
+                'analyzed_files': self.stats['analyzed_files'],
+                'total_dirs': self.stats['total_dirs'],
+                'current_file': current_file,
+                'message': message
+            }
+            self.progress_callback(progress_info)
+    
+    def _should_ignore_dir(self, dir_path: str, project_path: str = None) -> bool:
+        """
+        Comprobar si se debe ignorar un directorio.
+        
+        Args:
+            dir_path: Ruta completa al directorio o solo el nombre
+            project_path: Ruta raíz del proyecto para verificar .gitignore
+        """
+        dir_name = os.path.basename(dir_path)
+        
+        # Verificar con gitignore primero si está disponible
+        if self.gitignore_parser and project_path:
+            if self.gitignore_parser.should_ignore(dir_path, project_path):
+                return True
+        
+        # Verificar patrones tradicionales
         return any(
             # Ignorar directorios que empiezan con punto si no están explícitamente permitidos
             (dir_name.startswith('.') and dir_name not in ['.github'])
@@ -90,8 +130,22 @@ class ProjectScanner:
             for ignore_dir in self.ignore_dirs
         )
     
-    def _should_ignore_file(self, file_name: str) -> bool:
-        """Comprobar si se debe ignorar un archivo."""
+    def _should_ignore_file(self, file_path: str, project_path: str = None) -> bool:
+        """
+        Comprobar si se debe ignorar un archivo.
+        
+        Args:
+            file_path: Ruta completa al archivo o solo el nombre
+            project_path: Ruta raíz del proyecto para verificar .gitignore
+        """
+        file_name = os.path.basename(file_path)
+        
+        # Verificar con gitignore primero si está disponible
+        if self.gitignore_parser and project_path:
+            if self.gitignore_parser.should_ignore(file_path, project_path):
+                return True
+        
+        # Verificar patrones tradicionales
         return any(
             # Ignorar archivos que empiezan con punto si no están explícitamente permitidos
             (file_name.startswith('.') and file_name not in ['.gitignore', '.env', '.editorconfig'])
@@ -123,6 +177,12 @@ class ProjectScanner:
             self.languages = {}
             self.important_files = {}
             self.dependencies = {}
+            
+            # Inicializar parser de gitignore
+            self.gitignore_parser = get_gitignore_parser(project_path)
+            if self.gitignore_parser and self.gitignore_parser.get_ignored_count() > 0:
+                logger.info(f"Cargadas {self.gitignore_parser.get_ignored_count()} reglas de .gitignore")
+            
             self.stats = {
                 'total_files': 0, 
                 'total_dirs': 0,
@@ -130,18 +190,22 @@ class ProjectScanner:
                 'binary_files': 0,
                 'skipped_files': 0,
                 'total_size_kb': 0,
+                'gitignore_excluded': 0,
             }
             
             # Comenzar escaneo recursivo
-            self._scan_directory(project_path, project_path)
+            self.structure = self._scan_directory(project_path, project_path)
             
             # Analizar dependencias a nivel de proyecto
+            self._report_progress(message="Analizando dependencias del proyecto")
             self._analyze_project_dependencies()
             
             # Identificar lenguajes principales del proyecto
+            self._report_progress(message="Identificando lenguajes principales")
             self._identify_main_languages()
             
             # Identificar archivos importantes
+            self._report_progress(message="Identificando archivos importantes")
             self._identify_important_files()
             
             # Calcular tiempo total
@@ -197,6 +261,10 @@ class ProjectScanner:
             # Actualizar estadísticas
             self.stats['total_dirs'] += 1
             
+            # Reportar progreso del directorio
+            relative_dir = os.path.relpath(dir_path, base_path)
+            self._report_progress(message=f"Escaneando directorio: {relative_dir}")
+            
             # Listar contenidos
             for item_name in os.listdir(dir_path):
                 item_path = os.path.join(dir_path, item_name)
@@ -208,16 +276,26 @@ class ProjectScanner:
                 
                 # Procesar subdirectorios
                 if os.path.isdir(item_path):
-                    if not self._should_ignore_dir(item_name):
+                    if not self._should_ignore_dir(item_path, base_path):
                         subdir_info = self._scan_directory(item_path, base_path, depth + 1)
                         if subdir_info:  # Solo incluir si no está vacío
                             dir_info['contents'][item_name] = subdir_info
+                    else:
+                        # Contar archivos ignorados por gitignore si aplicó
+                        if (self.gitignore_parser and 
+                            self.gitignore_parser.should_ignore(item_path, base_path)):
+                            self.stats['gitignore_excluded'] += 1
                 
                 # Procesar archivos
                 elif os.path.isfile(item_path):
-                    if not self._should_ignore_file(item_name):
+                    if not self._should_ignore_file(item_path, base_path):
                         file_info = self._scan_file(item_path, base_path)
                         dir_info['contents'][item_name] = file_info
+                    else:
+                        # Contar archivos ignorados por gitignore si aplicó
+                        if (self.gitignore_parser and 
+                            self.gitignore_parser.should_ignore(item_path, base_path)):
+                            self.stats['gitignore_excluded'] += 1
             
             return dir_info
             
@@ -237,6 +315,10 @@ class ProjectScanner:
             Dict con información del archivo
         """
         self.stats['total_files'] += 1
+        
+        # Reportar progreso
+        relative_path = os.path.relpath(file_path, base_path)
+        self._report_progress(current_file=relative_path, message="Analizando archivo")
         
         try:
             # Comprobar tamaño
@@ -435,7 +517,8 @@ def get_project_scanner(
     ignore_dirs: Optional[List[str]] = None,
     ignore_files: Optional[List[str]] = None,
     max_file_size_mb: float = 5.0,
-    max_files: int = 10000
+    max_files: int = 10000,
+    progress_callback=None
 ) -> ProjectScanner:
     """
     Obtener una instancia configurada del escáner de proyectos.
@@ -445,6 +528,7 @@ def get_project_scanner(
         ignore_files: Lista de patrones de archivos a ignorar
         max_file_size_mb: Tamaño máximo de archivo a analizar en MB
         max_files: Número máximo de archivos a procesar
+        progress_callback: Función de callback para reportar progreso
         
     Returns:
         Instancia de ProjectScanner
@@ -453,5 +537,6 @@ def get_project_scanner(
         ignore_dirs=ignore_dirs,
         ignore_files=ignore_files,
         max_file_size_mb=max_file_size_mb,
-        max_files=max_files
+        max_files=max_files,
+        progress_callback=progress_callback
     )

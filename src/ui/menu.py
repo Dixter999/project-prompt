@@ -50,6 +50,7 @@ class Menu:
             kwargs: Argumentos con nombre a pasar a la función
         """
         self.options.append({
+            "type": "option",
             "key": key,
             "description": description,
             "action": action,
@@ -137,40 +138,26 @@ class Menu:
             # Mostrar cabecera
             print_header(self.title)
             
-            # Crear tabla de opciones
-            table = Table(show_header=False, box=None)
-            table.add_column("Key", style="cyan", no_wrap=True)
-            table.add_column("Descripción")
-            
-            # Mostrar opciones
-            for option in self.options:
-                if "key" not in option or option["key"] == "":
-                    table.add_row("", option["description"])
-                else:
-                    table.add_row(f"[{option['key']}]", option["description"])
-            
-            self.console.print(table)
+            # Mostrar opciones usando el método correcto
+            self._print_options()
             
             # Solicitar selección
             valid_keys = [opt["key"] for opt in self.options if "key" in opt and opt["key"]]
             selection = Prompt.ask("\nSeleccione una opción", choices=valid_keys)
             
-            # Ejecutar acción seleccionada
-            for option in self.options:
-                if option.get("key") == selection:
-                    action = option.get("action")
-                    if action:
-                        args = option.get("args", ())
-                        kwargs = option.get("kwargs", {})
-                        result = action(*args, **kwargs)
-                        
-                        # Para opciones de volver/salir
-                        if selection in ["0", "b", "q"]:
-                            return result
-                        
-                        # Pausa para que se vean los resultados antes de volver al menú
-                        input("\nPresione Enter para continuar...")
-                        break
+            # Para opciones de salir
+            if selection in ["q", "exit"]:
+                return None
+            
+            # Ejecutar acción seleccionada usando _handle_selection
+            if self._handle_selection(selection):
+                # Si fue una acción normal, continuar mostrando el menú
+                if selection not in ["0", "b"]:  # Si no es volver/atrás
+                    input("\nPresione Enter para continuar...")
+            else:
+                # Si retorna False, significa que hubo un error o se debe salir
+                if selection in ["0", "b"]:  # Opciones de volver
+                    return None
     
     def show_with_autocompletion(self):
         """

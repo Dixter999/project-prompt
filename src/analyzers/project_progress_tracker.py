@@ -599,8 +599,14 @@ class ProjectProgressTracker:
         Returns:
             Diccionario con métricas avanzadas
         """
-        # Analizar dependencias entre archivos
-        graph_data = self.dependency_graph.build_dependency_graph(self.project_path)
+        # Usar cache para evitar análisis duplicado de dependencias
+        if not hasattr(self, '_dependency_graph_cache'):
+            logger.info("Construyendo grafo de dependencias (primera vez)...")
+            self._dependency_graph_cache = self.dependency_graph.build_dependency_graph(self.project_path)
+        else:
+            logger.info("Usando grafo de dependencias cacheado...")
+        
+        graph_data = self._dependency_graph_cache
         
         # Identificar módulos centrales (alto número de dependientes)
         central_modules = []
@@ -1212,32 +1218,40 @@ class ProjectProgressTracker:
         Returns:
             Puntuación de modularidad (0-100)
         """
-        if not self.dependency_graph.graph:
-            return 50  # Valor por defecto
-        
-        # Evaluar basado en características de la gráfica de dependencias
-        num_nodes = len(self.dependency_graph.graph)
-        
-        if num_nodes == 0:
-            return 50
-        
-        # Contar dependencias
-        total_deps = sum(len(deps) for deps in self.dependency_graph.graph.values())
-        avg_deps = total_deps / num_nodes
-        
-        # Identificar nodos centrales
-        central_nodes = self.dependency_graph.get_central_nodes()
-        central_ratio = len(central_nodes) / num_nodes if num_nodes > 0 else 0
-        
-        # Calcular puntuación
-        # Menos dependencias por módulo = mejor modularity
-        deps_score = max(0, 100 - (avg_deps * 10))
-        
-        # Menos nodos centrales = mejor modularidad
-        central_score = max(0, 100 - (central_ratio * 100))
-        
-        # Combinar puntuaciones
-        return int((deps_score * 0.6) + (central_score * 0.4))
+        try:
+            # Obtener datos del grafo de dependencias
+            graph_data = self.dependency_graph.build_dependency_graph(self.project_path)
+            
+            if not graph_data or not graph_data.get('nodes'):
+                return 50  # Valor por defecto
+            
+            # Evaluar basado en características de la gráfica de dependencias
+            num_nodes = len(graph_data['nodes'])
+            
+            if num_nodes == 0:
+                return 50
+            
+            # Usar métricas del grafo
+            metrics = graph_data.get('metrics', {})
+            avg_deps = metrics.get('avg_out_degree', 0)
+            
+            # Identificar nodos centrales usando los datos existentes
+            central_files = graph_data.get('central_files', [])
+            central_ratio = min(len(central_files) / num_nodes, 1.0) if num_nodes > 0 else 0
+            
+            # Calcular puntuación
+            # Menos dependencias por módulo = mejor modularity
+            deps_score = max(0, 100 - (avg_deps * 10))
+            
+            # Menos nodos centrales = mejor modularidad
+            central_score = max(0, 100 - (central_ratio * 100))
+            
+            # Combinar puntuaciones
+            return int((deps_score * 0.6) + (central_score * 0.4))
+            
+        except Exception as e:
+            logger.warning(f"Error calculando puntuación de modularidad: {str(e)}")
+            return 50  # Valor por defecto en caso de error
     
     def _identify_risk_areas(self) -> List[Dict[str, Any]]:
         """
@@ -1269,16 +1283,21 @@ class ProjectProgressTracker:
                     pass
         
         # Módulos con muchos dependientes
-        if self.dependency_graph.graph:
-            for node, deps in self.dependency_graph.graph.items():
-                dependents = self.dependency_graph.get_dependents(node)
-                if len(dependents) > 10:
+        try:
+            graph_data = self.dependency_graph.build_dependency_graph(self.project_path)
+            central_files = graph_data.get('central_files', [])
+            
+            for central_file in central_files:
+                dependents = central_file.get('in_degree', 0)  # in_degree represents dependents
+                if dependents > 10:
                     risk_areas.append({
                         "type": "high_coupling",
-                        "file": node,
-                        "dependents": len(dependents),
-                        "risk_level": "medium" if len(dependents) < 20 else "high"
+                        "file": central_file.get('file', ''),
+                        "dependents": dependents,
+                        "risk_level": "medium" if dependents < 20 else "high"
                     })
+        except Exception as e:
+            logger.warning(f"Error al analizar dependencias para áreas de riesgo: {str(e)}")
         
         # Ordenar por nivel de riesgo
         risk_areas.sort(key=lambda x: 0 if x["risk_level"] == "high" else 1)

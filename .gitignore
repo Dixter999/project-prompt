@@ -51,6 +51,7 @@ logs/
 config.yaml
 
 # Testing
+/node_modules/
 /tests/
 .coverage
 htmlcov/
