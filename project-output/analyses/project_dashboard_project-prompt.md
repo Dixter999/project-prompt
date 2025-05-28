@@ -1,28 +1,28 @@
 # 📊 Dashboard del Proyecto: project-prompt
 
-*Generado por ProjectPrompt Premium el 2025-05-28 15:44:26*
+*Generado por ProjectPrompt Premium el 2025-05-28 16:17:56*
 
 ---
 
 ## 📋 Visión General del Proyecto
 
 ### Estadísticas Generales
-- **Total de archivos**: 218
-- **Total de líneas**: 40,493
-- **Directorios**: 63
+- **Total de archivos**: 221
+- **Total de líneas**: 40,503
+- **Directorios**: 0
 - **Archivos de código**: 145
 
 ### Distribución de Líneas
-- **Código**: 29,671 líneas (73.3%)
-- **Comentarios**: 3,670 líneas (9.1%)
+- **Código**: 29,677 líneas (73.3%)
+- **Comentarios**: 3,674 líneas (9.1%)
 - **Otros**: 7,152 líneas (17.7%)
 
 ### Top 10 Extensiones de Archivo
-- **.py**: 128 archivos (58.7%)
-- **.md**: 39 archivos (17.9%)
-- **.js**: 14 archivos (6.4%)
-- **.yml**: 8 archivos (3.7%)
-- **.json**: 8 archivos (3.7%)
+- **.py**: 128 archivos (57.9%)
+- **.md**: 42 archivos (19.0%)
+- **.js**: 14 archivos (6.3%)
+- **.yml**: 8 archivos (3.6%)
+- **.json**: 8 archivos (3.6%)
 - **.svg**: 5 archivos (2.3%)
 - **.ts**: 3 archivos (1.4%)
 - **.toml**: 2 archivos (0.9%)
@@ -346,12 +346,12 @@
 ### Main (2)
 
 - **main** 🌟 (actual)
-  - Último commit: 2025-05-28 15:42:31 +0200
-  - Mensaje: chore: Remove empty test files for cleaner test suite
+  - Último commit: 2025-05-28 16:04:14 +0200
+  - Mensaje: feat: Generate comprehensive project dashboard report with detailed statistics, metrics, and recommendations
 
 - **main**
-  - Último commit: 2025-05-28 15:42:31 +0200
-  - Mensaje: chore: Remove empty test files for cleaner test suite
+  - Último commit: 2025-05-28 16:04:14 +0200
+  - Mensaje: feat: Generate comprehensive project dashboard report with detailed statistics, metrics, and recommendations
 
 
 ### Other (20)
