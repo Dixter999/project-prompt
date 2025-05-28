@@ -13,6 +13,6 @@ def _get_version():
             return pkg_resources.get_distribution("projectprompt").version
         except Exception:
             # Last resort: return a fallback version
-            return "1.1.7"
+            return "1.1.9"
 
 __version__ = _get_version()
