@@ -912,6 +912,7 @@ def help():
     table.add_row("dashboard", "Generar dashboard básico del proyecto")
     table.add_row("subscription", "Gestionar suscripción premium")
     table.add_row("premium", "Acceder a comandos premium")
+    table.add_row("diagnose", "Diagnosticar instalación y problemas")
     table.add_row("help", "Mostrar esta ayuda")
     
     # Comandos premium
@@ -2510,3 +2511,111 @@ def setup_deps():
             typer.echo("Si ves advertencias de npm, son solo avisos de dependencias antiguas y no afectan el funcionamiento.")
     else:
         typer.echo("Instalación de dependencias opcionales omitida.")
+
+
+@app.command()
+@telemetry_command
+def diagnose():
+    """Diagnose ProjectPrompt installation and provide troubleshooting information."""
+    import shutil
+    import platform
+    from pathlib import Path
+    
+    cli.print_header("ProjectPrompt Installation Diagnosis")
+    
+    # Basic version info
+    cli.print_info(f"ProjectPrompt version: {__version__}")
+    cli.print_info(f"Python version: {sys.version.split()[0]}")
+    cli.print_info(f"Platform: {platform.system()} {platform.release()}")
+    cli.print_info(f"Shell: {os.environ.get('SHELL', 'Unknown')}")
+    
+    # Check installation details
+    console.print("\n[bold blue]📦 Installation Details[/bold blue]")
+    
+    try:
+        import pkg_resources
+        distribution = pkg_resources.get_distribution("projectprompt")
+        console.print(f"• Package location: {distribution.location}")
+        console.print(f"• Installed version: {distribution.version}")
+    except Exception as e:
+        console.print(f"• [red]Error getting package info: {e}[/red]")
+    
+    # Check PATH information
+    console.print("\n[bold blue]🛤️  PATH Information[/bold blue]")
+    
+    # Find where the executable should be
+    python_executable = sys.executable
+    console.print(f"• Python executable: {python_executable}")
+    
+    # Check common installation paths
+    paths_to_check = [
+        Path.home() / ".local" / "bin",
+        Path(python_executable).parent,
+        Path(python_executable).parent / "Scripts",  # Windows
+    ]
+    
+    for path in paths_to_check:
+        if path.exists():
+            project_prompt_path = path / "project-prompt"
+            if project_prompt_path.exists():
+                console.print(f"• [green]✅ Found executable at: {project_prompt_path}[/green]")
+            else:
+                console.print(f"• [yellow]❌ No executable at: {path}[/yellow]")
+        else:
+            console.print(f"• [gray]⚠️  Path doesn't exist: {path}[/gray]")
+    
+    # Check if executable is in PATH
+    project_prompt_in_path = shutil.which("project-prompt")
+    if project_prompt_in_path:
+        console.print(f"• [green]✅ project-prompt found in PATH: {project_prompt_in_path}[/green]")
+    else:
+        console.print("• [red]❌ project-prompt NOT found in PATH[/red]")
+    
+    # Check current PATH
+    current_path = os.environ.get("PATH", "")
+    path_entries = current_path.split(os.pathsep)
+    
+    console.print(f"\n[bold blue]🔍 Current PATH has {len(path_entries)} entries[/bold blue]")
+    
+    # Show relevant PATH entries
+    relevant_paths = [p for p in path_entries if any(keyword in p.lower() for keyword in ['python', 'local', 'bin', 'scripts'])]
+    if relevant_paths:
+        console.print("• Python-related PATH entries:")
+        for path in relevant_paths[:5]:  # Show first 5
+            console.print(f"  - {path}")
+        if len(relevant_paths) > 5:
+            console.print(f"  ... and {len(relevant_paths) - 5} more")
+    
+    # Provide solutions
+    console.print("\n[bold yellow]💡 Troubleshooting Suggestions[/bold yellow]")
+    
+    if not project_prompt_in_path:
+        console.print("• [bold]Command not found issue detected![/bold]")
+        console.print("• Try these solutions:")
+        console.print("  1. Add to PATH: [cyan]export PATH=\"$HOME/.local/bin:$PATH\"[/cyan]")
+        console.print("  2. Use Python module: [cyan]python -m projectprompt version[/cyan]")
+        console.print("  3. Reinstall with --user: [cyan]pip install --user projectprompt[/cyan]")
+        console.print("  4. See full guide: [cyan]https://github.com/Dixter999/project-prompt/blob/main/INSTALLATION_TROUBLESHOOTING.md[/cyan]")
+    else:
+        console.print("• [green]✅ Installation looks good![/green]")
+        console.print("• All commands should work properly")
+    
+    # Test basic functionality
+    console.print("\n[bold blue]🧪 Basic Functionality Test[/bold blue]")
+    
+    try:
+        # Test imports
+        from src.utils.config import config_manager
+        console.print("• [green]✅ Core modules import successfully[/green]")
+        
+        # Test configuration
+        config = config_manager.get_config()
+        console.print("• [green]✅ Configuration system works[/green]")
+        
+    except Exception as e:
+        console.print(f"• [red]❌ Module import error: {e}[/red]")
+    
+    console.print("\n[bold green]📋 Next Steps[/bold green]")
+    console.print("• Run [cyan]project-prompt help[/cyan] to see all available commands")
+    console.print("• Run [cyan]project-prompt menu[/cyan] for interactive setup")
+    console.print("• Check [cyan]INSTALLATION_TROUBLESHOOTING.md[/cyan] for detailed solutions")

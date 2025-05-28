@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "projectprompt"
-version = "1.1.8"
+version = "1.1.9"
 description = "Intelligent assistant for project analysis and documentation using AI"
 authors = ["Daniel Lagowski Solé <daniel@lagowski.es>"]
 readme = "README.md"
@@ -21,12 +21,15 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Documentation",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
 [tool.poetry.dependencies]
 python = "^3.8"
+setuptools = "^69.0.0"
 typer = "^0.9.0"
 rich = "^13.5.0"
 openai = "^1.0.0"

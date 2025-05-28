@@ -1,9 +1,9 @@
 # ProjectPrompt
 
 ![CI Status](https://github.com/Dixter999/project-prompt/actions/workflows/ci.yml/badge.svg)
-![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
+![Python Version](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.1.8-green)](https://github.com/Dixter999/project-prompt/releases)
+[![Version](https://img.shields.io/badge/version-1.1.9-green)](https://github.com/Dixter999/project-prompt/releases)
 
 An intelligent CLI tool that uses AI to analyze code projects, generate documentation, and provide improvement suggestions.
 
@@ -33,6 +33,24 @@ pip install projectprompt
 project-prompt version
 ```
 
+### 🚨 Troubleshooting Installation Issues
+
+If you get `zsh: command not found: project-prompt` or similar errors:
+
+- **📚 Complete Guide**: See [Installation Troubleshooting Guide](INSTALLATION_TROUBLESHOOTING.md)
+- **🔧 Auto Diagnosis**: Run `project-prompt diagnose` (v1.1.9+) for automatic troubleshooting
+
+**Quick fix for most users:**
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+**Alternative (always works):**
+```bash
+python -m src.main version
+```
+
 ## Getting Started
 
 1. **Install the package**:
@@ -40,22 +58,35 @@ project-prompt version
    pip install projectprompt
    ```
 
-2. **Navigate to your project directory**:
+2. **Verify it works**:
    ```bash
-   cd /path/to/your/project
+   project-prompt version
+   # Should show: ProjectPrompt v1.1.9
    ```
 
-3. **Run your first analysis**:
-   ```bash
-   project-prompt analyze
-   ```
-
-4. **Explore with the interactive menu**:
+3. **Start with the interactive menu** (recommended for beginners):
    ```bash
    project-prompt menu
    ```
 
+4. **Or navigate to your project and analyze directly**:
+   ```bash
+   cd /path/to/your/project
+   project-prompt analyze
+   ```
+
+5. **Generate a project dashboard**:
+   ```bash
+   project-prompt dashboard
+   ```
+
 That's it! ProjectPrompt will analyze your project structure, detect technologies, and provide insights with real-time progress indicators showing exactly what's being processed.
+
+### 📚 Need Help?
+
+- **Installation issues**: See [Installation & Troubleshooting Guide](INSTALLATION_TROUBLESHOOTING.md)
+- **Usage help**: Run `project-prompt help` or `project-prompt menu`
+- **API setup**: Run `project-prompt set-api --help`
 
 ## Progress Indicators
 
