@@ -3,7 +3,7 @@
 ![CI Status](https://github.com/Dixter999/project-prompt/actions/workflows/ci.yml/badge.svg)
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.1.7-green)](https://github.com/Dixter999/project-prompt/releases)
+[![Version](https://img.shields.io/badge/version-1.1.8-green)](https://github.com/Dixter999/project-prompt/releases)
 
 An intelligent CLI tool that uses AI to analyze code projects, generate documentation, and provide improvement suggestions.
 
