@@ -35,7 +35,7 @@ class AnthropicAPI:
             config: Objeto de configuración opcional. Si no se proporciona, se creará uno nuevo.
         """
         self.config = config or ConfigManager()
-        self.api_key = api_key or self.config.get("api.anthropic.key")
+        self.api_key = api_key or self.config.get_api_key("anthropic")
         self.max_tokens = self.config.get("api.anthropic.max_tokens", 4000)
         self.model = self.config.get("api.anthropic.model", "claude-3-haiku-20240307")
         
