@@ -80,10 +80,12 @@ class SyncManager:
             # Crear archivo de metadatos si no existe
             metadata_file = self.sync_dir / "sync_metadata.json"
             if not metadata_file.exists():
+                # Import version from main module
+                from src import __version__
                 metadata = {
                     "created": datetime.now().isoformat(),
                     "last_sync": None,
-                    "sync_version": "1.0.0",
+                    "sync_version": __version__,
                     "installations": []
                 }
                 

@@ -33,7 +33,7 @@ def main():
     # Add common arguments
     parser.add_argument('--config', '-c', type=str, help='Path to config file')
     parser.add_argument('--verbose', '-v', action='store_true', help='Enable verbose output')
-    parser.add_argument('--version', action='version', version='%(prog)s 1.0.0')
+    parser.add_argument('--version', action='version', version='%(prog)s 1.1.7')
     
     # Create subparsers for different commands
     subparsers = parser.add_subparsers(dest='command', help='Command to execute')
