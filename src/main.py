@@ -1253,7 +1253,7 @@ def ai_refactor_code(
     
     # Verificar suscripción
     subscription = get_subscription_manager()
-    if not subscription.is_premium_feature_available("ai_integrations"):
+    if not subscription.can_use_feature("ai_integrations"):
         cli.print_error("Esta es una característica premium. Actualiza tu suscripción para acceder.")
         return
     
@@ -2479,3 +2479,31 @@ def setup_alias():
             typer.echo(f"Puedes añadir manualmente este alias a tu archivo de configuración de shell:\n{alias_line}")
     else:
         typer.echo("Alias no añadido. Puedes crearlo manualmente si lo deseas.")
+
+
+@app.command()
+def setup_deps():
+    """
+    Instala Node.js, npm y Madge si el usuario lo desea (recomendado para análisis avanzados).
+    """
+    typer.echo("¿Deseas instalar Node.js, npm y Madge para análisis de dependencias avanzadas? [Y/n]")
+    answer = input().strip().lower()
+    if answer in ("", "y", "yes", "s", "si"):
+        import subprocess
+        cmds = [
+            "sudo apt update",
+            "sudo apt install -y nodejs npm",
+            "npm install -g madge"
+        ]
+        for cmd in cmds:
+            typer.echo(f"Ejecutando: {cmd}")
+            result = subprocess.run(cmd, shell=True)
+            if result.returncode != 0:
+                typer.echo(f"[red]Error ejecutando: {cmd}[/red]")
+                break
+        else:
+            typer.echo("[green]¡Node.js, npm y Madge instalados correctamente![/green]")
+            typer.echo("Puedes verificar con: madge --version")
+            typer.echo("Si ves advertencias de npm, son solo avisos de dependencias antiguas y no afectan el funcionamiento.")
+    else:
+        typer.echo("Instalación de dependencias opcionales omitida.")

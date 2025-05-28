@@ -540,22 +540,35 @@ class DashboardGenerator:
             <section class="card features">
                 <h2>Progreso por Características</h2>
                 <div class="error-message">
-                    <p>{features_data.get("error", "No se encontraron características identificables.")}</p>
+                    <p>{features_data.get('error', 'No se encontraron características identificables.')}</p>
                 </div>
             </section>
             """
-        
+
         # Lista de características
         features = features_data.get("features", {})
         features_html = ""
-        
-        for name, data in features.items():
+
+        # Handle both dict and list types for features
+        if isinstance(features, dict):
+            items = features.items()
+        elif isinstance(features, list):
+            # If it's a list, convert to (name, data) pairs
+            items = []
+            for i, data in enumerate(features):
+                name = data.get('name', f'Feature {i+1}') if isinstance(data, dict) else f'Feature {i+1}'
+                items.append((name, data))
+        else:
+            items = []
+
+        for name, data in items:
+            # Defensive: if data is not a dict, skip
+            if not isinstance(data, dict):
+                continue
             completion = data.get("completion_estimate", 0)
             color = self._get_score_color(completion)
-            
             files = data.get("files", 0)
             has_tests = "✓" if data.get("has_tests", False) else "✗"
-            
             features_html += f"""
             <tr>
                 <td>{name}</td>
@@ -569,7 +582,7 @@ class DashboardGenerator:
                 <td>{has_tests}</td>
             </tr>
             """
-        
+
         return f"""
         <section class="card features">
             <h2>Progreso por Características</h2>
