@@ -42,36 +42,84 @@ source ~/.zshrc
 python -m src.main version
 ```
 
+**Create `pp` shorthand alias:**
+```bash
+echo 'alias pp="project-prompt"' >> ~/.zshrc
+source ~/.zshrc
+# Now use: pp analyze, pp dashboard, etc.
+```
+
 📚 **Complete troubleshooting guide:** [INSTALLATION_TROUBLESHOOTING.md](INSTALLATION_TROUBLESHOOTING.md)
 
 ## Quick Start
 
-### Basic Usage
+### First Time Setup
+
+1. **Install and verify:**
+   ```bash
+   pip install projectprompt
+   project-prompt version
+   ```
+
+2. **Navigate to your project:**
+   ```bash
+   cd /path/to/your/project
+   ```
+
+3. **Start with basic analysis:**
+   ```bash
+   project-prompt analyze
+   project-prompt deps
+   project-prompt dashboard
+   ```
+
+### Optional: AI-Powered Features
+
+For enhanced analysis with AI insights:
 
 ```bash
-# Analyze current project
-project-prompt analyze
+# Configure API (one-time setup)
+project-prompt set-api anthropic
+project-prompt verify-api
 
-# Generate project dashboard
-project-prompt dashboard
-
-# Analyze dependencies
-project-prompt deps
+# Then use premium features
+project-prompt premium dashboard
 ```
 
-### API Configuration (Optional)
+### Quick Alias Setup
 
-For AI-powered features, configure API keys:
+Create a shorter `pp` command:
 
 ```bash
-# Configure Anthropic Claude
-project-prompt set-api anthropic
+echo 'alias pp="project-prompt"' >> ~/.zshrc
+source ~/.zshrc
 
-# Verify configuration
-project-prompt verify-api
+# Now you can use:
+pp analyze
+pp dashboard
 ```
 
 ## Commands
+
+### Typical Workflow
+
+For new users, follow this command sequence:
+
+```bash
+# 1. First analysis (start here)
+project-prompt analyze
+
+# 2. Dependency analysis  
+project-prompt deps
+
+# 3. Generate dashboard
+project-prompt dashboard
+
+# 4. Optional: Setup AI features
+project-prompt set-api anthropic
+project-prompt verify-api
+project-prompt premium dashboard
+```
 
 ### Core Commands
 
