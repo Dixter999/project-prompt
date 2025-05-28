@@ -55,14 +55,14 @@ jobs:
           python -m pytest tests/anthropic/ --mock -v
           
       - name: Run integration tests (API mode)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_api_tests == 'true' && secrets.ANTHROPIC_API_KEY != '' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_api_tests == 'true' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           python -m pytest tests/anthropic/ -v
       
       - name: Run verification script
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_api_tests == 'true' && secrets.ANTHROPIC_API_KEY != '' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_api_tests == 'true' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
