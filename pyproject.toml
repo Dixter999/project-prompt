@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "projectprompt"
-version = "1.1.4"
+version = "1.1.5"
 description = "Intelligent assistant for project analysis and documentation using AI"
 authors = ["ProjectPrompt Team <info@project-prompt.org>"]
 readme = "README.md"
