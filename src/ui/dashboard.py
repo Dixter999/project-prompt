@@ -85,9 +85,11 @@ class DashboardGenerator:
         
         # Determinar ruta de salida
         if not output_path:
-            temp_dir = tempfile.gettempdir()
             project_name = os.path.basename(self.project_path).replace(" ", "_")
-            output_path = os.path.join(temp_dir, f"project_prompt_dashboard_{project_name}.html")
+            # Crear el directorio de análisis si no existe
+            analyses_dir = os.path.join(self.project_path, "project-output", "analyses")
+            os.makedirs(analyses_dir, exist_ok=True)
+            output_path = os.path.join(analyses_dir, f"project_prompt_dashboard_{project_name}.html")
         
         # Guardar el archivo
         try:
@@ -132,9 +134,11 @@ class DashboardGenerator:
         
         # Determinar ruta de salida
         if not output_path:
-            temp_dir = tempfile.gettempdir()
             project_name = os.path.basename(self.project_path).replace(" ", "_")
-            output_path = os.path.join(temp_dir, f"project_prompt_dashboard_{project_name}_free.html")
+            # Crear el directorio de análisis si no existe
+            analyses_dir = os.path.join(self.project_path, "project-output", "analyses")
+            os.makedirs(analyses_dir, exist_ok=True)
+            output_path = os.path.join(analyses_dir, f"project_prompt_dashboard_{project_name}_free.html")
         
         # Guardar el archivo
         try:

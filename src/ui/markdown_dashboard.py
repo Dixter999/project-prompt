@@ -77,8 +77,11 @@ class MarkdownDashboardGenerator:
         # Determinar ruta de salida
         if not output_path:
             project_name = os.path.basename(self.project_path).replace(" ", "_")
+            # Crear el directorio de análisis si no existe
+            analyses_dir = os.path.join(self.project_path, "project-output", "analyses")
+            os.makedirs(analyses_dir, exist_ok=True)
             output_path = os.path.join(
-                self.project_path, 
+                analyses_dir,
                 f"project_dashboard_{project_name}.md"
             )
         
@@ -128,8 +131,11 @@ class MarkdownDashboardGenerator:
         # Determinar ruta de salida
         if not output_path:
             project_name = os.path.basename(self.project_path).replace(" ", "_")
+            # Crear el directorio de análisis si no existe
+            analyses_dir = os.path.join(self.project_path, "project-output", "analyses")
+            os.makedirs(analyses_dir, exist_ok=True)
             output_path = os.path.join(
-                self.project_path,
+                analyses_dir,
                 f"project_dashboard_{project_name}_free.md"
             )
         
