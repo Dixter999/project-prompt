@@ -1,0 +1,35 @@
+# Ignore development files
+.vscode/**
+**/*.ts
+**/tsconfig.json
+**/*.map
+.gitignore
+**/*.test.js
+
+# Ignore source files if bundling
+src/**
+!src/index.js
+!src/panel.js
+!src/providers/**
+!src/integrations/**
+
+# Ignore node modules
+node_modules/**
+.eslintrc.json
+webpack.config.js
+
+# Ignore CI/CD
+.github/**
+
+# Ignore test files
+test/**
+**/test/**
+**/*.spec.js
+**/*.test.js
+
+# Other files to ignore
+.yarnrc
+yarn.lock
+**/.DS_Store
+**/*.vsix
+**/*.log
