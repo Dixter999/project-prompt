@@ -2092,8 +2092,8 @@ def configure_sync(
         console.print(table)
 
 
-@update_app.command("status")
-def sync_status():
+@app.command()
+def status():
     """Mostrar estado de sincronización."""
     cli.print_header("Estado de Sincronización")
     
@@ -2124,8 +2124,6 @@ def sync_status():
                 inst.get('last_sync', 'Nunca')
             )
         console.print(install_table)
-
-
 
 
 
@@ -2450,3 +2448,34 @@ def delete(
                 cli.print_error(f"Error al eliminar archivos en {directory}: {e}")
     
     cli.print_success("Limpieza completada exitosamente.")
+
+
+@app.command()
+def setup_alias():
+    """Ofrece crear un alias 'pp' para simplificar el uso del comando."""
+    import getpass
+    import platform
+    shell = os.environ.get("SHELL", "")
+    user = getpass.getuser()
+    home = os.path.expanduser("~")
+    shell_rc = None
+    if "zsh" in shell:
+        shell_rc = os.path.join(home, ".zshrc")
+    elif "bash" in shell:
+        shell_rc = os.path.join(home, ".bashrc")
+    else:
+        shell_rc = os.path.join(home, ".profile")
+    
+    typer.echo(f"¿Quieres crear un alias para usar 'pp' en vez de 'project-prompt'? [Y/n]")
+    answer = input().strip().lower()
+    if answer in ("", "y", "yes", "s", "si"):
+        alias_line = "alias pp='project-prompt'\n"
+        try:
+            with open(shell_rc, "a") as f:
+                f.write(f"\n# Alias para ProjectPrompt\n{alias_line}")
+            typer.echo(f"Alias añadido a {shell_rc}. Reinicia tu terminal o ejecuta 'source {shell_rc}' para activarlo.")
+        except Exception as e:
+            typer.echo(f"No se pudo escribir en {shell_rc}: {e}")
+            typer.echo(f"Puedes añadir manualmente este alias a tu archivo de configuración de shell:\n{alias_line}")
+    else:
+        typer.echo("Alias no añadido. Puedes crearlo manualmente si lo deseas.")
