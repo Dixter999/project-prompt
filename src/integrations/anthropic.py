@@ -9,7 +9,7 @@ de credenciales y la gestión de límites según el plan del usuario.
 """
 
 import os
-from typing import Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 import logging
 import requests
 from src.utils.config import ConfigManager
@@ -181,6 +181,77 @@ class AnthropicAPI:
                     text_parts.append(item.get("text", ""))
                     
             return "".join(text_parts).strip()
+            
+        except requests.RequestException as e:
+            logger.error(f"Error de conexión con API Anthropic: {e}")
+            raise Exception(f"Error de conexión: {str(e)}")
+            
+        except Exception as e:
+            logger.error(f"Error al procesar respuesta de Anthropic: {e}")
+            raise
+
+    def generate_text(self, prompt: str, max_tokens: Optional[int] = None, temperature: float = 0.7) -> Dict[str, Any]:
+        """
+        Generate text using Claude API with structured response.
+        
+        Args:
+            prompt: Text prompt for the AI
+            max_tokens: Maximum tokens in response (optional)
+            temperature: Sampling temperature (0.0 to 1.0)
+            
+        Returns:
+            Dict with 'content' key containing the response text and metadata
+            
+        Raises:
+            Exception: If API is not configured or request fails
+        """
+        if not self.is_configured:
+            raise ValueError("API de Anthropic no configurada. Configure una clave API primero.")
+            
+        # Establecer número máximo de tokens
+        tokens = max_tokens or self.max_tokens
+        
+        # Preparar payload
+        payload = {
+            "model": self.model,
+            "max_tokens": min(tokens, 4096),  # Límite de seguridad
+            "temperature": max(0.0, min(1.0, temperature)),  # Clamp temperature
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
+        # Realizar la solicitud
+        try:
+            response = requests.post(
+                f"{ANTHROPIC_API_BASE_URL}/v1/messages",
+                headers=self._get_headers(),
+                json=payload
+            )
+            
+            # Verificar si hay error
+            if response.status_code != 200:
+                error_msg = f"Error en API Anthropic: {response.status_code} - {response.text}"
+                logger.error(error_msg)
+                raise Exception(error_msg)
+                
+            # Procesar respuesta
+            result = response.json()
+            content = result.get("content", [])
+            
+            # Extraer el texto del contenido
+            text_parts = []
+            for item in content:
+                if item.get("type") == "text":
+                    text_parts.append(item.get("text", ""))
+                    
+            response_text = "".join(text_parts).strip()
+            
+            # Retornar respuesta estructurada
+            return {
+                "content": response_text,
+                "model": self.model,
+                "usage": result.get("usage", {}),
+                "stop_reason": result.get("stop_reason", "unknown")
+            }
             
         except requests.RequestException as e:
             logger.error(f"Error de conexión con API Anthropic: {e}")

@@ -15,6 +15,7 @@ from src.analyzers.completeness_verifier import CompletenessVerifier, get_comple
 from src.analyzers.code_quality_analyzer import CodeQualityAnalyzer, get_code_quality_analyzer
 from src.analyzers.project_progress_tracker import ProjectProgressTracker, get_project_progress_tracker
 from src.analyzers.project_structure_analyzer import ProjectStructureAnalyzer, get_project_structure_analyzer
+from src.analyzers.ai_insights_analyzer_lightweight import AIInsightsAnalyzer
 
 __all__ = [
     'ProjectScanner', 'get_project_scanner',
@@ -27,4 +28,5 @@ __all__ = [
     'CompletenessVerifier', 'get_completeness_verifier',
     'CodeQualityAnalyzer', 'get_code_quality_analyzer',
     'ProjectStructureAnalyzer', 'get_project_structure_analyzer',
+    'AIInsightsAnalyzer',
 ]

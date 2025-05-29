@@ -14,6 +14,7 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Tuple
 
 from src.analyzers.project_progress_tracker import ProjectProgressTracker, get_project_progress_tracker
+from src.analyzers.ai_insights_analyzer_lightweight import AIInsightsAnalyzer
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
 from src.utils.subscription_manager import get_subscription_manager
@@ -45,6 +46,17 @@ class MarkdownDashboardGenerator:
         
         # Verificar acceso premium
         self.premium_access = self.subscription.is_premium_feature_available('project_dashboard')
+        
+        # Initialize AI insights analyzer for premium features
+        self.ai_analyzer = None
+        # Force AI analyzer for testing AI insights functionality
+        try:
+            from src.analyzers.ai_insights_analyzer_lightweight import AIInsightsAnalyzer
+            self.ai_analyzer = AIInsightsAnalyzer(project_path, config)
+            logger.info("AI analyzer initialized successfully")
+        except Exception as e:
+            logger.warning(f"Could not initialize AI insights analyzer: {e}")
+            self.ai_analyzer = None
     
     def generate_markdown_dashboard(self, output_path: Optional[str] = None, premium_mode: bool = False, detailed: bool = False) -> str:
         """
@@ -79,6 +91,19 @@ class MarkdownDashboardGenerator:
         if detailed:
             project_data["dependencies"] = self._get_dependency_analysis()
             project_data["recommendations"] = self.tracker.get_recommendations()
+            
+            # Add AI insights for premium users with AI enabled
+            if self.ai_analyzer:
+                try:
+                    logger.info("Generating AI-powered insights...")
+                    project_data["ai_insights"] = self.ai_analyzer.generate_ai_insights()
+                    project_data["ai_recommendations"] = self.ai_analyzer.generate_ai_recommendations()
+                    project_data["ai_priorities"] = self.ai_analyzer.get_development_priorities()
+                except Exception as e:
+                    logger.warning(f"Could not generate AI insights: {e}")
+                    project_data["ai_insights"] = []
+                    project_data["ai_recommendations"] = []
+                    project_data["ai_priorities"] = []
         
         # Generar contenido Markdown
         markdown = self._generate_markdown(project_data)
@@ -204,6 +229,9 @@ class MarkdownDashboardGenerator:
         # Solo incluir secciones detalladas si está habilitado
         dependencies_section = ""
         recommendations_section = ""
+        ai_insights_section = ""
+        ai_recommendations_section = ""
+        ai_priorities_section = ""
         
         if is_detailed:
             try:
@@ -217,6 +245,26 @@ class MarkdownDashboardGenerator:
             except Exception as e:
                 logger.error(f"Error generando sección recommendations: {str(e)}")
                 recommendations_section = "## 💡 Recomendaciones\n\nError al generar recomendaciones."
+            
+            # Generate AI-powered sections if available
+            if data.get('ai_insights') or data.get('ai_recommendations') or data.get('ai_priorities'):
+                try:
+                    ai_insights_section = self._generate_ai_insights_section(data.get('ai_insights', []))
+                except Exception as e:
+                    logger.error(f"Error generando sección AI insights: {str(e)}")
+                    ai_insights_section = "## 🤖 AI-Powered Insights\n\nError al generar insights de IA."
+                
+                try:
+                    ai_recommendations_section = self._generate_ai_recommendations_section(data.get('ai_recommendations', []))
+                except Exception as e:
+                    logger.error(f"Error generando sección AI recommendations: {str(e)}")
+                    ai_recommendations_section = "## 📋 Actionable Recommendations\n\nError al generar recomendaciones de IA."
+                
+                try:
+                    ai_priorities_section = self._generate_ai_priorities_section(data.get('ai_priorities', []))
+                except Exception as e:
+                    logger.error(f"Error generando sección AI priorities: {str(e)}")
+                    ai_priorities_section = "## 🎯 Development Priorities\n\nError al generar prioridades de desarrollo."
         
         # Construir el markdown con secciones opcionales
         sections = [
@@ -228,6 +276,16 @@ class MarkdownDashboardGenerator:
             branches_section,
             features_section
         ]
+        
+        # Add AI-powered sections first (if available)
+        if is_detailed and ai_insights_section:
+            sections.append(ai_insights_section)
+        
+        if is_detailed and ai_recommendations_section:
+            sections.append(ai_recommendations_section)
+            
+        if is_detailed and ai_priorities_section:
+            sections.append(ai_priorities_section)
         
         if is_detailed and dependencies_section:
             sections.append(dependencies_section)
@@ -1047,6 +1105,214 @@ Para más información, ejecuta: `project-prompt subscription plans`
 - *Archivos centrales críticos para el funcionamiento*
 - *Organización lógica del código por funcionalidad*  
 - *Posibles puntos de refactorización o mejora arquitectural*
+"""
+        
+        return section_content
+
+    def _generate_ai_insights_section(self, insights: List[Any]) -> str:
+        """Generate AI-powered insights section."""
+        if not insights:
+            return """## 🤖 AI-Powered Insights
+
+*AI analysis is enabled but no insights were generated. This could be due to:*
+- *API configuration issues*
+- *Project complexity below analysis threshold*
+- *Temporary service unavailability*
+
+To configure AI analysis, ensure your Anthropic API key is set in the configuration.
+"""
+        
+        section_content = """## 🤖 AI-Powered Insights
+
+*The following insights were generated by analyzing your project's architecture, code quality, and development patterns using advanced AI.*
+
+"""
+        
+        # Group insights by category
+        categories = {}
+        for insight in insights:
+            category = getattr(insight, 'category', 'general')
+            if category not in categories:
+                categories[category] = []
+            categories[category].append(insight)
+        
+        # Generate content for each category
+        category_icons = {
+            'architecture': '🏗️',
+            'quality': '✨',
+            'performance': '⚡',
+            'security': '🔒',
+            'maintainability': '🔧',
+            'general': '💡'
+        }
+        
+        for category, category_insights in categories.items():
+            icon = category_icons.get(category, '💡')
+            section_content += f"\n### {icon} {category.title()} Insights\n\n"
+            
+            for insight in category_insights:
+                title = getattr(insight, 'title', 'Unknown')
+                description = getattr(insight, 'description', '')
+                impact = getattr(insight, 'impact', 'medium')
+                effort = getattr(insight, 'effort', 'medium')
+                priority = getattr(insight, 'priority', 3)
+                tags = getattr(insight, 'tags', [])
+                
+                # Impact and effort indicators
+                impact_indicator = "🔴" if impact == "high" else "🟡" if impact == "medium" else "🟢"
+                effort_indicator = "🔴" if effort == "high" else "🟡" if effort == "medium" else "🟢"
+                priority_stars = "⭐" * priority
+                
+                section_content += f"""#### {title}
+
+{description}
+
+**Impact:** {impact_indicator} {impact.title()} | **Effort:** {effort_indicator} {effort.title()} | **Priority:** {priority_stars} ({priority}/5)
+
+"""
+                if tags:
+                    tags_str = " ".join([f"`{tag}`" for tag in tags])
+                    section_content += f"**Tags:** {tags_str}\n\n"
+                
+                section_content += "---\n\n"
+        
+        section_content += """*AI insights are generated based on static code analysis and architectural patterns. Review each suggestion carefully in the context of your specific requirements.*
+"""
+        
+        return section_content
+    
+    def _generate_ai_recommendations_section(self, recommendations: List[Any]) -> str:
+        """Generate AI-powered recommendations section."""
+        if not recommendations:
+            return """## 📋 Actionable Recommendations
+
+*AI analysis is enabled but no specific recommendations were generated.*
+
+This could indicate that your project already follows good practices, or that the AI analysis needs more context to provide specific suggestions.
+"""
+        
+        section_content = """## 📋 Actionable Recommendations
+
+*These recommendations are generated by AI analysis of your codebase and are designed to provide specific, actionable improvements.*
+
+"""
+        
+        # Sort recommendations by priority
+        priority_order = {'critical': 4, 'high': 3, 'medium': 2, 'low': 1}
+        sorted_recommendations = sorted(
+            recommendations, 
+            key=lambda r: priority_order.get(getattr(r, 'priority', 'medium'), 2),
+            reverse=True
+        )
+        
+        for i, rec in enumerate(sorted_recommendations, 1):
+            title = getattr(rec, 'title', 'Unknown')
+            description = getattr(rec, 'description', '')
+            action_items = getattr(rec, 'action_items', [])
+            priority = getattr(rec, 'priority', 'medium')
+            estimated_effort = getattr(rec, 'estimated_effort', 'medium')
+            functional_groups = getattr(rec, 'functional_groups', [])
+            expected_benefits = getattr(rec, 'expected_benefits', [])
+            
+            # Priority indicator
+            priority_indicators = {
+                'critical': '🚨 CRITICAL',
+                'high': '🔴 HIGH',
+                'medium': '🟡 MEDIUM',
+                'low': '🟢 LOW'
+            }
+            priority_indicator = priority_indicators.get(priority, '🟡 MEDIUM')
+            
+            section_content += f"""### {i}. {title}
+
+**Priority:** {priority_indicator} | **Estimated Effort:** {estimated_effort.title()}
+
+{description}
+
+"""
+            
+            if action_items:
+                section_content += "**Action Items:**\n"
+                for item in action_items:
+                    section_content += f"- {item}\n"
+                section_content += "\n"
+            
+            if functional_groups:
+                groups_str = ", ".join([f"`{group}`" for group in functional_groups])
+                section_content += f"**Affected Areas:** {groups_str}\n\n"
+            
+            if expected_benefits:
+                section_content += "**Expected Benefits:**\n"
+                for benefit in expected_benefits:
+                    section_content += f"- {benefit}\n"
+                section_content += "\n"
+            
+            section_content += "---\n\n"
+        
+        section_content += """*These recommendations are prioritized based on impact, effort, and current project state. Consider your specific requirements and constraints when implementing.*
+"""
+        
+        return section_content
+    
+    def _generate_ai_priorities_section(self, priorities: List[Dict[str, Any]]) -> str:
+        """Generate AI-powered development priorities section."""
+        if not priorities:
+            return """## 🎯 Development Priorities
+
+*No specific development priorities were identified by AI analysis.*
+
+This could indicate that your project is well-structured, or that additional context is needed for priority assessment.
+"""
+        
+        section_content = """## 🎯 Development Priorities
+
+*AI-generated development priorities based on impact, effort, and current project state. These are ranked to help you focus on the most valuable improvements first.*
+
+"""
+        
+        for i, priority in enumerate(priorities[:10], 1):  # Show top 10
+            title = priority.get('title', 'Unknown')
+            description = priority.get('description', '')
+            priority_score = priority.get('priority', 3)
+            effort = priority.get('effort', 'medium')
+            priority_type = priority.get('type', 'general')
+            
+            # Visual indicators
+            priority_stars = "⭐" * priority_score
+            effort_colors = {'low': '🟢', 'medium': '🟡', 'high': '🔴'}
+            effort_indicator = effort_colors.get(effort, '🟡')
+            type_icons = {'insight': '💡', 'recommendation': '📋', 'general': '🎯'}
+            type_icon = type_icons.get(priority_type, '🎯')
+            
+            section_content += f"""### {i}. {type_icon} {title}
+
+**Priority:** {priority_stars} ({priority_score}/5) | **Effort:** {effort_indicator} {effort.title()}
+
+{description}
+
+"""
+            
+            # Add specific details based on type
+            if priority_type == 'recommendation' and 'action_items' in priority:
+                action_items = priority['action_items']
+                if action_items:
+                    section_content += "**Next Steps:**\n"
+                    for item in action_items[:3]:  # Show top 3 action items
+                        section_content += f"- {item}\n"
+                    section_content += "\n"
+            
+            if 'functional_groups' in priority and priority['functional_groups']:
+                groups = priority['functional_groups']
+                groups_str = ", ".join([f"`{group}`" for group in groups[:3]])
+                section_content += f"**Focus Areas:** {groups_str}\n\n"
+            
+            if 'benefits' in priority and priority['benefits']:
+                benefits = priority['benefits']
+                section_content += f"**Expected Impact:** {benefits[0]}\n\n"
+            
+            section_content += "---\n\n"
+        
+        section_content += """*Priorities are ranked by AI analysis considering impact, implementation effort, and current project needs. Focus on high-priority, low-effort items for quick wins.*
 """
         
         return section_content

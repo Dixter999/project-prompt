@@ -100,7 +100,7 @@ class ProjectAnalyzer:
             if self.quality_analyzer:
                 logger.info("Performing code quality analysis...")
                 try:
-                    analysis_result['quality_metrics'] = self.quality_analyzer.analyze_quality(str(project_path))
+                    analysis_result['quality_metrics'] = self.quality_analyzer.analyze_code_quality(str(project_path))
                 except Exception as e:
                     logger.warning(f"Code quality analysis failed: {e}")
                     analysis_result['quality_metrics'] = {'error': str(e)}
@@ -136,7 +136,7 @@ class ProjectAnalyzer:
         elif component_type == 'functionality':
             return self.functionality_detector.detect_functionalities(str(project_path))
         elif component_type == 'quality' and self.quality_analyzer:
-            return self.quality_analyzer.analyze_quality(str(project_path))
+            return self.quality_analyzer.analyze_code_quality(str(project_path))
         elif component_type == 'basic':
             return self.scanner.scan_project(str(project_path))
         else:
@@ -154,9 +154,18 @@ class ProjectAnalyzer:
         
         # Languages
         languages = analysis_result.get('basic_structure', {}).get('languages', {})
-        if languages:
-            summary['primary_language'] = max(languages.items(), key=lambda x: x[1]['files'])[0]
-            summary['language_count'] = len(languages)
+        if languages and isinstance(languages, dict):
+            # Filter out any non-dict values and safely get primary language
+            valid_languages = {k: v for k, v in languages.items() if isinstance(v, dict) and 'files' in v}
+            if valid_languages:
+                summary['primary_language'] = max(valid_languages.items(), key=lambda x: x[1]['files'])[0]
+                summary['language_count'] = len(valid_languages)
+            else:
+                summary['primary_language'] = 'unknown'
+                summary['language_count'] = 0
+        else:
+            summary['primary_language'] = 'unknown'
+            summary['language_count'] = 0
         
         # Project patterns
         patterns = analysis_result.get('detailed_structure', {}).get('patterns', {})
