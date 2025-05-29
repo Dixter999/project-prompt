@@ -46,18 +46,23 @@ class MarkdownDashboardGenerator:
         # Verificar acceso premium
         self.premium_access = self.subscription.is_premium_feature_available('project_dashboard')
     
-    def generate_markdown_dashboard(self, output_path: Optional[str] = None) -> str:
+    def generate_markdown_dashboard(self, output_path: Optional[str] = None, premium_mode: bool = False, detailed: bool = False) -> str:
         """
         Generar el dashboard completo y guardarlo como Markdown.
         
         Args:
             output_path: Ruta donde guardar el Markdown (opcional)
+            premium_mode: Si está en modo premium (opcional)
+            detailed: Si incluir análisis detallado (opcional)
             
         Returns:
             Ruta al archivo Markdown generado
         """
-        # Si no tiene acceso premium, generar versión reducida
-        if not self.premium_access:
+        # Determinar si usar características premium
+        is_premium = self.premium_access and premium_mode
+        
+        # Si no tiene acceso premium o no está en modo premium, generar versión reducida
+        if not is_premium:
             return self._generate_free_markdown_dashboard(output_path)
         
         # Obtener todos los datos
@@ -66,10 +71,14 @@ class MarkdownDashboardGenerator:
             "progress": self.tracker.get_progress_metrics(),
             "branches": self.tracker.get_branch_status(),
             "features": self.tracker.get_feature_progress(),
-            "dependencies": self._get_dependency_analysis(),
-            "recommendations": self.tracker.get_recommendations(),
-            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "detailed": detailed
         }
+        
+        # Solo incluir análisis pesados si está en modo detallado
+        if detailed:
+            project_data["dependencies"] = self._get_dependency_analysis()
+            project_data["recommendations"] = self.tracker.get_recommendations()
         
         # Generar contenido Markdown
         markdown = self._generate_markdown(project_data)
@@ -97,17 +106,19 @@ class MarkdownDashboardGenerator:
             logger.error(f"Error al guardar el dashboard: {str(e)}")
             raise
     
-    def generate_dashboard(self, output_path: Optional[str] = None) -> str:
+    def generate_dashboard(self, output_path: Optional[str] = None, premium_mode: bool = False, detailed: bool = False) -> str:
         """
         Alias para generate_markdown_dashboard para compatibilidad.
         
         Args:
             output_path: Ruta donde guardar el Markdown (opcional)
+            premium_mode: Si está en modo premium (opcional)
+            detailed: Si incluir análisis detallado (opcional)
             
         Returns:
             Ruta al archivo Markdown generado
         """
-        return self.generate_markdown_dashboard(output_path)
+        return self.generate_markdown_dashboard(output_path, premium_mode, detailed)
     
     def _generate_free_markdown_dashboard(self, output_path: Optional[str] = None) -> str:
         """
@@ -162,6 +173,7 @@ class MarkdownDashboardGenerator:
             Contenido Markdown del dashboard
         """
         project_name = os.path.basename(self.project_path)
+        is_detailed = data.get('detailed', False)
         
         try:
             overview_section = self._generate_overview_section(data['overview'])
@@ -176,7 +188,7 @@ class MarkdownDashboardGenerator:
             metrics_section = "## 📈 Métricas de Progreso\n\nError al generar métricas de progreso."
         
         try:
-            branches_section = self._generate_branches_section(data.get('branches', {}))
+            branches_section = self._generate_simplified_branches_section(data.get('branches', {}))
         except Exception as e:
             logger.error(f"Error generando sección branches: {str(e)}")
             branches_section = "## 🌿 Estado de Branches\n\nError al generar estado de branches."
@@ -189,42 +201,46 @@ class MarkdownDashboardGenerator:
             logger.error(f"Features data content: {data.get('features', {})}")
             features_section = "## 🎯 Grupos Funcionales\n\nError al generar grupos funcionales."
         
-        try:
-            dependencies_section = self._generate_dependencies_section(data.get('dependencies', {}))
-        except Exception as e:
-            logger.error(f"Error generando sección dependencies: {str(e)}")
-            dependencies_section = "## 🔗 Análisis de Dependencias\n\nError al generar análisis de dependencias."
+        # Solo incluir secciones detalladas si está habilitado
+        dependencies_section = ""
+        recommendations_section = ""
         
-        try:
-            recommendations_section = self._generate_recommendations_section(data.get('recommendations', []))
-        except Exception as e:
-            logger.error(f"Error generando sección recommendations: {str(e)}")
-            recommendations_section = "## 💡 Recomendaciones\n\nError al generar recomendaciones."
+        if is_detailed:
+            try:
+                dependencies_section = self._generate_dependencies_section(data.get('dependencies', {}))
+            except Exception as e:
+                logger.error(f"Error generando sección dependencies: {str(e)}")
+                dependencies_section = "## 🔗 Análisis de Dependencias\n\nError al generar análisis de dependencias."
+            
+            try:
+                recommendations_section = self._generate_recommendations_section(data.get('recommendations', []))
+            except Exception as e:
+                logger.error(f"Error generando sección recommendations: {str(e)}")
+                recommendations_section = "## 💡 Recomendaciones\n\nError al generar recomendaciones."
         
-        markdown = f"""# 📊 Dashboard del Proyecto: {project_name}
-
-*Generado por ProjectPrompt Premium el {data.get('generated_at')}*
-
----
-
-{overview_section}
-
-{metrics_section}
-
-{branches_section}
-
-{features_section}
-
-{dependencies_section}
-
-{recommendations_section}
-
----
-
-*Dashboard generado con ProjectPrompt Premium - Para más información visite: https://projectprompt.dev*
-"""
+        # Construir el markdown con secciones opcionales
+        sections = [
+            f"# 📊 Dashboard del Proyecto: {project_name}",
+            f"*Generado por ProjectPrompt Premium el {data.get('generated_at')}*",
+            "---",
+            overview_section,
+            metrics_section,
+            branches_section,
+            features_section
+        ]
         
-        return markdown
+        if is_detailed and dependencies_section:
+            sections.append(dependencies_section)
+            
+        if is_detailed and recommendations_section:
+            sections.append(recommendations_section)
+        
+        sections.extend([
+            "---",
+            "*Dashboard generado con ProjectPrompt Premium - Para más información visite: https://github.com/Dixter999/project-prompt"
+        ])
+        
+        return "\n\n".join(sections)
     
     def _generate_free_markdown(self, data: Dict[str, Any]) -> str:
         """
@@ -238,6 +254,9 @@ class MarkdownDashboardGenerator:
         """
         project_name = os.path.basename(self.project_path)
         
+        # Generate basic functional groups for free users
+        basic_features_section = self._generate_free_features_section()
+        
         markdown = f"""# 📊 Dashboard del Proyecto: {project_name}
 
 *Generado por ProjectPrompt (versión gratuita) el {data.get('generated_at')}*
@@ -246,6 +265,8 @@ class MarkdownDashboardGenerator:
 
 {self._generate_overview_section(data['overview'])}
 
+{basic_features_section}
+
 ## 🚀 Mejora a Premium
 
 Para acceder a métricas avanzadas, análisis de branches, seguimiento de características y recomendaciones personalizadas, actualiza a ProjectPrompt Premium:
@@ -253,8 +274,8 @@ Para acceder a métricas avanzadas, análisis de branches, seguimiento de caract
 ### Características Premium disponibles:
 - ✨ **Métricas de progreso avanzadas**: Completitud, calidad del código, cobertura de tests
 - 🔀 **Análisis de branches**: Estado de ramas, commits recientes, progreso por rama
-- 🎯 **Seguimiento de características**: Progreso detallado por funcionalidad
-- 🎯 **Recomendaciones proactivas**: Sugerencias específicas para mejorar el proyecto
+- 🎯 **Listado detallado de archivos**: Archivos específicos en cada grupo funcional
+- 🤖 **Análisis con IA**: Recomendaciones inteligentes y detección de patrones
 - 📈 **Métricas de modularidad**: Análisis de arquitectura y dependencias
 - 🔍 **Detección de áreas de riesgo**: Identificación de componentes problemáticos
 
@@ -262,7 +283,7 @@ Para más información, ejecuta: `project-prompt subscription plans`
 
 ---
 
-*Dashboard generado con ProjectPrompt - Para más información visite: https://projectprompt.dev*
+*Dashboard generado con ProjectPrompt - Para más información visite: https://github.com/Dixter999/project-prompt
 """
         
         return markdown
@@ -272,20 +293,6 @@ Para más información, ejecuta: `project-prompt subscription plans`
         stats = overview.get('stats', {})
         files = overview.get('files', {})
         code_metrics = overview.get('code_metrics', {})
-        
-        # Preparar estadísticas de extensiones
-        extensions_list = ""
-        file_extensions = files.get('by_extension', {})
-        if file_extensions:
-            sorted_extensions = sorted(
-                file_extensions.items(), 
-                key=lambda x: x[1], 
-                reverse=True
-            )[:10]  # Top 10
-            
-            for ext, count in sorted_extensions:
-                percentage = (count / files.get('total', 1)) * 100
-                extensions_list += f"- **{ext}**: {count} archivos ({percentage:.1f}%)\n"
         
         # Distribución de líneas
         total_lines = code_metrics.get('total_lines', 0)
@@ -308,9 +315,6 @@ Para más información, ejecuta: `project-prompt subscription plans`
 - **Código**: {code_lines:,} líneas ({code_percent:.1f}%)
 - **Comentarios**: {comment_lines:,} líneas ({comment_percent:.1f}%)
 - **Otros**: {total_lines - code_lines - comment_lines:,} líneas ({other_percent:.1f}%)
-
-### Top 10 Extensiones de Archivo
-{extensions_list if extensions_list else "No hay datos de extensiones disponibles."}
 """
     
     def _generate_metrics_section(self, progress: Dict[str, Any]) -> str:
@@ -451,6 +455,68 @@ Para más información, ejecuta: `project-prompt subscription plans`
 {branches_content}
 """
     
+    def _generate_simplified_branches_section(self, branches_data: Dict[str, Any]) -> str:
+        """Generar sección simplificada de estado de branches."""
+        try:
+            if not branches_data:
+                return "## 🌿 Estado de Branches\n\nNo se detectó información de control de versiones Git."
+            
+            current_branch = branches_data.get('current_branch', 'N/A')
+            categories = branches_data.get('categories', {})
+            
+            if not categories:
+                return "## 🌿 Estado de Branches\n\nNo se encontraron branches para mostrar."
+            
+            # Contar branches únicos por categoría
+            total_unique_branches = 0
+            category_summary = []
+            
+            for category, branch_list in categories.items():
+                if not branch_list:
+                    continue
+                
+                # Remover duplicados basado en el nombre del branch
+                seen_names = set()
+                unique_branches = []
+                for branch in branch_list:
+                    name = branch.get('name', '')
+                    if name and name not in seen_names:
+                        seen_names.add(name)
+                        unique_branches.append(branch)
+                
+                if unique_branches:
+                    total_unique_branches += len(unique_branches)
+                    category_summary.append((category, len(unique_branches), unique_branches[:5]))  # Solo mostrar top 5
+            
+            # Generar contenido
+            content = f"## 🌿 Estado de Branches\n\n**Branch actual**: {current_branch}\n\n"
+            content += f"**Total de branches únicos**: {total_unique_branches}\n\n"
+            
+            for category, count, sample_branches in category_summary:
+                content += f"### {category.capitalize()} ({count})\n\n"
+                
+                for branch in sample_branches:
+                    name = branch.get('name', '')
+                    date = branch.get('last_commit_date', 'N/A')
+                    msg = branch.get('last_commit_msg', 'N/A')
+                    
+                    # Truncar mensaje si es muy largo
+                    if len(msg) > 80:
+                        msg = msg[:77] + "..."
+                    
+                    current_indicator = " 🌟 (actual)" if branch.get('current', False) else ""
+                    content += f"- **{name}**{current_indicator}\n"
+                    content += f"  - {date} - {msg}\n\n"
+                
+                if count > 5:
+                    content += f"*... y {count - 5} branches más de tipo {category}*\n\n"
+            
+            return content
+            
+        except Exception as e:
+            logger.error(f"Error al generar sección simplificada de branches: {str(e)}")
+            return f"## 🌿 Estado de Branches\n\nError al analizar branches: {str(e)}"
+
     def _generate_features_section(self, features_data: Dict[str, Any]) -> str:
         """Generar sección de grupos funcionales."""
         if not features_data or not features_data.get('features'):
@@ -491,7 +557,7 @@ Para más información, ejecuta: `project-prompt subscription plans`
             if not isinstance(group_data, dict):
                 logger.warning(f"Skipping non-dict group data for {name}: {type(group_data)}")
                 continue
-                
+            
             # Extract group information with fallbacks
             group_name = group_data.get('name', name)
             group_type = group_data.get('type', 'unknown')
@@ -499,6 +565,11 @@ Para más información, ejecuta: `project-prompt subscription plans`
             completion = group_data.get('completion_estimate', 0)
             files_count = group_data.get('files', 0)
             importance = group_data.get('importance', 0)
+            file_list = group_data.get('file_list', [])
+            
+            # Skip groups with zero files
+            if not file_list or files_count == 0:
+                continue
             
             # Ensure completion is numeric
             if not isinstance(completion, (int, float)):
@@ -525,24 +596,177 @@ Para más información, ejecuta: `project-prompt subscription plans`
                 icon = "🔧"
             elif group_type == "directory":
                 icon = "📁"
+
+            # Show up to 10 files, then summarize
+            files_md = ""
+            if file_list:
+                files_md += "**Archivos principales:**\n"
+                for f in file_list[:10]:
+                    files_md += f"- `{f}`\n"
+                if len(file_list) > 10:
+                    files_md += f"- ...y {len(file_list) - 10} archivos más\n"
+
+            functional_groups_content += f"""### {icon} {group_name}\n\n**Tipo**: {group_type.capitalize()}  \n**Descripción**: {description}  \n**Completitud**: {completion}% {progress_bar}  \n**Archivos**: {files_count}  \n**Importancia**: {importance:.1f}\n\n{files_md}\n"""
+
+        if not functional_groups_content:
+            return "## 🎯 Grupos Funcionales\n\nNo se encontraron grupos funcionales para mostrar."
+
+        return f"""## 🎯 Grupos Funcionales\n\nLos siguientes grupos funcionales han sido identificados en el proyecto:\n\n{functional_groups_content}\n*Los grupos funcionales representan áreas lógicas del código organizadas por funcionalidad, no por estructura de directorios.*\n"""
+    
+    def _generate_free_features_section(self) -> str:
+        """
+        Generar una sección simplificada de grupos funcionales para usuarios gratuitos.
+        
+        Esta versión muestra los grupos funcionales básicos sin los listados detallados
+        de archivos, manteniendo la diferenciación con la versión premium.
+        
+        Returns:
+            Contenido Markdown de la sección de características gratuitas
+        """
+        try:
+            # Create a temporary tracker instance for basic functionality detection
+            from src.analyzers.project_progress_tracker import ProjectProgressTracker
             
-            functional_groups_content += f"""### {icon} {group_name}
+            # Use a basic tracker without premium features
+            temp_tracker = ProjectProgressTracker(self.project_path, self.config)
+            # Force free access to ensure functional groups are generated for free users
+            temp_tracker.premium_access = False
+            
+            # Get basic functional groups using directory-based approach
+            basic_features = temp_tracker._create_directory_based_groups()
+            
+            # Also try to get basic functionality groups if available
+            try:
+                func_features = temp_tracker._create_basic_functional_groups()
+                # Merge both approaches, prioritizing functionality-based groups
+                basic_features.update(func_features)
+            except Exception:
+                # Fallback to directory-based only
+                pass
+            
+        except Exception as e:
+            logger.warning(f"Error al crear grupos funcionales básicos: {e}")
+            return self._generate_fallback_features_section()
+        
+        if not basic_features:
+            return self._generate_fallback_features_section()
+        
+        # Sort by importance and file count
+        sorted_features = sorted(basic_features.items(), 
+                                key=lambda x: (x[1].get('importance', 0), x[1].get('files', 0)), 
+                                reverse=True)
+        
+        functional_groups_content = ""
+        
+        for group_name, group_data in sorted_features[:8]:  # Limit to top 8 groups for free users
+            # Extract group information with fallbacks
+            completion = group_data.get('completion_estimate', 0)
+            files_count = group_data.get('files', 0)
+            group_type = group_data.get('type', 'unknown')
+            description = group_data.get('description', f"Grupo funcional: {group_name}")
+            
+            # Skip groups with zero files
+            if files_count == 0:
+                continue
+            
+            # Ensure completion is numeric
+            if not isinstance(completion, (int, float)):
+                completion = 0
+            
+            # Create progress bar
+            progress_bar = "▓" * int(completion / 10) + "░" * (10 - int(completion / 10))
+            
+            # Determine group icon (clean up if emoji already exists)
+            clean_name = group_name
+            icon = "📁"
+            
+            if group_name.startswith('🔐'):
+                icon = "🔐"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('🗄️'):
+                icon = "🗄️"
+                clean_name = group_name[3:].strip()
+            elif group_name.startswith('🔗'):
+                icon = "🔗"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('🎨'):
+                icon = "🎨"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('🧪'):
+                icon = "🧪"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('⚙️'):
+                icon = "⚙️"
+                clean_name = group_name[3:].strip()
+            elif group_name.startswith('📚'):
+                icon = "📚"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('🛡️'):
+                icon = "🛡️"
+                clean_name = group_name[3:].strip()
+            elif group_name.startswith('📋'):
+                icon = "📋"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('🚀'):
+                icon = "🚀"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('📊'):
+                icon = "📊"
+                clean_name = group_name[2:].strip()
+            elif group_name.startswith('🔧'):
+                icon = "🔧"
+                clean_name = group_name[2:].strip()
+            elif "test" in group_name.lower():
+                icon = "🧪"
+            elif "doc" in group_name.lower():
+                icon = "📖"
+            elif "core" in group_name.lower() or "main" in group_name.lower():
+                icon = "⚙️"
+            elif "ui" in group_name.lower() or "frontend" in group_name.lower():
+                icon = "🎨"
+            elif "api" in group_name.lower():
+                icon = "🔗"
+            elif "config" in group_name.lower():
+                icon = "⚙️"
+            
+            functional_groups_content += f"""### {icon} {clean_name}
 
 **Tipo**: {group_type.capitalize()}  
 **Descripción**: {description}  
 **Completitud**: {completion}% {progress_bar}  
-**Archivos**: {files_count}  
-**Importancia**: {importance:.1f}
+**Archivos**: {files_count}
 
 """
+
+        if not functional_groups_content:
+            return self._generate_fallback_features_section()
 
         return f"""## 🎯 Grupos Funcionales
 
 Los siguientes grupos funcionales han sido identificados en el proyecto:
 
 {functional_groups_content}
+💡 **Versión gratuita**: Se muestran hasta 8 grupos principales sin listado detallado de archivos.  
+🚀 **Actualiza a Premium** para ver todos los grupos con archivos específicos y análisis con IA.
 
-*Los grupos funcionales representan áreas lógicas del código organizadas por funcionalidad, no por estructura de directorios.*
+"""
+
+    def _generate_fallback_features_section(self) -> str:
+        """
+        Generar una sección de fallback cuando no se pueden detectar grupos funcionales.
+        """
+        return """## 🎯 Grupos Funcionales
+
+⚠️ **Análisis básico no disponible**: No se pudieron detectar grupos funcionales en este momento.
+
+### 🚀 ¿Qué obtienes con Premium?
+- **Detección inteligente**: Grupos funcionales detectados automáticamente
+- **Análisis detallado**: Lista completa de archivos en cada grupo
+- **Métricas avanzadas**: Completitud y progreso por funcionalidad
+- **Recomendaciones con IA**: Sugerencias específicas de mejora
+
+Para más información, ejecuta: `project-prompt subscription plans`
+
 """
     
     def _generate_recommendations_section(self, recommendations: List[Dict[str, Any]]) -> str:
@@ -818,8 +1042,7 @@ Los siguientes grupos funcionales han sido identificados en el proyecto:
 - *Posibles puntos de refactorización o mejora arquitectural*
 """
 
-        return section_content
-
+    # ...existing code...
 def main():
     """Punto de entrada cuando se ejecuta como script."""
     if len(sys.argv) < 2:
