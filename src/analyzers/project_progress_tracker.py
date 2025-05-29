@@ -277,18 +277,35 @@ class ProjectProgressTracker:
                 group_files = group.get('files', [])
                 group_type = group.get('type', 'unknown')
                 
-                # Crear métricas para este grupo funcional
-                features[group_name] = {
-                    "type": group_type,
-                    "files": len(group_files),
-                    "description": group.get('description', f"Grupo funcional: {group_name}"),
-                    "importance": group.get('total_importance', 0),
-                    "size": group.get('size', len(group_files)),
-                    "completion_estimate": self._estimate_group_completion(group_files)
-                }
+                # Limpiar nombre del grupo para evitar duplicados de emojis
+                clean_name = group_name.replace('📁 ', '').replace('🔧 ', '').replace('🔗 ', '').replace('🎨 ', '').replace('🧪 ', '')
+                
+                # Asegurar que tenemos archivos y un nombre válido
+                if group_files and clean_name.strip() and len(clean_name.strip()) > 2:
+                    # Extraer paths de archivos si están en formato de diccionario
+                    file_paths = []
+                    for file_item in group_files:
+                        if isinstance(file_item, dict):
+                            path = file_item.get('path', file_item.get('file', ''))
+                            if path:
+                                file_paths.append(path)
+                        elif isinstance(file_item, str):
+                            file_paths.append(file_item)
+                    
+                    # Solo añadir el grupo si tiene archivos válidos
+                    if file_paths:
+                        features[clean_name] = {
+                            "type": group_type,
+                            "files": len(file_paths),
+                            "file_list": file_paths,  # Guardar lista real de archivos
+                            "description": group.get('description', f"Grupo funcional: {clean_name}"),
+                            "importance": group.get('total_importance', 0),
+                            "size": group.get('size', len(file_paths)),
+                            "completion_estimate": self._estimate_group_completion(file_paths)
+                        }
             
-            # Si no hay grupos funcionales, crear grupos básicos basados en funcionalidades detectadas
-            if not functional_groups:
+            # Si no hay grupos funcionales válidos, crear grupos básicos basados en funcionalidades detectadas
+            if not features:
                 features = self._create_basic_functional_groups()
                 
         except Exception as e:

@@ -17,6 +17,12 @@ import webbrowser
 import tempfile
 import argparse
 
+# Ensure local imports take precedence over system-installed packages
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from src.analyzers.project_progress_tracker import ProjectProgressTracker, get_project_progress_tracker
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
@@ -1320,24 +1326,40 @@ class DashboardCLI:
     """Interfaz de línea de comandos para el dashboard."""
     
     def __init__(self):
-        """Inicializar CLI del dashboard."""
-        self.config = ConfigManager()
+        from src.utils.config import config_manager
+        from src.utils.subscription_manager import get_subscription_manager
+        
+        self.config = config_manager
         self.subscription = get_subscription_manager()
     
     def run(self, args=None):
         """
-        Ejecutar el comando de dashboard desde CLI.
+        Ejecutar el CLI del dashboard.
         
         Args:
-            args: Argumentos de línea de comandos (opcional)
+            args: Lista de argumentos de línea de comandos
+            
+        Returns:
+            int: Código de salida (0 = éxito, 1 = error)
         """
-        parser = argparse.ArgumentParser(description="Generar dashboard de progreso del proyecto")
-        parser.add_argument("--project", "-p", help="Ruta al proyecto (por defecto: directorio actual)")
-        parser.add_argument("--output", "-o", help="Ruta donde guardar el archivo generado")
-        parser.add_argument("--format", "-f", choices=["html", "markdown", "md"], default="markdown", help="Formato de salida (html/markdown)")
-        parser.add_argument("--no-browser", dest="browser", action="store_false", help="No abrir automáticamente en el navegador (solo para HTML)")
+        # Configurar argumentos
+        parser = argparse.ArgumentParser(description="Generar dashboard del proyecto")
+        parser.add_argument("--project", "-p", default=".", help="Ruta del proyecto")
+        parser.add_argument("--output", "-o", help="Ruta donde guardar el dashboard")
+        parser.add_argument("--format", "-f", choices=["html", "markdown", "md"], 
+                          default="markdown", help="Formato de salida")
+        parser.add_argument("--no-browser", action="store_true", 
+                          help="No abrir automáticamente en el navegador")
+        parser.add_argument("--premium", action="store_true", 
+                          help="Modo premium con características avanzadas")
+        parser.add_argument("--detailed", action="store_true",
+                          help="Incluir análisis detallado de dependencias")
         
-        parsed_args = parser.parse_args(args)
+        # Procesar argumentos
+        parsed_args = parser.parse_args(args or [])
+        
+        # Configurar banderas
+        parsed_args.browser = not parsed_args.no_browser
         
         # Determinar ruta del proyecto
         project_path = parsed_args.project or os.getcwd()
@@ -1348,12 +1370,23 @@ class DashboardCLI:
         try:
             # Verificar acceso premium
             has_premium = self.subscription.is_premium_feature_available('project_dashboard')
+            is_premium_mode = parsed_args.premium and has_premium
             
-            if not has_premium:
-                print("⚠️  Estás utilizando la versión gratuita del dashboard.")
-                print("    Algunas características como el seguimiento de branches, progreso por característica")
-                print("    y recomendaciones proactivas requieren una suscripción premium.")
+            if parsed_args.premium and not has_premium:
+                print("⚠️  Las características premium requieren una suscripción activa.")
                 print("    Ejecuta 'project-prompt subscription plans' para más información.\n")
+                return 1
+            
+            if not is_premium_mode:
+                print("⚠️  Dashboard simplificado (versión gratuita)")
+                print("    El dashboard premium incluye:")
+                print("    • Análisis detallado de dependencias y arquitectura")
+                print("    • Seguimiento completo de branches con filtros inteligentes")
+                print("    • Grupos funcionales con archivos específicos")
+                print("    • Recomendaciones proactivas personalizadas")
+                print("    Ejecuta 'project-prompt premium dashboard' para acceso completo.\n")
+            else:
+                print("✨ Dashboard Premium con análisis avanzado")
             
             print(f"📊 Generando dashboard {format_type.upper()} para el proyecto en {project_path}")
             
@@ -1364,7 +1397,9 @@ class DashboardCLI:
                 
                 markdown_generator = MarkdownDashboardGenerator(project_path, self.config)
                 output_file = markdown_generator.generate_markdown_dashboard(
-                    output_path=parsed_args.output
+                    output_path=parsed_args.output,
+                    premium_mode=is_premium_mode,
+                    detailed=parsed_args.detailed
                 )
                 
                 print(f"✅ Dashboard markdown generado correctamente en: {output_file}")
@@ -1374,7 +1409,9 @@ class DashboardCLI:
                 dashboard = DashboardGenerator(project_path, self.config)
                 output_file = dashboard.generate_dashboard(
                     output_path=parsed_args.output,
-                    open_browser=parsed_args.browser
+                    open_browser=parsed_args.browser,
+                    premium_mode=is_premium_mode,
+                    detailed=parsed_args.detailed
                 )
                 
                 print(f"✅ Dashboard HTML generado correctamente en: {output_file}")

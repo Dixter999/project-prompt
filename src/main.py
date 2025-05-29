@@ -19,6 +19,12 @@ from enum import Enum
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
+# Ensure local imports take precedence over system-installed packages
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 import typer
 from rich.console import Console
 
@@ -360,6 +366,28 @@ def analyze(
     except Exception as e:
         cli.print_error(f"Error durante el análisis: {e}")
         logger.error(f"Error en analyze: {e}", exc_info=True)
+
+
+@app.command(name="analyze-group")
+@telemetry_command
+def analyze_group_command(
+    group_name: Optional[str] = typer.Argument(None, help="Nombre del grupo funcional a analizar"),
+    project_path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto a analizar")
+):
+    """Analizar un grupo funcional específico con IA (Anthropic Claude)."""
+    from src.commands.analyze_group import AnalyzeGroupCommand
+    
+    try:
+        command = AnalyzeGroupCommand()
+        success = command.execute(
+            group_name=group_name,
+            project_path=project_path
+        )
+        if not success:
+            cli.print_error("El análisis no se completó exitosamente")
+    except Exception as e:
+        cli.print_error(f"Error durante el análisis del grupo: {e}")
+        logger.error(f"Error en analyze_group_command: {e}", exc_info=True)
 
 
 @app.command()
@@ -1255,7 +1283,7 @@ def ai_refactor_code(
     # Verificar suscripción
     subscription = get_subscription_manager()
     if not subscription.can_use_feature("ai_integrations"):
-        cli.print_error("Esta es una característica premium. Actualiza tu suscripción para acceder.")
+        cli.check_premium_feature("ai_integrations")
         return
     
     # Verificar archivo
@@ -1504,9 +1532,10 @@ def premium_dashboard(
     project: str = typer.Argument(".", help="Ruta al proyecto para generar el dashboard"),
     format: str = typer.Option("markdown", "--format", "-f", help="Formato de salida (html/markdown/md)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Ruta donde guardar el dashboard"),
-    no_browser: bool = typer.Option(False, "--no-browser", help="No abrir automáticamente en el navegador")
+    no_browser: bool = typer.Option(False, "--no-browser", help="No abrir automáticamente en el navegador"),
+    detailed: bool = typer.Option(False, "--detailed", help="Incluir análisis detallado de dependencias y arquitectura")
 ):
-    """Genera un dashboard visual interactivo con el estado y progreso del proyecto (característica premium)."""
+    """Genera un dashboard premium con análisis avanzado de arquitectura y métricas detalladas."""
     from src.utils.subscription_manager import get_subscription_manager
     
     cli.print_header("Dashboard Premium de Proyecto")
@@ -1520,8 +1549,8 @@ def premium_dashboard(
     # Crear instancia del CLI del dashboard
     dashboard_cli = DashboardCLI()
     
-    # Configurar argumentos
-    args = []
+    # Configurar argumentos para premium
+    args = ["--premium"]
     if project != ".":
         args.extend(["--project", project])
     if format != "html":
@@ -1530,8 +1559,10 @@ def premium_dashboard(
         args.extend(["--output", output])
     if no_browser:
         args.append("--no-browser")
+    if detailed:
+        args.append("--detailed")
     
-    # Ejecutar dashboard
+    # Ejecutar dashboard premium
     dashboard_cli.run(args)
 
 
