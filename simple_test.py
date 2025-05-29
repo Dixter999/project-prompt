@@ -12,7 +12,7 @@ from src.utils.config import ConfigManager
 
 # Quick test
 config = ConfigManager()
-config.set_subscription_type("free")
+config.set_premium(False)  # Set to free tier
 
 dashboard_gen = MarkdownDashboardGenerator("/mnt/h/Projects/project-prompt", config)
 

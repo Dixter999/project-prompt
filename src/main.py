@@ -688,7 +688,7 @@ def analyze_dependencies(
     path: str = typer.Argument(".", help="Ruta del proyecto a analizar"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Archivo de salida personalizado (auto-guardado si no se especifica)"),
     format: str = typer.Option("markdown", "--format", "-f", help="Formato de salida: markdown, json, html"),
-    max_files: int = typer.Option(100, "--max-files", help="Máximo número de archivos importantes a analizar"),
+    max_files: int = typer.Option(1000, "--max-files", help="Máximo número de archivos importantes a analizar"),
     min_deps: int = typer.Option(3, "--min-deps", help="Mínimo número de dependencias para considerar archivo importante"),
     use_madge: bool = typer.Option(True, "--madge/--no-madge", help="Usar Madge para análisis eficiente"),
     show_groups: bool = typer.Option(True, "--groups/--no-groups", help="Mostrar grupos de funcionalidad"),

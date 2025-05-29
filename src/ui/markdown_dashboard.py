@@ -836,7 +836,7 @@ Para más información, ejecuta: `project-prompt subscription plans`
                 from src.analyzers.dependency_graph import DependencyGraph
                 
                 dep_analyzer = DependencyGraph()
-                analysis_result = dep_analyzer.build_dependency_graph(self.project_path)
+                analysis_result = dep_analyzer.build_dependency_graph(self.project_path, max_files=1000)
                 
                 # Guardar en caché para futuras llamadas
                 cache.set(self.project_path, 'dependencies', analysis_result)
@@ -1029,6 +1029,13 @@ Para más información, ejecuta: `project-prompt subscription plans`
                     section_content += "```\n"
                     section_content += textual_representation
                     section_content += "\n```\n\n"
+                    
+                    # Agregar matriz de dependencias si hay conexiones
+                    try:
+                        dependency_matrix = dep_analyzer.generate_dependency_matrix(graph_data_for_textual, max_files=8)
+                        section_content += dependency_matrix
+                    except Exception as e:
+                        logger.warning(f"Error al generar matriz de dependencias: {e}")
                 else:
                     section_content += "*No se pudieron encontrar conexiones significativas para la representación textual.*\n\n"
                     
@@ -1041,6 +1048,8 @@ Para más información, ejecuta: `project-prompt subscription plans`
 - *Organización lógica del código por funcionalidad*  
 - *Posibles puntos de refactorización o mejora arquitectural*
 """
+        
+        return section_content
 
     # ...existing code...
 def main():

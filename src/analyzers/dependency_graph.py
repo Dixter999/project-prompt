@@ -322,6 +322,83 @@ class DependencyGraph:
             logger.error(f"Error al generar visualización markdown: {e}", exc_info=True)
             return f"Error al generar visualización: {str(e)}"
     
+    def generate_dependency_matrix(self, graph_data: Dict[str, Any], max_files: int = 10) -> str:
+        """
+        Generar una tabla matriz de dependencias.
+        
+        Args:
+            graph_data: Datos del grafo
+            max_files: Número máximo de archivos a incluir en la matriz
+            
+        Returns:
+            Representación en markdown de la matriz de dependencias
+        """
+        important_files = graph_data.get('important_files', [])[:max_files]
+        
+        if len(important_files) < 2:
+            return "### 📊 Matriz de Dependencias\n\n*No hay suficientes archivos para mostrar matriz.*\n\n"
+        
+        # Obtener rutas de archivos
+        file_paths = []
+        file_names = []
+        
+        for file_info in important_files:
+            if isinstance(file_info, dict):
+                file_path = file_info.get('path', file_info.get('file', ''))
+            else:
+                file_path = str(file_info)
+            
+            file_paths.append(file_path)
+            # Usar solo el nombre del archivo para la tabla
+            file_names.append(os.path.basename(file_path))
+        
+        # Crear matriz de dependencias
+        edges = graph_data.get('edges', [])
+        dependency_matrix = {}
+        
+        for file_path in file_paths:
+            dependency_matrix[file_path] = set()
+        
+        # Llenar matriz con conexiones
+        for edge in edges:
+            source = edge.get('source', '')
+            target = edge.get('target', '')
+            
+            if source in file_paths and target in file_paths:
+                dependency_matrix[source].add(target)
+        
+        # Generar tabla markdown
+        lines = ["### 📊 Matriz de Dependencias\n"]
+        
+        # Header de la tabla
+        header = "| Archivo |"
+        separator = "|---------|"
+        
+        for name in file_names:
+            short_name = name[:10] + "..." if len(name) > 10 else name
+            header += f" {short_name} |"
+            separator += "-------|"
+        
+        lines.append(header)
+        lines.append(separator)
+        
+        # Filas de la tabla
+        for i, source_path in enumerate(file_paths):
+            source_name = file_names[i]
+            display_name = source_name[:15] + "..." if len(source_name) > 15 else source_name
+            row = f"| **{display_name}** |"
+            
+            for target_path in file_paths:
+                if target_path in dependency_matrix[source_path]:
+                    row += " ✅ |"
+                else:
+                    row += " ❌ |"
+            
+            lines.append(row)
+        
+        lines.append("\n*✅ = Tiene dependencia, ❌ = No tiene dependencia*\n")
+        return "\n".join(lines)
+
     def _build_directed_graph(self, connections: Dict[str, List[str]]) -> Dict[str, Dict[str, List[str]]]:
         """
         Construir un grafo dirigido a partir de las conexiones.
@@ -536,36 +613,85 @@ class DependencyGraph:
         """
         lines = []
         
-        # Obtener archivos centrales
-        central_files = graph_data['central_files'][:max_nodes]
+        # Obtener archivos importantes (no solo centrales)
+        important_files = graph_data.get('important_files', [])
+        if not important_files:
+            # Fallback a archivos centrales si no hay archivos importantes
+            important_files = graph_data.get('central_files', [])
+        
+        # Limitar archivos a mostrar
+        files_to_show = important_files[:max_nodes]
+        
+        if not files_to_show:
+            return "No se encontraron archivos importantes para mostrar."
         
         # Preparar estructura para la visualización
         node_map = {}
-        for i, file_info in enumerate(central_files):
+        file_paths = []
+        
+        for i, file_info in enumerate(files_to_show):
             # Compatibilidad con diferentes estructuras de datos
-            file_path = file_info.get('file', file_info.get('path', f'unknown_{i}'))
-            short_name = os.path.basename(file_path)
-            node_map[file_path] = f"[{i+1}] {short_name}"
+            if isinstance(file_info, dict):
+                file_path = file_info.get('file', file_info.get('path', f'unknown_{i}'))
+                importance = file_info.get('importance_score', 0)
+            else:
+                file_path = str(file_info)
+                importance = 0
             
-            # Añadir nodo a la visualización
-            lines.append(f"{i+1}. {file_path}")
+            short_name = os.path.basename(file_path)
+            node_map[file_path] = f"{i+1}"
+            file_paths.append(file_path)
+            
+            # Añadir nodo a la visualización con información de importancia
+            if importance > 0:
+                lines.append(f"{i+1}. {file_path} (importancia: {importance:.1f})")
+            else:
+                lines.append(f"{i+1}. {file_path}")
         
         lines.append("\nDependencias:")
         
-        # Añadir conexiones
-        edges = graph_data['edges']
-        shown_edges = set()
+        # Mostrar conexiones de los archivos mostrados
+        edges = graph_data.get('edges', [])
+        connections_found = False
+        
+        # Crear un mapa para mostrar dependencias de manera más clara
+        dependencies_map = {}
         
         for edge in edges:
-            source = edge['source']
-            target = edge['target']
+            source = edge.get('source', '')
+            target = edge.get('target', '')
             
-            # Solo mostrar conexiones entre nodos centrales
-            if source in node_map and target in node_map:
-                edge_str = f"{source} -> {target}"
-                if edge_str not in shown_edges:
-                    lines.append(f"  {node_map[source]} -> {node_map[target]}")
-                    shown_edges.add(edge_str)
+            if source in file_paths:
+                if source not in dependencies_map:
+                    dependencies_map[source] = []
+                dependencies_map[source].append(target)
+                connections_found = True
+        
+        # Mostrar dependencias agrupadas por archivo
+        if dependencies_map:
+            for source_file in file_paths:
+                if source_file in dependencies_map:
+                    targets = dependencies_map[source_file]
+                    # Filtrar solo targets que están en nuestros archivos mostrados
+                    internal_targets = [t for t in targets if t in file_paths]
+                    external_targets = [t for t in targets if t not in file_paths]
+                    
+                    if internal_targets or external_targets:
+                        source_display = os.path.basename(source_file)
+                        line_parts = [f"  {node_map[source_file]}. {source_display} →"]
+                        
+                        if internal_targets:
+                            internal_display = [f"{node_map[t]}.{os.path.basename(t)}" for t in internal_targets if t in node_map]
+                            if internal_display:
+                                line_parts.append(f" [{', '.join(internal_display)}]")
+                        
+                        if external_targets:
+                            line_parts.append(f" +{len(external_targets)} externas")
+                        
+                        lines.append(''.join(line_parts))
+        
+        if not connections_found:
+            lines.append("  (No se detectaron conexiones entre los archivos mostrados)")
         
         return "\n".join(lines)
     

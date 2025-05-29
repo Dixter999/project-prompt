@@ -31,7 +31,7 @@ class MadgeAnalyzer:
     def __init__(self):
         """Inicializar el analizador Madge."""
         self.min_dependencies = 3  # Mínimo de dependencias para considerar archivo importante
-        self.max_files_to_analyze = 100  # Máximo de archivos importantes a analizar
+        self.max_files_to_analyze = 1000  # Máximo de archivos importantes a analizar
         
     def is_madge_available(self) -> bool:
         """Verificar si Madge está disponible."""
