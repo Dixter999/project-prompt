@@ -390,6 +390,45 @@ def analyze_group_command(
         logger.error(f"Error en analyze_group_command: {e}", exc_info=True)
 
 
+@app.command(name="generate-suggestions")
+@telemetry_command
+def generate_suggestions_command(
+    group_name: str = typer.Argument(..., help="Nombre del grupo funcional para generar sugerencias"),
+    project_path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto")
+):
+    """Generar sugerencias de mejora estructuradas para un grupo funcional."""
+    from src.commands.generate_suggestions import GenerateSuggestionsCommand
+    
+    try:
+        command = GenerateSuggestionsCommand()
+        success = command.execute(
+            group_name=group_name,
+            project_path=project_path
+        )
+        if not success:
+            cli.print_error("La generación de sugerencias no se completó exitosamente")
+    except Exception as e:
+        cli.print_error(f"Error durante la generación de sugerencias: {e}")
+        logger.error(f"Error en generate_suggestions_command: {e}", exc_info=True)
+
+
+@app.command(name="track-progress")
+@telemetry_command
+def track_progress_command(
+    group_name: Optional[str] = typer.Argument(None, help="Nombre del grupo funcional (opcional, muestra resumen si no se especifica)"),
+    phase: Optional[int] = typer.Option(None, "--phase", "-p", help="Número de fase específica a rastrear (opcional)")
+):
+    """Rastrear y gestionar el progreso de implementación de mejoras."""
+    from src.commands.track_progress import TrackProgressCommand
+    
+    try:
+        command = TrackProgressCommand()
+        command.execute(group_name=group_name, phase=phase)
+    except Exception as e:
+        cli.print_error(f"Error durante el seguimiento de progreso: {e}")
+        logger.error(f"Error en track_progress_command: {e}", exc_info=True)
+
+
 @app.command()
 def menu():
     """Iniciar el menú interactivo de ProjectPrompt."""

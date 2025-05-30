@@ -340,8 +340,21 @@ class AdvancedAnthropicClient:
         Returns:
             Respuesta de la API
         """
+        import time
+        
+        # Logging detallado para debugging
+        logger.info("====== ANTHROPIC API REQUEST DEBUG ======")
+        logger.info(f"API Key configured: {'Yes' if self.base_client.api_key else 'No'}")
+        logger.info(f"API Key (first 10 chars): {self.base_client.api_key[:10] if self.base_client.api_key else 'None'}...")
+        logger.info(f"Model: {model}")
+        logger.info(f"Max tokens: {max_tokens}")
+        logger.info(f"Messages count: {len(messages)}")
+        if messages:
+            logger.info(f"First message preview: {messages[0]['content'][:200]}...")
+        
         # Verificar que tengamos una clave API válida
         if not self.base_client.api_key:
+            logger.error("No se ha configurado una clave API para Anthropic")
             raise ValueError("No se ha configurado una clave API para Anthropic")
         
         # Preparar headers
@@ -358,25 +371,60 @@ class AdvancedAnthropicClient:
             "messages": messages
         }
         
+        url = f"{ANTHROPIC_API_BASE_URL}/v1/messages"
+        logger.info(f"Making HTTP POST request to: {url}")
+        
+        # Timing de la solicitud
+        start_time = time.time()
+        
         # Realizar la solicitud
-        response = requests.post(
-            f"{ANTHROPIC_API_BASE_URL}/v1/messages",
-            headers=headers,
-            json=data
-        )
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            request_duration = time.time() - start_time
+            
+            logger.info(f"Request completed in {request_duration:.2f} seconds")
+            logger.info(f"Response status code: {response.status_code}")
+            logger.info(f"Response headers: {dict(response.headers)}")
+            
+            # Log response size
+            if hasattr(response, 'content'):
+                logger.info(f"Response content size: {len(response.content)} bytes")
+            
+        except Exception as e:
+            logger.error(f"HTTP request failed: {str(e)}")
+            raise
         
         # Verificar respuesta
         if response.status_code != 200:
+            error_text = response.text[:500] if response.text else "No error text"
+            logger.error(f"API returned non-200 status: {response.status_code}")
+            logger.error(f"Error response text: {error_text}")
             error_info = response.json() if response.text else {"error": f"Status code: {response.status_code}"}
             raise Exception(f"Error en API Anthropic: {error_info}")
         
-        response_data = response.json()
+        try:
+            response_data = response.json()
+            logger.info(f"Response JSON keys: {list(response_data.keys()) if response_data else 'None'}")
+            
+            # Log usage info if available
+            if "usage" in response_data:
+                usage = response_data["usage"]
+                logger.info(f"Token usage - Input: {usage.get('input_tokens', 'N/A')}, Output: {usage.get('output_tokens', 'N/A')}")
+            
+        except Exception as e:
+            logger.error(f"Failed to parse response JSON: {str(e)}")
+            logger.error(f"Raw response text: {response.text[:500]}")
+            raise
         
         # Extraer contenido de la respuesta
         if response_data and "content" in response_data:
             content = response_data["content"][0]["text"] if response_data["content"] else ""
+            logger.info(f"Response content length: {len(content)} characters")
+            logger.info(f"Response content preview: {content[:200]}...")
+            logger.info("====== API REQUEST COMPLETED ======")
             return {"content": content, "raw_response": response_data}
         else:
+            logger.error(f"Unexpected response format: {response_data}")
             raise Exception("Formato de respuesta inesperado de la API")
     
     def _extract_code_from_response(self, response: Dict[str, Any], language: str) -> str:

@@ -1,284 +1,329 @@
 # ProjectPrompt
 
-![CI Status](https://github.com/Dixter999/project-prompt/actions/workflows/ci.yml/badge.svg)
 ![Python Version](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-1.1.9-green)](https://github.com/Dixter999/project-prompt/releases)
 
-An intelligent CLI tool that uses AI to analyze code projects, generate documentation, and provide improvement suggestions.
+**ProjectPrompt** is an intelligent CLI tool that analyzes code projects and provides AI-powered insights, documentation generation, and improvement suggestions. It helps developers understand their codebase structure, generate contextual prompts, and maintain better project documentation.
 
-## Features
+## ✨ Key Features
 
-- **Smart Project Analysis**: Detects technologies, frameworks, and project structure
-- **AI-Powered Insights**: Leverages Anthropic Claude and OpenAI for intelligent analysis
-- **Visual Dashboard**: Generate comprehensive project dashboards in HTML or Markdown
-- **Dependency Analysis**: Advanced dependency mapping with functional groups
-- **Multi-Language Support**: Python, JavaScript, TypeScript, Java, C++, and more
-- **Offline Capable**: Core features work offline, AI features require API keys
+- **🔍 Smart Project Analysis**: Automatically detects technologies, frameworks, and project structure
+- **🤖 AI-Powered Insights**: Integration with Anthropic Claude and OpenAI for intelligent code analysis
+- **📊 Visual Dashboards**: Generate comprehensive project dashboards in HTML or Markdown
+- **🔗 Dependency Analysis**: Advanced dependency mapping with functional groups
+- **🌐 Multi-Language Support**: Python, JavaScript, TypeScript, Java, C++, and more
+- **⚡ Offline Capable**: Core features work without internet, AI features require API keys
+- **📋 Progress Tracking**: Track development progress across project phases
+- **🎯 Contextual Prompts**: Generate targeted prompts for specific functionalities
 
-## Installation
+## 🚀 Quick Start
+
+### Installation
 
 ```bash
 pip install projectprompt
 ```
 
-**Verify installation:**
+### Verify Installation
+
 ```bash
 project-prompt version
 ```
 
-### Troubleshooting
+### Basic Usage
 
-If you get `command not found` errors:
+```bash
+# Analyze your current project
+project-prompt analyze
 
-**Quick fix:**
+# Generate a project dashboard
+project-prompt dashboard
+
+# Get help with all commands
+project-prompt help
+```
+
+## 📖 Installation Guide
+
+### Prerequisites
+
+- Python 3.8 or higher
+- pip package manager
+
+### Standard Installation
+
+```bash
+pip install projectprompt
+```
+
+### Development Installation
+
+```bash
+git clone https://github.com/Dixter999/project-prompt.git
+cd project-prompt
+pip install -r requirements.txt
+```
+
+### Troubleshooting Installation
+
+If you encounter `command not found` errors:
+
+**For zsh users:**
 ```bash
 echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
-**Alternative method:**
+**For bash users:**
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Alternative: Run via Python module**
 ```bash
 python -m src.main version
 ```
 
-**Create `pp` shorthand alias:**
+**Create convenient alias**
 ```bash
 echo 'alias pp="project-prompt"' >> ~/.zshrc
 source ~/.zshrc
 # Now use: pp analyze, pp dashboard, etc.
 ```
 
-📚 **Complete troubleshooting guide:** [INSTALLATION_TROUBLESHOOTING.md](INSTALLATION_TROUBLESHOOTING.md)
+## 🎯 What to Expect
 
-## Quick Start
+When you run ProjectPrompt on your project, you can expect:
 
-### First Time Setup
+### Immediate Results
+- **Project structure analysis** with file counts and organization
+- **Technology detection** for languages, frameworks, and tools
+- **Basic dependency mapping** showing relationships between files
+- **Code quality metrics** including complexity analysis
 
-1. **Install and verify:**
-   ```bash
-   pip install projectprompt
-   project-prompt version
-   ```
+### With AI APIs Configured
+- **Intelligent insights** about your codebase architecture
+- **Improvement suggestions** tailored to your project
+- **Code explanations** for complex functions
+- **Refactoring recommendations** with best practices
 
-2. **Navigate to your project:**
-   ```bash
-   cd /path/to/your/project
-   ```
+### Premium Features
+- **Advanced dashboards** with interactive visualizations
+- **Comprehensive dependency analysis** with functional groupings
+- **Implementation assistants** for new features
+- **Progress tracking** across development phases
 
-3. **Start with basic analysis:**
-   ```bash
-   project-prompt analyze
-   project-prompt deps
-   project-prompt dashboard
-   ```
-
-### Optional: AI-Powered Features
-
-For enhanced analysis with AI insights:
-
-```bash
-# Configure API (one-time setup)
-project-prompt set-api anthropic
-project-prompt verify-api
-
-# Then use premium features
-project-prompt premium dashboard
-```
-
-### Quick Alias Setup
-
-Create a shorter `pp` command:
-
-```bash
-echo 'alias pp="project-prompt"' >> ~/.zshrc
-source ~/.zshrc
-
-# Now you can use:
-pp analyze
-pp dashboard
-```
-
-## Commands
-
-### Typical Workflow
-
-For new users, follow this command sequence:
-
-```bash
-# 1. First analysis (start here)
-project-prompt analyze
-
-# 2. Dependency analysis  
-project-prompt deps
-
-# 3. Generate dashboard
-project-prompt dashboard
-
-# 4. Optional: Setup AI features
-project-prompt set-api anthropic
-project-prompt verify-api
-project-prompt premium dashboard
-```
+## 🛠️ Command Reference
 
 ### Core Commands
 
-| Command | Description |
-|---------|-------------|
-| `project-prompt analyze` | Analyze project structure and dependencies |
-| `project-prompt dashboard` | Generate visual project dashboard |
-| `project-prompt deps` | Advanced dependency analysis with functional groups |
-| `project-prompt version` | Show version information |
-| `project-prompt config` | View configuration |
-| `project-prompt set-api <provider>` | Configure API keys (anthropic, github) |
-| `project-prompt verify-api` | Test API configuration |
+| Command | Description | Example |
+|---------|-------------|---------|
+| `analyze` | Analyze project structure and generate insights | `project-prompt analyze` |
+| `dashboard` | Generate visual project dashboard | `project-prompt dashboard --format html` |
+| `version` | Show version and API status | `project-prompt version` |
+| `help` | Display detailed help information | `project-prompt help` |
+| `init` | Initialize project with ProjectPrompt | `project-prompt init` |
+| `menu` | Launch interactive menu interface | `project-prompt menu` |
 
-### Dashboard Options
+### API Configuration
 
-```bash
-# Generate markdown dashboard (default)
-project-prompt dashboard
-
-# Generate HTML dashboard
-project-prompt dashboard --format html
-
-# Premium features (requires API)
-project-prompt premium dashboard
-```
-
-### Dependency Analysis
-
-```bash
-# Basic dependency analysis
-project-prompt deps
-
-# Custom output and limits
-project-prompt deps --output analysis.md --max-files 500
-
-# Different formats
-project-prompt deps --format json
-project-prompt deps --format html
-```
-
-## Features
-
-### Dependency Analysis
-
-- **Functional Groups**: Automatically groups files by functionality (core, tests, config, etc.)
-- **Smart Filtering**: Respects `.gitignore` files and focuses on important files
-- **Multiple Formats**: Supports Markdown, JSON, and HTML output
-- **Circular Dependencies**: Detects and reports dependency loops
-- **Performance**: Uses optimized analysis tools for faster processing
-
-### Dashboard Generation
-
-- **Multiple Formats**: Generate HTML or Markdown dashboards
-- **Project Overview**: Comprehensive project structure and metrics
-- **AI Insights**: Enhanced analysis with premium features
+| Command | Description | Example |
+|---------|-------------|---------|
+| `set-api` | Configure API keys for AI services | `project-prompt set-api anthropic` |
+| `verify-api` | Check API configuration status | `project-prompt verify-api` |
+| `check-env` | Verify environment variables | `project-prompt check-env` |
 
 ### Project Analysis
 
-- **Multi-Language**: Supports all major programming languages
-- **Technology Detection**: Automatically identifies frameworks and tools
-- **Progress Indicators**: Real-time feedback during analysis
+| Command | Description | Example |
+|---------|-------------|---------|
+| `analyze-group` | Analyze specific functional groups | `project-prompt analyze-group "Authentication"` |
+| `generate-suggestions` | Generate AI-powered improvement suggestions | `project-prompt generate-suggestions` |
+| `track-progress` | Track development progress across phases | `project-prompt track-progress` |
 
-## Examples
+### AI Features
 
-### Analyze a React Project
+| Command | Description | Example |
+|---------|-------------|---------|
+| `ai analyze` | AI-powered code analysis | `project-prompt ai analyze file.py` |
+| `ai refactor` | Get refactoring suggestions | `project-prompt ai refactor file.py` |
+| `ai explain` | Explain code functionality | `project-prompt ai explain file.py --detail advanced` |
+| `ai generate` | Generate code or documentation | `project-prompt ai generate` |
+
+### Premium Features
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `premium dashboard` | Advanced interactive dashboard | `project-prompt premium dashboard` |
+| `premium implementation` | Implementation assistant | `project-prompt premium implementation "user auth"` |
+
+### Utilities
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `delete` | Clean up generated files | `project-prompt delete all --force` |
+| `setup-alias` | Set up command aliases | `project-prompt setup-alias` |
+| `setup-deps` | Install optional dependencies | `project-prompt setup-deps` |
+| `set-log-level` | Change logging verbosity | `project-prompt set-log-level debug` |
+| `diagnose` | Diagnose installation issues | `project-prompt diagnose` |
+
+### Subscription Management
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `subscription plans` | View available subscription plans | `project-prompt subscription plans` |
+| `subscription activate` | Activate premium license | `project-prompt subscription activate LICENSE_KEY` |
+| `subscription info` | View current subscription status | `project-prompt subscription info` |
+
+### Telemetry
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `telemetry enable` | Enable anonymous usage analytics | `project-prompt telemetry enable` |
+| `telemetry disable` | Disable usage analytics | `project-prompt telemetry disable` |
+| `telemetry status` | Check telemetry status | `project-prompt telemetry status` |
+
+## 🔧 Configuration
+
+### Environment Setup
+
+Create a `.env` file in your project root:
 
 ```bash
-cd my-react-app
+# AI API Keys (optional but recommended)
+ANTHROPIC_API_KEY=your_anthropic_key_here
+OPENAI_API_KEY=your_openai_key_here
+GITHUB_TOKEN=your_github_token_here
+
+# Logging level
+LOG_LEVEL=info
+```
+
+### API Configuration
+
+1. **Anthropic Claude** (Recommended):
+   ```bash
+   project-prompt set-api anthropic
+   ```
+
+2. **OpenAI GPT**:
+   ```bash
+   project-prompt set-api openai
+   ```
+
+3. **Verify Configuration**:
+   ```bash
+   project-prompt verify-api
+   ```
+
+## 📊 Output Examples
+
+### Basic Analysis
+```bash
 project-prompt analyze
-project-prompt deps --format html
-project-prompt dashboard
 ```
+**Generates:**
+- Project structure overview
+- File type distribution
+- Basic metrics and statistics
+- Technology stack detection
 
-### Generate Documentation
-
+### Dashboard Generation
 ```bash
-# Basic dependency analysis
-project-prompt deps --output docs/dependencies.md
-
-# Comprehensive dashboard
-project-prompt dashboard --format html
-
-# With AI insights (requires API key)
-project-prompt set-api anthropic
-project-prompt premium dashboard
+project-prompt dashboard --format html --output ./report.html
 ```
+**Creates:**
+- Interactive HTML dashboard
+- Dependency graphs
+- Code quality metrics
+- Navigation-friendly project overview
 
-### Large Project Analysis
-
+### AI-Powered Insights
 ```bash
-# Focused analysis
-project-prompt deps --max-files 1000 --min-deps 5
-
-# Custom output location
-project-prompt deps --output /docs/analysis.json --format json
+project-prompt ai analyze src/main.py --output analysis.json
 ```
+**Provides:**
+- Code quality assessment
+- Potential issues detection
+- Improvement recommendations
+- Security considerations
 
-## Advanced Features
+## 🎨 Use Cases
 
-### .gitignore Support
+### For Individual Developers
+- **Code Reviews**: Analyze code quality before commits
+- **Documentation**: Generate comprehensive project documentation
+- **Learning**: Understand complex codebases quickly
+- **Refactoring**: Get AI suggestions for code improvements
 
-ProjectPrompt automatically respects your project's `.gitignore` file:
+### For Teams
+- **Onboarding**: Help new team members understand project structure
+- **Architecture**: Visualize system dependencies and relationships
+- **Standards**: Maintain consistent code quality across projects
+- **Planning**: Track development progress and milestones
 
-- **Automatic Detection**: Finds and parses `.gitignore` patterns
-- **Performance**: Reduces analysis time by skipping irrelevant files
-- **Clean Results**: Excludes ignored files for better dependency analysis
+### For Project Managers
+- **Progress Tracking**: Monitor development phases and completion
+- **Risk Assessment**: Identify potential technical debt
+- **Resource Planning**: Understand project complexity and scope
+- **Reporting**: Generate visual reports for stakeholders
 
-### Functional Groups
+## 🔒 Privacy & Security
 
-Files are automatically organized into functional groups:
+- **Local Processing**: Core analysis runs entirely on your machine
+- **API Usage**: AI features only send code snippets when explicitly requested
+- **No Data Collection**: Your code never leaves your environment without consent
+- **Optional Telemetry**: Anonymous usage statistics can be disabled anytime
 
-- **📁 Core Source**: Main application logic and source files
-- **🧪 Tests**: Unit tests, integration tests, and test utilities  
-- **📚 Documentation**: README files, docs, and guides
-- **⚙️ Configuration**: Config files, build scripts, and settings
-- **🎨 Assets**: Images, stylesheets, and static resources
-- **🔧 Tools**: Build tools, deployment scripts, and utilities
+## 🆘 Getting Help
 
-### Output Formats
-
-- **Markdown**: Default format, great for documentation and GitHub
-- **HTML**: Rich visual output with styling and interactivity
-- **JSON**: Structured data for integration with other tools
-
-## Troubleshooting
-
-### Common Issues
-
-**Command not found:**
+### Command Help
 ```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
+project-prompt [COMMAND] --help
 ```
 
-**API Configuration:**
+### Troubleshooting
 ```bash
-project-prompt set-api anthropic
-project-prompt verify-api
+project-prompt diagnose
 ```
 
-**License/Telemetry Warnings:**
-These are harmless and don't affect functionality. ProjectPrompt works offline with basic features.
+### Interactive Menu
+```bash
+project-prompt menu
+```
 
-## Requirements
+### Documentation
+- **Quick Start**: `QUICKSTART_GUIDE.md`
+- **User Guide**: `docs/guides/user_guide.md`
+- **API Reference**: `docs/reference/api_reference.md`
 
-- Python 3.8+
-- Internet connection (for AI features only)
-- API keys (optional, for AI-powered analysis)
+## 🚀 Advanced Features
 
-## Contributing
+### Premium Capabilities
+- Advanced dependency analysis with madge integration
+- AI-powered implementation assistants
+- Comprehensive progress tracking
+- Priority support and updates
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+### Extensibility
+- Custom analyzers for specific technologies
+- Template system for output customization
+- Plugin architecture for additional integrations
+- API for programmatic access
 
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## Support
+## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/Dixter999/project-prompt/issues)
-- **Documentation**: See [docs/](docs/) directory
-- **Changelog**: [CHANGELOG.md](CHANGELOG.md)
+- **Documentation**: [Project Wiki](https://github.com/Dixter999/project-prompt/wiki)
+- **Email**: daniel@lagowski.es
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Ready to get started?** Run `project-prompt analyze` in your project directory and discover what ProjectPrompt can do for you!

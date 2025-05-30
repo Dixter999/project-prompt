@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
-  <path fill-rule="evenodd" clip-rule="evenodd" d="M4 2V14H12V2H4ZM3 1H13V15H3V1Z" fill="currentColor"/>
-  <path d="M6 4H10V5H6V4Z" fill="currentColor"/>
-  <path d="M6 7H10V8H6V7Z" fill="currentColor"/>
-  <path d="M6 10H10V11H6V10Z" fill="currentColor"/>
-</svg>

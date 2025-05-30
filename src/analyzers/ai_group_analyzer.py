@@ -22,6 +22,7 @@ from src.analyzers.project_progress_tracker import ProjectProgressTracker
 from src.analyzers.dependency_graph import DependencyGraph
 from src.utils.config import ConfigManager
 from src.ui.cli import CLI
+from src.utils.token_counter import AnthropicTokenCounter
 
 # Configurar logger
 logger = get_logger()
@@ -40,6 +41,7 @@ class AIGroupAnalyzer:
         self.config = config or ConfigManager()
         self.ai_client = AdvancedAnthropicClient(config=self.config)
         self.cli = CLI()
+        self.token_counter = AnthropicTokenCounter()
         
         # Configuración de análisis
         self.batch_size = self.config.get("ai_analysis.batch_size", 5)
@@ -99,18 +101,6 @@ class AIGroupAnalyzer:
             # Mostrar información del grupo
             self.cli.print_info(f"\n🤖 Analizando grupo: {target_group['name']}")
             self.cli.print_info(f"📁 Archivos en el grupo: {target_group['size']}")
-            
-            # Estimar costo antes de proceder
-            cost_estimate = self._estimate_analysis_cost(target_group)
-            self.cli.print_info(f"💰 Costo estimado: ~${cost_estimate:.4f} USD")
-            
-            # Confirmar continuación
-            if not self.cli.confirm("¿Desea continuar con el análisis?"):
-                return {
-                    "success": False,
-                    "error": "Análisis cancelado por el usuario",
-                    "group_name": group_name
-                }
             
             # Analizar archivos del grupo
             analysis_results = self._analyze_group_files(project_path, target_group)
@@ -235,28 +225,6 @@ class AIGroupAnalyzer:
         
         return groups
     
-    def _estimate_analysis_cost(self, group: Dict[str, Any]) -> float:
-        """
-        Estimar el costo del análisis basado en el número de archivos.
-        
-        Args:
-            group: Grupo a analizar
-            
-        Returns:
-            Costo estimado en USD
-        """
-        # Estimación basada en tokens promedio por archivo
-        files_count = group.get('size', 0)
-        avg_tokens_per_file = 1000  # Estimación conservadora
-        tokens_for_analysis = 500   # Tokens adicionales para análisis
-        
-        total_tokens = files_count * (avg_tokens_per_file + tokens_for_analysis)
-        
-        # Precio estimado de Claude-3 Sonnet (modelo de análisis)
-        price_per_1k_tokens = 0.003  # $0.003 por 1K tokens (aprox)
-        
-        return (total_tokens / 1000) * price_per_1k_tokens
-    
     def _analyze_group_files(self, project_path: str, group: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Analizar todos los archivos de un grupo.
@@ -268,6 +236,8 @@ class AIGroupAnalyzer:
         Returns:
             Lista con análisis de cada archivo
         """
+        from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn
+        
         files = group.get('files', [])
         analysis_results = []
         
@@ -278,38 +248,64 @@ class AIGroupAnalyzer:
             logger.warning("No hay archivos válidos para analizar en el grupo")
             return []
         
-        # Mostrar progreso
         total_files = len(valid_files)
-        self.cli.print_info(f"📊 Analizando {total_files} archivos...")
         
-        # Procesar archivos en lotes
-        for i in range(0, len(valid_files), self.batch_size):
-            batch = valid_files[i:i + self.batch_size]
-            batch_num = (i // self.batch_size) + 1
+        # Crear progreso con Rich
+        from rich.console import Console
+        console = Console()
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            console=console
+        ) as progress:
+            
+            # Task para progreso general
+            main_task = progress.add_task(f"📊 Analizando {total_files} archivos", total=total_files)
+            
+            # Task para lotes
             total_batches = (len(valid_files) + self.batch_size - 1) // self.batch_size
+            batch_task = progress.add_task("🔄 Procesando lotes", total=total_batches)
             
-            self.cli.print_info(f"🔄 Procesando lote {batch_num}/{total_batches} ({len(batch)} archivos)")
-            
-            # Analizar archivos del lote
-            for file_info in batch:
-                try:
-                    file_analysis = self._analyze_single_file(project_path, file_info)
-                    if file_analysis:
-                        analysis_results.append(file_analysis)
-                    
-                    # Progreso individual
-                    progress = len(analysis_results)
-                    percentage = (progress / total_files) * 100
-                    self.cli.print_info(f"📊 Archivos analizados: {progress}/{total_files} ({percentage:.1f}%)")
-                    
-                except Exception as e:
-                    logger.error(f"Error al analizar archivo {file_info.get('path', '')}: {e}")
-                    continue
-            
-            # Delay entre lotes para evitar rate limiting
-            if i + self.batch_size < len(valid_files):
-                self.cli.print_info(f"⏳ Esperando {self.analysis_delay}s antes del siguiente lote...")
-                time.sleep(self.analysis_delay)
+            # Procesar archivos en lotes
+            for i in range(0, len(valid_files), self.batch_size):
+                batch = valid_files[i:i + self.batch_size]
+                batch_num = (i // self.batch_size) + 1
+                
+                progress.update(batch_task, description=f"🔄 Lote {batch_num}/{total_batches} ({len(batch)} archivos)")
+                
+                # Analizar archivos del lote
+                for file_info in batch:
+                    try:
+                        # Actualizar descripción con archivo actual
+                        file_path = file_info.get('path', 'unknown')
+                        progress.update(main_task, description=f"📄 Analizando: {os.path.basename(file_path)}")
+                        
+                        file_analysis = self._analyze_single_file(project_path, file_info)
+                        if file_analysis:
+                            analysis_results.append(file_analysis)
+                        
+                        # Actualizar progreso
+                        progress.update(main_task, advance=1)
+                        
+                    except Exception as e:
+                        logger.error(f"Error al analizar archivo {file_info.get('path', '')}: {e}")
+                        progress.update(main_task, advance=1)
+                        continue
+                
+                # Actualizar progreso de lotes
+                progress.update(batch_task, advance=1)
+                
+                # Delay entre lotes para evitar rate limiting
+                if i + self.batch_size < len(valid_files):
+                    delay_task = progress.add_task(f"⏳ Esperando {self.analysis_delay}s", total=self.analysis_delay)
+                    for _ in range(self.analysis_delay):
+                        time.sleep(1)
+                        progress.update(delay_task, advance=1)
+                    progress.remove_task(delay_task)
         
         self.cli.print_success(f"✅ Análisis completado: {len(analysis_results)} archivos procesados")
         return analysis_results
@@ -424,23 +420,47 @@ class AIGroupAnalyzer:
             # Crear prompt para análisis
             analysis_prompt = self._create_analysis_prompt(file_path, content, language)
             
-            # Solicitar análisis a Claude
-            result = self.ai_client.explain_code(
-                code=content,
-                language=language,
-                detail_level="advanced",
-                context={
-                    "file_path": file_path,
-                    "analysis_type": "functional_group_analysis"
-                }
-            )
+            # Debug: log para verificar que se está llamando a la API
+            logger.info(f"Analizando archivo {file_path} con IA (tamaño: {len(content)} chars)")
+            
+            # Solicitar análisis a Claude usando el método explain_code con prompt personalizado
+            # Combine the analysis prompt with the code content for a comprehensive analysis
+            combined_prompt = f"""Analiza este archivo {language} que forma parte de un grupo funcional:
+
+Archivo: {file_path}
+
+Por favor proporciona un análisis estructurado que incluya:
+
+1. **Funcionalidad Principal**: ¿Qué hace este archivo?
+2. **Responsabilidades**: Principales responsabilidades y propósito  
+3. **Dependencias**: Qué librerías, módulos o archivos importa/usa
+4. **Calidad del Código**: Evaluación de la calidad (1-10) con justificación
+5. **Complejidad**: Nivel de complejidad (Baja/Media/Alta) y por qué
+6. **Mantenibilidad**: Qué tan fácil es mantener este código
+7. **Posibles Mejoras**: Sugerencias específicas para mejorar
+
+Mantén el análisis conciso pero informativo.
+
+CÓDIGO A ANALIZAR:
+{content}"""
+            
+            result = self.ai_client.explain_code(combined_prompt, language, "standard", {
+                "purpose": "file_analysis",
+                "file_path": file_path
+            })
+            
+            # Debug: log de la respuesta
+            logger.info(f"Respuesta IA para {file_path}: success={result.get('success', False)}")
             
             if not result.get('success', False):
                 logger.error(f"Error en análisis IA para {file_path}: {result.get('error', 'Unknown error')}")
                 return None
             
             # Procesar y estructurar respuesta
-            analysis_data = self._parse_ai_analysis(file_path, result['explanation'], content)
+            ai_content = result.get('explanation', result.get('content', result.get('message', '')))
+            logger.info(f"Contenido AI recibido para {file_path}: {len(ai_content)} chars")
+            
+            analysis_data = self._parse_ai_analysis(file_path, ai_content, content)
             
             return analysis_data
             
@@ -510,17 +530,34 @@ class AIGroupAnalyzer:
 
 Archivo: {file_path}
 
-Por favor proporciona un análisis estructurado que incluya:
+Por favor proporciona un análisis estructurado que incluya EXACTAMENTE estos campos:
 
-1. **Funcionalidad Principal**: ¿Qué hace este archivo?
-2. **Responsabilidades**: Principales responsabilidades y propósito
-3. **Dependencias**: Qué librerías, módulos o archivos importa/usa
-4. **Calidad del Código**: Evaluación de la calidad (1-10) con justificación
-5. **Complejidad**: Nivel de complejidad (Baja/Media/Alta) y por qué
-6. **Mantenibilidad**: Qué tan fácil es mantener este código
-7. **Posibles Mejoras**: Sugerencias específicas para mejorar
+1. **Funcionalidad Específica**: Describe en UNA línea concisa qué hace específicamente este archivo (máximo 60 caracteres)
+2. **Dependencias Internas**: Lista SOLO los archivos internos del proyecto que este archivo importa o usa (separa con comas)
+3. **Dependencias Externas**: Lista SOLO las librerías externas que importa (separa con comas, máximo 3)
+4. **Complejidad**: Clasifica como "Baja", "Media" o "Alta" basándote en:
+   - Número de funciones/clases
+   - Lógica de negocio
+   - Manejo de errores
+   - Interacciones con otros sistemas
+5. **Responsabilidades Principales**: Enumera las 3 responsabilidades principales
+6. **Mejoras Recomendadas**: Sugiere mejoras específicas para este archivo
 
-Mantén el análisis conciso pero informativo."""
+Ejemplo de formato de respuesta:
+**Funcionalidad Específica**: Gestiona autenticación de usuarios y tokens JWT
+**Dependencias Internas**: auth_utils.py, models/user.py
+**Dependencias Externas**: jwt, bcrypt, hashlib
+**Complejidad**: Alta
+**Responsabilidades Principales**: 
+- Validar credenciales de usuario
+- Generar y validar tokens JWT
+- Gestionar sesiones de usuario
+**Mejoras Recomendadas**:
+- Separar lógica de tokens en clase independiente
+- Agregar tests unitarios para cada función
+- Mejorar manejo de errores específicos
+
+Mantén cada sección concisa y específica."""
     
     def _parse_ai_analysis(self, file_path: str, ai_response: str, original_content: str) -> Dict[str, Any]:
         """
@@ -538,30 +575,28 @@ Mantén el análisis conciso pero informativo."""
         lines_count = len(original_content.splitlines())
         char_count = len(original_content)
         
-        # Intentar extraer información estructurada de la respuesta
-        functionality = self._extract_section(ai_response, "Funcionalidad Principal", "Funcionalidad")
-        responsibilities = self._extract_section(ai_response, "Responsabilidades")
-        dependencies = self._extract_section(ai_response, "Dependencias")
-        quality_info = self._extract_section(ai_response, "Calidad del Código", "Calidad")
+        # Extraer información específica usando el nuevo formato
+        functionality = self._extract_section(ai_response, "Funcionalidad Específica")
+        internal_deps = self._extract_section(ai_response, "Dependencias Internas")
+        external_deps = self._extract_section(ai_response, "Dependencias Externas")
         complexity = self._extract_section(ai_response, "Complejidad")
-        maintainability = self._extract_section(ai_response, "Mantenibilidad")
-        improvements = self._extract_section(ai_response, "Posibles Mejoras", "Mejoras")
+        responsibilities = self._extract_section(ai_response, "Responsabilidades Principales")
+        improvements = self._extract_section(ai_response, "Mejoras Recomendadas")
         
-        # Extraer score de calidad si está presente
-        quality_score = self._extract_quality_score(quality_info)
+        # Procesar dependencias
+        internal_dependencies = self._parse_dependencies_list(internal_deps)
+        external_dependencies = self._parse_dependencies_list(external_deps)
         
         return {
             'file_path': file_path,
             'file_name': os.path.basename(file_path),
             'analysis': {
                 'functionality': functionality,
-                'responsibilities': responsibilities,
-                'dependencies': dependencies,
-                'quality_assessment': quality_info,
+                'internal_dependencies': internal_dependencies,
+                'external_dependencies': external_dependencies,
                 'complexity': complexity,
-                'maintainability': maintainability,
-                'suggested_improvements': improvements,
-                'quality_score': quality_score
+                'responsibilities': responsibilities,
+                'improvements': improvements
             },
             'metrics': {
                 'lines_of_code': lines_count,
@@ -571,6 +606,23 @@ Mantén el análisis conciso pero informativo."""
             'analysis_timestamp': datetime.now().isoformat(),
             'full_ai_response': ai_response
         }
+    
+    def _parse_dependencies_list(self, deps_text: str) -> List[str]:
+        """
+        Parsear lista de dependencias desde texto.
+        
+        Args:
+            deps_text: Texto con dependencias separadas por comas
+            
+        Returns:
+            Lista de dependencias limpias
+        """
+        if not deps_text or deps_text.strip() == "-" or "no" in deps_text.lower():
+            return []
+        
+        # Limpiar y separar dependencias
+        deps = [dep.strip() for dep in deps_text.split(',')]
+        return [dep for dep in deps if dep and len(dep) > 1]
     
     def _extract_section(self, text: str, *section_names: str) -> str:
         """
@@ -646,19 +698,18 @@ Mantén el análisis conciso pero informativo."""
             Ruta al archivo de reporte generado
         """
         # Crear directorio de salida
-        output_dir = os.path.join(project_path, "project-output", "analyses", "groups")
+        output_dir = os.path.join(project_path, "project-output", "analyses", "functionality_groups")
         os.makedirs(output_dir, exist_ok=True)
         
-        # Crear nombre de archivo seguro
+        # Crear nombre de archivo seguro (sin timestamp para seguir el formato exacto requerido)
         safe_group_name = "".join(c for c in group['name'] if c.isalnum() or c in (' ', '-', '_')).strip()
         safe_group_name = safe_group_name.replace(' ', '_')
         
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        report_filename = f"{safe_group_name}_{timestamp}.md"
+        report_filename = f"{safe_group_name}.md"
         report_path = os.path.join(output_dir, report_filename)
         
-        # Generar contenido del reporte
-        content = self._create_report_content(group, analysis_results, project_path)
+        # Generar contenido del reporte con formato específico requerido
+        content = self._create_structured_report_content(group, analysis_results, project_path)
         
         # Escribir reporte
         with open(report_path, 'w', encoding='utf-8') as f:
@@ -702,29 +753,27 @@ Mantén el análisis conciso pero informativo."""
             "",
         ]
         
-        # Agregar tabla resumen
+        # Agregar tabla resumen simplificada
         if analysis_results:
             content.extend([
-                "## 📋 Tabla de Análisis por Archivo",
+                "## 📋 Resumen de Análisis",
                 "",
-                "| Archivo | Funcionalidad | Dependencias | Calidad | Complejidad |",
-                "|---------|---------------|--------------|---------|-------------|"
+                "| Archivo | Funcionalidad | Mejoras Sugeridas |",
+                "|---------|---------------|-------------------|"
             ])
             
             for result in analysis_results:
                 file_name = result['file_name']
-                functionality = self._truncate_text(result['analysis']['functionality'], 50)
-                dependencies = self._truncate_text(result['analysis']['dependencies'], 40)
-                quality_score = result['analysis']['quality_score'] or "N/A"
-                complexity = result['analysis']['complexity']
+                functionality = self._truncate_text(result['analysis']['functionality'], 60)
+                improvements = self._truncate_text(result['analysis']['suggested_improvements'], 60)
                 
                 content.append(
-                    f"| `{file_name}` | {functionality} | {dependencies} | {quality_score} | {complexity} |"
+                    f"| `{file_name}` | {functionality} | {improvements} |"
                 )
             
             content.extend(["", "---", ""])
         
-        # Análisis detallado por archivo
+        # Análisis detallado por archivo - Solo información útil
         content.extend([
             "## 🔍 Análisis Detallado por Archivo",
             ""
@@ -732,39 +781,15 @@ Mantén el análisis conciso pero informativo."""
         
         for i, result in enumerate(analysis_results, 1):
             analysis = result['analysis']
-            metrics = result['metrics']
             
             content.extend([
                 f"### {i}. 📄 `{result['file_path']}`",
                 "",
-                f"**Métricas:**",
-                f"- Líneas de código: {metrics['lines_of_code']}",
-                f"- Tamaño: {metrics['file_size_kb']} KB",
-                "",
                 f"**🎯 Funcionalidad Principal:**",
                 f"{analysis['functionality']}",
                 "",
-                f"**📋 Responsabilidades:**",
-                f"{analysis['responsibilities']}",
-                "",
                 f"**🔗 Dependencias:**",
                 f"{analysis['dependencies']}",
-                "",
-                f"**⭐ Calidad del Código:**",
-                f"{analysis['quality_assessment']}",
-                ""
-            ])
-            
-            if analysis['quality_score']:
-                content.append(f"**Puntuación de Calidad:** {analysis['quality_score']}/10")
-                content.append("")
-            
-            content.extend([
-                f"**🔧 Complejidad:**",
-                f"{analysis['complexity']}",
-                "",
-                f"**🛠️ Mantenibilidad:**",
-                f"{analysis['maintainability']}",
                 "",
                 f"**💡 Sugerencias de Mejora:**",
                 f"{analysis['suggested_improvements']}",
@@ -772,24 +797,6 @@ Mantén el análisis conciso pero informativo."""
                 "---",
                 ""
             ])
-        
-        # Agregar estadísticas finales
-        if analysis_results:
-            avg_quality = self._calculate_average_quality(analysis_results)
-            complexity_dist = self._calculate_complexity_distribution(analysis_results)
-            
-            content.extend([
-                "## 📈 Estadísticas del Grupo",
-                "",
-                f"- **Calidad Promedio:** {avg_quality:.1f}/10",
-                f"- **Distribución de Complejidad:**"
-            ])
-            
-            for complexity, count in complexity_dist.items():
-                percentage = (count / len(analysis_results)) * 100
-                content.append(f"  - {complexity}: {count} archivos ({percentage:.1f}%)")
-            
-            content.extend(["", "---", ""])
         
         # Footer
         content.extend([
@@ -800,24 +807,508 @@ Mantén el análisis conciso pero informativo."""
         
         return "\n".join(content)
     
-    def _truncate_text(self, text: str, max_length: int) -> str:
-        """Truncar texto a longitud máxima."""
-        if len(text) <= max_length:
-            return text
-        return text[:max_length-3] + "..."
-    
-    def _calculate_average_quality(self, analysis_results: List[Dict[str, Any]]) -> float:
-        """Calcular calidad promedio."""
-        scores = [r['analysis']['quality_score'] for r in analysis_results if r['analysis']['quality_score']]
-        return sum(scores) / len(scores) if scores else 0.0
-    
-    def _calculate_complexity_distribution(self, analysis_results: List[Dict[str, Any]]) -> Dict[str, int]:
-        """Calcular distribución de complejidad."""
-        distribution = {}
+    def _create_structured_report_content(self, group: Dict[str, Any], analysis_results: List[Dict[str, Any]], project_path: str) -> str:
+        """
+        Crear el contenido markdown del reporte con formato estructurado específico.
+        
+        Args:
+            group: Información del grupo
+            analysis_results: Resultados del análisis
+            project_path: Ruta al proyecto
+            
+        Returns:
+            Contenido markdown del reporte con formato específico
+        """
+        from datetime import datetime
+        import os
+        
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        content = [
+            f"# Análisis del Grupo: {group['name']}",
+            f"Fecha: {timestamp}",
+            f"Archivos analizados: {len(analysis_results)}",
+            "",
+            "## Resumen del Grupo",
+            "",
+            self._generate_group_summary(group, analysis_results),
+            "",
+            "## Análisis Detallado por Archivo",
+            "",
+            "| Archivo | Funcionalidad Específica | Dependencias Internas | Dependencias Externas | Complejidad |",
+            "|---------|--------------------------|----------------------|----------------------|-------------|"
+        ]
+        
+        # Generar tabla con formato específico requerido
         for result in analysis_results:
-            complexity = result['analysis']['complexity']
-            distribution[complexity] = distribution.get(complexity, 0) + 1
-        return distribution
+            file_name = result['file_name']
+            functionality = self._extract_specific_functionality(result['analysis'])
+            internal_deps = self._extract_internal_dependencies(result['analysis'])
+            external_deps = self._extract_external_dependencies(result['analysis'])
+            complexity = self._extract_complexity_level(result['analysis'])
+            
+            content.append(
+                f"| {file_name} | {functionality} | {internal_deps} | {external_deps} | {complexity} |"
+            )
+        
+        content.extend([
+            "",
+            "## Conexiones y Dependencias",
+            "",
+            self._generate_dependency_diagram(analysis_results),
+            "",
+            "## Recomendaciones",
+            "",
+            self._generate_group_recommendations(analysis_results)
+        ])
+        
+        return "\n".join(content)
+    
+    def _generate_group_summary(self, group: Dict[str, Any], analysis_results: List[Dict[str, Any]]) -> str:
+        """Generar resumen general del grupo."""
+        functionalities = []
+        for result in analysis_results:
+            functionality = self._extract_specific_functionality(result['analysis'])
+            if functionality and functionality != "Sin especificar":
+                functionalities.append(functionality)
+        
+        if functionalities:
+            main_purpose = f"Este grupo se encarga principalmente de: {', '.join(functionalities[:3])}."
+        else:
+            main_purpose = f"Grupo funcional '{group['name']}' que contiene {len(analysis_results)} archivos."
+        
+        return main_purpose
+    
+    def _extract_specific_functionality(self, analysis: Dict[str, Any]) -> str:
+        """Extraer funcionalidad específica del análisis."""
+        if isinstance(analysis, dict):
+            functionality = analysis.get('functionality', '')
+            if isinstance(functionality, str) and len(functionality) > 50:
+                # Truncar funcionalidad si es muy larga
+                return functionality[:47] + "..."
+            return functionality or "Sin especificar"
+        return "Sin especificar"
+    
+    def _extract_internal_dependencies(self, analysis: Dict[str, Any]) -> str:
+        """Extraer dependencias internas del análisis."""
+        if isinstance(analysis, dict):
+            deps = analysis.get('internal_dependencies', [])
+            if isinstance(deps, list) and deps:
+                return ", ".join(deps[:3])  # Máximo 3 dependencias
+            elif isinstance(deps, str):
+                return deps
+        return "-"
+    
+    def _extract_external_dependencies(self, analysis: Dict[str, Any]) -> str:
+        """Extraer dependencias externas del análisis."""
+        if isinstance(analysis, dict):
+            deps = analysis.get('external_dependencies', [])
+            if isinstance(deps, list) and deps:
+                return ", ".join(deps[:3])  # Máximo 3 dependencias
+            elif isinstance(deps, str):
+                return deps
+        return "-"
+    
+    def _extract_complexity_level(self, analysis: Dict[str, Any]) -> str:
+        """Extraer nivel de complejidad del análisis."""
+        if isinstance(analysis, dict):
+            complexity = analysis.get('complexity', '')
+            if complexity:
+                return complexity
+            # Intentar inferir complejidad por palabras clave
+            text = str(analysis)
+            if 'alta' in text.lower() or 'complex' in text.lower():
+                return "Alta"
+            elif 'media' in text.lower() or 'medium' in text.lower():
+                return "Media"
+            elif 'baja' in text.lower() or 'low' in text.lower():
+                return "Baja"
+        return "Media"
+    
+    def _generate_dependency_diagram(self, analysis_results: List[Dict[str, Any]]) -> str:
+        """Generar diagrama textual de dependencias."""
+        lines = []
+        for result in analysis_results:
+            file_name = result['file_name']
+            internal_deps = self._extract_internal_dependencies(result['analysis'])
+            if internal_deps and internal_deps != "-":
+                lines.append(f"- `{file_name}` → {internal_deps}")
+        
+        if lines:
+            return "\n".join(lines)
+        else:
+            return "No se detectaron dependencias internas complejas entre los archivos del grupo."
+    
+    def _generate_group_recommendations(self, analysis_results: List[Dict[str, Any]]) -> str:
+        """Generar recomendaciones basadas en el análisis."""
+        recommendations = []
+        
+        # Analizar patrones comunes
+        high_complexity_files = []
+        files_with_many_deps = []
+        
+        for result in analysis_results:
+            complexity = self._extract_complexity_level(result['analysis'])
+            if complexity == "Alta":
+                high_complexity_files.append(result['file_name'])
+                
+            internal_deps = self._extract_internal_dependencies(result['analysis'])
+            if internal_deps and len(internal_deps.split(',')) > 2:
+                files_with_many_deps.append(result['file_name'])
+        
+        if high_complexity_files:
+            recommendations.append(f"- **Refactorización de complejidad**: Los archivos {', '.join(high_complexity_files)} presentan alta complejidad y podrían beneficiarse de modularización.")
+        
+        if files_with_many_deps:
+            recommendations.append(f"- **Reducción de dependencias**: Considerar simplificar las dependencias en {', '.join(files_with_many_deps)} para mejorar la mantenibilidad.")
+        
+        if len(analysis_results) > 5:
+            recommendations.append("- **Organización**: El grupo contiene muchos archivos. Considerar subdividir en grupos más pequeños para mejor organización.")
+        
+        recommendations.append("- **Documentación**: Agregar documentación específica sobre las responsabilidades y interfaces de cada archivo.")
+        recommendations.append("- **Testing**: Implementar tests unitarios específicos para cada funcionalidad identificada.")
+        
+        return "\n".join(recommendations)
+                for dep in deps:
+                    content.append(f"- {dep}")
+            else:
+                content.append("- Ninguna dependencia crítica identificada")
+            
+            content.extend([
+                "",
+                f"**Puntos de Mejora:**",
+            ])
+            
+            # Extraer mejoras sugeridas
+            improvements = self._parse_improvements_from_analysis(analysis)
+            if improvements:
+                for improvement in improvements:
+                    content.append(f"- {improvement}")
+            else:
+                content.append("- No se identificaron mejoras específicas")
+            
+            content.extend([
+                "",
+                f"**Nivel de Complejidad:** {self._assess_complexity(analysis)}",
+                f"**Prioridad de Refactoring:** {self._assess_refactoring_priority(analysis)}",
+                "",
+                "---",
+                ""
+            ])
+        
+        # Sección de dependencias del grupo
+        content.extend([
+            "## Dependencias del Grupo",
+            "",
+            "### Dependencias Internas",
+        ])
+        
+        internal_deps = self._identify_internal_dependencies(analysis_results)
+        if internal_deps:
+            for dep in internal_deps:
+                content.append(f"- {dep}")
+        else:
+            content.append("- No se identificaron dependencias internas críticas")
+        
+        content.extend([
+            "",
+            "### Dependencias Externas",
+        ])
+        
+        external_deps = self._identify_external_dependencies(analysis_results)
+        if external_deps:
+            for dep in external_deps:
+                content.append(f"- {dep}")
+        else:
+            content.append("- No se identificaron dependencias externas críticas")
+        
+        # Recomendaciones finales
+        content.extend([
+            "",
+            "## Recomendaciones Generales",
+            "",
+            "### Mejoras de Arquitectura",
+        ])
+        
+        arch_recommendations = self._generate_architecture_recommendations(group, analysis_results)
+        for rec in arch_recommendations:
+            content.append(f"- {rec}")
+        
+        content.extend([
+            "",
+            "### Mejoras de Código",
+        ])
+        
+        code_recommendations = self._generate_code_recommendations(analysis_results)
+        for rec in code_recommendations:
+            content.append(f"- {rec}")
+        
+        content.extend([
+            "",
+            "### Próximos Pasos Sugeridos",
+            "",
+            "1. **Fase 1:** Implementar mejoras de calidad de código identificadas",
+            "2. **Fase 2:** Refactorizar componentes con alta complejidad",
+            "3. **Fase 3:** Optimizar dependencias y arquitectura",
+            "4. **Fase 4:** Implementar patrones de diseño recomendados",
+            "",
+            "---",
+            "",
+            f"*Reporte generado el {timestamp} por ProjectPrompt AI Analyzer*"
+        ])
+        
+        return "\n".join(content)
+    
+    def _extract_main_functionality(self, analysis: dict) -> str:
+        """Extraer la funcionalidad principal de un análisis."""
+        functionality = analysis.get('functionality', '')
+        if len(functionality) > 60:
+            return functionality[:57] + "..."
+        return functionality or "No especificada"
+    
+    def _extract_dependencies(self, analysis: dict) -> str:
+        """Extraer dependencias clave del análisis."""
+        # Buscar menciones de imports, requires, etc.
+        text = str(analysis.get('technical_details', '')) + str(analysis.get('functionality', ''))
+        deps = []
+        
+        # Patrones comunes de dependencias
+        import_patterns = ['import ', 'from ', 'require(', 'include ', '#include']
+        for pattern in import_patterns:
+            if pattern in text.lower():
+                deps.append("Múltiples")
+                break
+        
+        if not deps:
+            deps.append("Mínimas")
+            
+        return ", ".join(deps[:3])  # Máximo 3 dependencias mostradas
+    
+    def _extract_quality_score(self, analysis: dict) -> str:
+        """Extraer puntuación de calidad del análisis."""
+        # Buscar puntuaciones numéricas en el análisis
+        text = str(analysis)
+        scores = []
+        
+        # Buscar patrones de puntuación
+        import re
+        score_patterns = [
+            r'(\d+)/10',
+            r'score[:\s]*(\d+)',
+            r'quality[:\s]*(\d+)',
+            r'rating[:\s]*(\d+)'
+        ]
+        
+        for pattern in score_patterns:
+            matches = re.findall(pattern, text.lower())
+            if matches:
+                scores.extend([int(m) for m in matches if m.isdigit()])
+        
+        if scores:
+            avg_score = sum(scores) / len(scores)
+            if avg_score >= 8:
+                return f"Alta ({avg_score:.1f}/10)"
+            elif avg_score >= 6:
+                return f"Media ({avg_score:.1f}/10)"
+            else:
+                return f"Baja ({avg_score:.1f}/10)"
+        
+        # Análisis heurístico basado en palabras clave
+        text_lower = text.lower()
+        if any(word in text_lower for word in ['excellent', 'good', 'well', 'clean']):
+            return "Alta"
+        elif any(word in text_lower for word in ['improve', 'refactor', 'fix', 'issue']):
+            return "Media"
+        else:
+            return "Por evaluar"
+    
+    def _extract_key_recommendations(self, analysis: dict) -> str:
+        """Extraer recomendaciones clave del análisis."""
+        improvements = analysis.get('suggested_improvements', '')
+        if len(improvements) > 50:
+            return improvements[:47] + "..."
+        return improvements or "Ninguna"
+    
+    def _parse_dependencies_from_analysis(self, analysis: dict) -> List[str]:
+        """Extraer lista de dependencias del análisis."""
+        deps = []
+        text = str(analysis.get('technical_details', '')) + str(analysis.get('functionality', ''))
+        
+        # Buscar menciones específicas de librerías/módulos
+        common_deps = [
+            'os', 'sys', 'json', 'datetime', 'pathlib', 'typing',
+            'requests', 'numpy', 'pandas', 'flask', 'django',
+            'fastapi', 'sqlalchemy', 'pytest', 'logging'
+        ]
+        
+        for dep in common_deps:
+            if dep in text.lower():
+                deps.append(f"Módulo {dep}")
+        
+        # Si no se encontraron dependencias específicas, agregar genéricas
+        if not deps:
+            if 'import' in text.lower():
+                deps.append("Dependencias estándar de Python")
+            else:
+                deps.append("Sin dependencias externas identificadas")
+        
+        return deps[:5]  # Máximo 5 dependencias
+    
+    def _parse_improvements_from_analysis(self, analysis: dict) -> List[str]:
+        """Extraer lista de mejoras del análisis."""
+        improvements_text = analysis.get('suggested_improvements', '')
+        if not improvements_text:
+            return []
+        
+        # Dividir por puntos o líneas
+        improvements = []
+        
+        # Intentar dividir por números o bullets
+        import re
+        lines = re.split(r'[.\n]|\d+\.', improvements_text)
+        
+        for line in lines:
+            line = line.strip()
+            if len(line) > 10:  # Filtrar líneas muy cortas
+                improvements.append(line[:80] + ("..." if len(line) > 80 else ""))
+        
+        return improvements[:4]  # Máximo 4 mejoras
+    
+    def _assess_complexity(self, analysis: dict) -> str:
+        """Evaluar el nivel de complejidad basado en el análisis."""
+        text = str(analysis).lower()
+        
+        # Indicadores de alta complejidad
+        high_complexity_indicators = [
+            'complex', 'complicated', 'intricate', 'nested',
+            'multiple inheritance', 'deep hierarchy', 'coupling'
+        ]
+        
+        # Indicadores de baja complejidad
+        low_complexity_indicators = [
+            'simple', 'straightforward', 'basic', 'minimal',
+            'clean', 'clear', 'direct'
+        ]
+        
+        high_score = sum(1 for indicator in high_complexity_indicators if indicator in text)
+        low_score = sum(1 for indicator in low_complexity_indicators if indicator in text)
+        
+        if high_score > low_score:
+            return "Alta"
+        elif low_score > high_score:
+            return "Baja"
+        else:
+            return "Media"
+    
+    def _assess_refactoring_priority(self, analysis: dict) -> str:
+        """Evaluar la prioridad de refactoring."""
+        improvements = analysis.get('suggested_improvements', '').lower()
+        
+        # Indicadores de alta prioridad
+        high_priority_words = [
+            'critical', 'urgent', 'important', 'must', 'should',
+            'refactor', 'rewrite', 'fix', 'issue', 'problem'
+        ]
+        
+        priority_score = sum(1 for word in high_priority_words if word in improvements)
+        
+        if priority_score >= 3:
+            return "Alta"
+        elif priority_score >= 1:
+            return "Media"
+        else:
+            return "Baja"
+    
+    def _identify_internal_dependencies(self, analysis_results: List[Dict[str, Any]]) -> List[str]:
+        """Identificar dependencias internas entre archivos del grupo."""
+        deps = []
+        file_names = [result['file_name'] for result in analysis_results]
+        
+        for result in analysis_results:
+            text = str(result['analysis'])
+            for other_file in file_names:
+                if other_file != result['file_name'] and other_file.replace('.py', '') in text:
+                    deps.append(f"{result['file_name']} → {other_file}")
+        
+        return list(set(deps))[:8]  # Eliminar duplicados y limitar
+    
+    def _identify_external_dependencies(self, analysis_results: List[Dict[str, Any]]) -> List[str]:
+        """Identificar dependencias externas del grupo."""
+        deps = set()
+        
+        for result in analysis_results:
+            text = str(result['analysis']).lower()
+            
+            # Librerías comunes
+            external_libs = [
+                'requests', 'numpy', 'pandas', 'flask', 'django',
+                'fastapi', 'sqlalchemy', 'pytest', 'click', 'typer',
+                'rich', 'anthropic', 'openai'
+            ]
+            
+            for lib in external_libs:
+                if lib in text:
+                    deps.add(f"Librería {lib}")
+        
+        return list(deps)[:10]
+    
+    def _generate_architecture_recommendations(self, group: Dict[str, Any], analysis_results: List[Dict[str, Any]]) -> List[str]:
+        """Generar recomendaciones de arquitectura."""
+        recommendations = []
+        
+        # Basado en el número de archivos
+        if len(analysis_results) > 10:
+            recommendations.append("Considerar dividir el grupo en subgrupos más pequeños")
+        
+        # Basado en dependencias
+        internal_deps = self._identify_internal_dependencies(analysis_results)
+        if len(internal_deps) > 5:
+            recommendations.append("Reducir el acoplamiento entre módulos")
+        
+        # Recomendaciones generales
+        recommendations.extend([
+            "Implementar patrones de diseño apropiados para el dominio",
+            "Evaluar la separación de responsabilidades",
+            "Considerar la aplicación de principios SOLID"
+        ])
+        
+        return recommendations[:5]
+    
+    def _generate_code_recommendations(self, analysis_results: List[Dict[str, Any]]) -> List[str]:
+        """Generar recomendaciones de código."""
+        recommendations = []
+        
+        # Analizar patrones comunes en las mejoras sugeridas
+        all_improvements = []
+        for result in analysis_results:
+            improvements = result['analysis'].get('suggested_improvements', '')
+            all_improvements.append(improvements.lower())
+        
+        combined_text = ' '.join(all_improvements)
+        
+        # Recomendaciones basadas en patrones
+        if 'documentation' in combined_text or 'comment' in combined_text:
+            recommendations.append("Mejorar documentación y comentarios")
+        
+        if 'test' in combined_text:
+            recommendations.append("Incrementar cobertura de pruebas")
+        
+        if 'error' in combined_text or 'exception' in combined_text:
+            recommendations.append("Mejorar manejo de errores")
+        
+        if 'performance' in combined_text or 'optimization' in combined_text:
+            recommendations.append("Optimizar rendimiento")
+        
+        # Recomendaciones generales
+        recommendations.extend([
+            "Aplicar estándares de codificación consistentes",
+            "Implementar logging adecuado",
+            "Validar entradas y salidas"
+        ])
+        
+        return recommendations[:6]
+
+    # ...existing code...
 
 
 def get_ai_group_analyzer(config: Optional[ConfigManager] = None) -> AIGroupAnalyzer:

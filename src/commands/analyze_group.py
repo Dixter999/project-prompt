@@ -16,6 +16,8 @@ from src.analyzers.ai_group_analyzer import get_ai_group_analyzer
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
 from src.ui.cli import CLI
+from src.utils.token_counter import AnthropicTokenCounter
+from src.ui.interactive_group_analyzer import InteractiveGroupAnalyzer
 
 # Configurar logger
 logger = get_logger()
@@ -34,6 +36,8 @@ class AnalyzeGroupCommand:
         self.config = config or ConfigManager()
         self.cli = CLI()
         self.analyzer = get_ai_group_analyzer(self.config)
+        self.token_counter = AnthropicTokenCounter()
+        self.interactive_ui = InteractiveGroupAnalyzer()
     
     def execute(self, group_name: Optional[str] = None, project_path: Optional[str] = None) -> bool:
         """
@@ -64,11 +68,46 @@ class AnalyzeGroupCommand:
             self.cli.print_info(f"📁 Proyecto: {os.path.basename(project_path)}")
             self.cli.print_info(f"🎯 Grupo: {group_name}")
             
-            # Ejecutar análisis
-            result = self.analyzer.analyze_group(project_path, group_name)
+            # Obtener grupos para encontrar el grupo específico
+            groups = self.analyzer._get_functional_groups(project_path)
+            if not groups:
+                self.cli.print_error("❌ No se encontraron grupos funcionales en el proyecto")
+                return False
             
+            # Buscar el grupo específico
+            target_group = None
+            for group in groups:
+                if group.get('name', '').lower() == group_name.lower():
+                    target_group = group
+                    break
+                # También buscar por coincidencia parcial
+                if group_name.lower() in group.get('name', '').lower():
+                    target_group = group
+                    break
+            
+            if not target_group:
+                available_groups = [g.get('name', 'Sin nombre') for g in groups]
+                self.cli.print_error(f"❌ Grupo '{group_name}' no encontrado")
+                self.cli.print_info("📋 Grupos disponibles:")
+                for group in available_groups:
+                    self.cli.print_info(f"   • {group}")
+                return False
+            
+            # Estimar costo y mostrar confirmación interactiva
+            cost_estimate = self.token_counter.estimate_group_analysis_tokens(project_path, target_group)
+            
+            if not self.interactive_ui.show_cost_confirmation(cost_estimate, group_name):
+                self.cli.print_warning("⚠️  Análisis cancelado por el usuario")
+                return False
+            
+            # Ejecutar análisis con progreso interactivo
+            with self.interactive_ui.progress_context("Analizando grupo funcional") as progress:
+                result = self.analyzer.analyze_group(project_path, group_name)
+                progress.update_status("Análisis completado")
+            
+            # Mostrar resultados usando la interfaz interactiva
             if result['success']:
-                self._show_success_results(result)
+                self.interactive_ui.show_analysis_results(result, cost_estimate)
                 return True
             else:
                 self._show_error_results(result)
@@ -101,40 +140,61 @@ class AnalyzeGroupCommand:
                 self.cli.print_info("💡 Ejecute primero 'pp analyze' para detectar grupos funcionales")
                 return False
             
-            self.cli.print_header("📊 Grupos Funcionales Disponibles")
-            self.cli.print_info(f"📁 Proyecto: {os.path.basename(project_path)}")
-            self.cli.print_info(f"🔢 Total de grupos: {len(groups)}")
-            print()
+            # Usar la interfaz interactiva para mostrar grupos
+            selected_group = self.interactive_ui.show_group_selection(groups, project_path)
             
-            # Mostrar tabla de grupos
-            self.cli.print_info("| # | Nombre del Grupo | Tipo | Archivos | Importancia |")
-            self.cli.print_info("|---|------------------|------|----------|-------------|")
-            
-            for i, group in enumerate(groups, 1):
-                name = group.get('name', 'Sin nombre')
-                group_type = group.get('type', 'unknown')
-                size = group.get('size', 0)
-                importance = group.get('total_importance', 0)
-                
-                # Truncar nombre si es muy largo
-                display_name = name[:30] + "..." if len(name) > 30 else name
-                
-                self.cli.print_info(f"| {i:2d} | {display_name:<30} | {group_type:<8} | {size:8d} | {importance:11.1f} |")
-            
-            print()
-            self.cli.print_info("💡 Para analizar un grupo específico, use:")
-            self.cli.print_info("   pp analyze-group '<nombre_del_grupo>'")
-            print()
-            self.cli.print_info("📋 Ejemplos:")
-            for group in groups[:3]:  # Mostrar ejemplos de los primeros 3 grupos
-                name = group.get('name', '')
-                self.cli.print_info(f"   pp analyze-group \"{name}\"")
+            if selected_group:
+                # Si el usuario seleccionó un grupo, analizarlo
+                return self._analyze_selected_group(project_path, selected_group)
             
             return True
             
         except Exception as e:
             logger.error(f"Error al mostrar grupos disponibles: {e}")
             self.cli.print_error(f"❌ Error al obtener grupos: {str(e)}")
+            return False
+    
+    def _analyze_selected_group(self, project_path: str, group: dict) -> bool:
+        """
+        Analizar un grupo seleccionado con confirmación de costo interactiva.
+        
+        Args:
+            project_path: Ruta al proyecto
+            group: Grupo seleccionado para analizar
+            
+        Returns:
+            True si el análisis fue exitoso
+        """
+        try:
+            group_name = group.get('name', 'Sin nombre')
+            
+            # Estimar costo del análisis
+            cost_estimate = self.token_counter.estimate_group_analysis_tokens(project_path, group)
+            
+            # Mostrar confirmación de costo interactiva
+            if not self.interactive_ui.show_cost_confirmation(cost_estimate, group_name):
+                self.cli.print_warning("⚠️  Análisis cancelado por el usuario")
+                return False
+            
+            # Ejecutar análisis con progreso interactivo
+            with self.interactive_ui.progress_context("Analizando grupo funcional") as progress:
+                result = self.analyzer.analyze_group(project_path, group_name)
+                progress.update_status("Análisis completado")
+            
+            # Mostrar resultados usando la interfaz interactiva
+            if result['success']:
+                self.interactive_ui.show_analysis_results(result, cost_estimate)
+                return True
+            else:
+                self._show_error_results(result)
+                return False
+                
+        except KeyboardInterrupt:
+            self.cli.print_warning("\n⚠️  Análisis interrumpido por el usuario")
+            return False
+        except Exception as e:
+            logger.error(f"Error al analizar grupo seleccionado: {e}")
+            self.cli.print_error(f"❌ Error inesperado: {str(e)}")
             return False
     
     def _show_success_results(self, result: dict) -> None:
