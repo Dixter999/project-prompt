@@ -969,6 +969,29 @@ Mantén cada sección concisa y específica."""
         recommendations.append("- **Testing**: Implementar tests unitarios específicos para cada funcionalidad identificada.")
         
         return "\n".join(recommendations)
+    
+    def _create_detailed_report_content(self, group: Dict[str, Any], analysis_results: List[Dict[str, Any]], project_path: str) -> str:
+        """
+        Crear un reporte detallado con análisis avanzado.
+        
+        Args:
+            group: Información del grupo
+            analysis_results: Resultados del análisis
+            project_path: Ruta al proyecto
+            
+        Returns:
+            Contenido del reporte detallado
+        """
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        content = []
+        
+        # Para cada archivo
+        for result in analysis_results:
+            analysis = result['analysis']
+            
+            # Extraer dependencias
+            deps = self._parse_dependencies_from_analysis(analysis)
+            if deps:
                 for dep in deps:
                     content.append(f"- {dep}")
             else:
