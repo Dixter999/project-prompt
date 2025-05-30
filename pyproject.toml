@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "projectprompt"
-version = "1.2.3"
+version = "1.2.5"
 description = "Intelligent assistant for project analysis and documentation using AI"
 authors = ["Daniel Lagowski Solé <daniel@lagowski.es>"]
 readme = "README.md"
@@ -31,9 +31,9 @@ classifiers = [
 python = "^3.8"
 setuptools = "^69.0.0"
 typer = "0.9.0"
-click = "8.1.7"
-rich = "^13.5.0"
-openai = "^1.0.0"
+click = "^8.1.7"
+rich = ">=13.5.0"
+openai = ">=1.50.0"
 anthropic = "^0.5.0"
 pyyaml = "^6.0.1"
 python-frontmatter = "^1.0.0"
@@ -41,7 +41,7 @@ jinja2 = "^3.0.0"
 tabulate = "^0.9.0"
 requests = "^2.28.0"
 keyring = "^24.0.0"
-tiktoken = "^0.5.0"
+tiktoken = ">=0.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
