@@ -17,8 +17,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from src.utils.config import ConfigManager
 from src.utils.logger import get_logger
 # Lazy imports to avoid circular imports
-# from src.integrations.anthropic import AnthropicAPI, get_anthropic_client
-# from src.integrations.copilot import CopilotAPI, get_copilot_client
+from src.integrations.anthropic import AnthropicAPI, get_anthropic_client
+from src.integrations.copilot import CopilotAPI, get_copilot_client
 
 # Configurar logger
 logger = get_logger()
