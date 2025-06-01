@@ -2,6 +2,20 @@
 
 This interactive markmap shows the complete command structure and hierarchy of ProjectPrompt v1.2.8.
 
+> **🚀 Quick Start**: For the best experience, install the [VS Code Markmap extension](https://marketplace.visualstudio.com/items?itemName=gera2ld.markmap-vscode) or copy this content to [markmap.js.org/repl](https://markmap.js.org/repl)
+
+## 🎯 Viewing Options
+
+### 🌟 Interactive Experience (Recommended)
+1. **VS Code Extension**: Install `gera2ld.markmap-vscode` and open this file
+2. **Online Viewer**: Copy content → [markmap.js.org/repl](https://markmap.js.org/repl)
+3. **Features**: Click to expand/collapse, zoom, pan, and explore hierarchies
+
+### 📖 Text-Based Reference  
+Scroll down to view the structured command reference below the markmap diagram.
+
+---
+
 ## 🗺️ Complete Command Overview
 
 <!-- markmap: {"colorFreezeLevel": 2, "duration": 800, "maxWidth": 300} -->

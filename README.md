@@ -116,11 +116,28 @@ When you run ProjectPrompt on your project, you can expect:
 - **Implementation assistants** for new features
 - **Progress tracking** across development phases
 
-## 🗺️ Command Mind Map
+## 🗺️ Interactive Command Mind Map
 
-For a complete visual overview of all ProjectPrompt commands and their relationships, see our comprehensive **[Command Mind Map](docs/COMMAND_MINDMAP.md)**. This interactive diagram shows all **35+ implemented commands** organized by category, making it easy to discover functionality and understand command hierarchies.
+Explore our comprehensive **[Command Mind Map](docs/COMMAND_MINDMAP.md)** - a visual overview of all **35+ verified commands** organized by category. This interactive diagram helps you discover functionality and understand command relationships.
 
 ![Command Overview](https://img.shields.io/badge/Commands-35+-blue) ![Categories](https://img.shields.io/badge/Categories-8-green) ![Interactive](https://img.shields.io/badge/Map-Interactive-purple) ![Status](https://img.shields.io/badge/Status-Verified-brightgreen)
+
+### 🎯 How to View the Interactive Mind Map
+
+**Option 1: VS Code Extension (Recommended)**
+```bash
+# Install the Markmap extension in VS Code
+code --install-extension gera2ld.markmap-vscode
+# Then open docs/COMMAND_MINDMAP.md in VS Code
+```
+
+**Option 2: Online Viewer**
+1. Copy the content from [docs/COMMAND_MINDMAP.md](docs/COMMAND_MINDMAP.md)
+2. Paste it into the [Markmap REPL](https://markmap.js.org/repl)
+3. Enjoy the interactive navigation!
+
+**Option 3: Quick Command Reference**
+For a text-based overview, see the [Command Reference](#%EF%B8%8F-command-reference) section below.
 
 ## 🛠️ Command Reference
 
