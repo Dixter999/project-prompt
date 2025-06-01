@@ -148,9 +148,11 @@ This interactive markmap shows the complete command structure and hierarchy of P
 
 ### 🧙 rules wizard
 - Interactive setup
-- Guided configuration
+- Guided configuration  
 - Template selection
 - Step-by-step
+
+> **Note**: Advanced wizard interface planned for future release
 
 ### 🔰 rules init
 - Initialize rules file
@@ -204,29 +206,13 @@ This interactive markmap shows the complete command structure and hierarchy of P
 
 ## 📚 Documentation
 
-### 📚 docs list
-- Available documents
-- Navigation tree
-- Document index
-- Quick access
+### 📖 docs
+- Interactive documentation viewer
+- Project documentation access
+- Built-in help system
+- Reference materials
 
-### 👁️ docs view
-- Document viewer
-- Markdown rendering
-- Interactive browsing
-- Search functionality
-
-### 📝 docs generate
-- Auto-documentation
-- Project docs
-- API reference
-- User guides
-
-### 🧭 docs navigate
-- Interactive navigation
-- Document browser
-- Cross-references
-- Smart linking
+> **Note**: Full documentation suite (list, view, generate, navigate) is planned for future releases
 
 ## 🛠️ Utilities
 
@@ -236,29 +222,19 @@ This interactive markmap shows the complete command structure and hierarchy of P
 - Selective removal
 - Safe deletion
 
-### 🔗 setup-alias
-- Command shortcuts
-- Shell integration
-- Custom aliases
-- Quick access
-
-### 📦 setup-deps
-- Optional dependencies
-- Feature enablement
-- Package management
-- Installation guide
-
 ### 📊 set-log-level
 - Logging control
 - debug/info/warning
 - Verbosity settings
 - Output control
 
-### 🔧 diagnose
-- Issue diagnosis
-- Installation check
-- Troubleshooting
-- System health
+### 🔧 config
+- Configuration management
+- View/set parameters
+- Environment setup
+- API key management
+
+> **Note**: Additional utilities (diagnose, setup-alias, setup-deps) are planned for future releases
 
 ## 💳 Subscription
 
