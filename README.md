@@ -1,4 +1,4 @@
-# ProjectPrompt
+# Pr[![Version](https://img.shields.io/badge/version-1.2.7-green)](https://github.com/Dixter999/project-prompt/releases)jectPrompt
 
 ![Python Version](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -115,6 +115,12 @@ When you run ProjectPrompt on your project, you can expect:
 - **Comprehensive dependency analysis** with functional groupings
 - **Implementation assistants** for new features
 - **Progress tracking** across development phases
+
+## 🗺️ Command Mind Map
+
+For a complete visual overview of all ProjectPrompt commands and their relationships, see our comprehensive **[Command Mind Map](docs/COMMAND_MINDMAP.md)**. This interactive diagram shows all 40+ commands organized by category, making it easy to discover functionality and understand command hierarchies.
+
+![Command Overview](https://img.shields.io/badge/Commands-40+-blue) ![Categories](https://img.shields.io/badge/Categories-8-green) ![Interactive](https://img.shields.io/badge/Map-Interactive-purple)
 
 ## 🛠️ Command Reference
 
