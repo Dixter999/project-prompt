@@ -1,0 +1,397 @@
+# Custom Project Rules Implementation Plan
+
+## Overview
+Implement a system that allows users to define custom rules and context for their projects, similar to `.cursor rules`, which will be automatically loaded and applied during AI-powered analysis.
+
+## Phase 1: Custom Rules System Foundation
+
+### 1.1 Rules File Management
+
+**Branch:** `feature/custom-project-rules`  
+**Description:** Implement core system for managing custom project rules
+
+**Files to create:**
+- `src/utils/rules_manager.py` - Manages loading and parsing of custom rules
+- `src/templates/project-prompt-rules-template.md` - Default template for users
+- `src/validators/rules_validator.py` - Validates rules syntax and structure
+- `tests/test_rules_manager.py` - Unit tests for rules system
+
+**Functionalities:**
+- Auto-detect `project-prompt-rules.md` in project root or `project-output/`
+- Parse markdown rules into structured format
+- Validate rules syntax and provide helpful errors
+- Cache parsed rules for performance
+- Support multiple rule files with priority system
+
+### Implementation Prompt
+
+```
+I am developing ProjectPrompt, an intelligent project assistant that analyzes codebases.
+
+I am in **Phase 1**, task **1.1 Rules File Management** and need to implement a custom rules system similar to .cursor rules as described in `implement_project_prompt_rules.md`.
+
+Please help me to:
+1. Create branch feature/custom-project-rules
+2. Implement RulesManager class that:
+   - Searches for project-prompt-rules.md in project root and project-output/
+   - Parses markdown content into structured rules
+   - Provides methods to access rules by category
+   - Caches parsed rules for performance
+3. Create a template file with example rules
+4. Add validation to ensure rules are properly formatted
+
+The system should support rules like:
+- Technology constraints (e.g., "Use only Streamlit for UI")
+- Code structure requirements (e.g., "All services must inherit from BaseService")
+- Naming conventions
+- Architecture patterns
+- Custom analysis priorities
+
+Refer to `implement_project_prompt_rules.md` for the complete specification and examples.
+```
+
+### 1.2 Rules Integration with Analysis
+
+**Branch:** `feature/rules-analysis-integration`  
+**Description:** Integrate custom rules into the analysis pipeline
+
+**Files to modify:**
+- `src/analyzers/project_analyzer.py` - Add rules loading
+- `src/analyzers/ai_group_analyzer.py` - Apply rules during analysis
+- `src/integrations/anthropic_advanced.py` - Include rules in AI context
+- `src/generators/suggestion_generator.py` - Consider rules in suggestions
+
+**Functionalities:**
+- Automatically load rules before any analysis
+- Include rules as context for Anthropic API calls
+- Filter suggestions based on user constraints
+- Highlight rule violations in analysis reports
+- Adapt recommendations to follow user preferences
+
+### Implementation Prompt
+
+```
+I am developing ProjectPrompt, an intelligent project assistant.
+
+I am in **Phase 1**, task **1.2 Rules Integration with Analysis** and need to integrate custom rules into the analysis pipeline as specified in `implement_project_prompt_rules.md`.
+
+Please help me to:
+1. Create branch feature/rules-analysis-integration
+2. Modify analysis functions to:
+   - Load project-prompt-rules.md before analysis
+   - Include rules as system context for Anthropic API
+   - Apply rules as filters for suggestions
+   - Check code against defined rules
+3. Update AI prompts to respect user-defined constraints
+4. Ensure rules are applied consistently across all analysis types
+
+The rules should influence:
+- Code quality checks
+- Architecture recommendations
+- Technology suggestions
+- Refactoring proposals
+
+Follow the integration patterns described in `implement_project_prompt_rules.md`.
+```
+
+## Phase 2: Advanced Rules Features
+
+### 2.1 Rules Categories and Priorities
+
+**Branch:** `feature/rules-categories`  
+**Description:** Implement categorized rules with priority levels
+
+**Files to create:**
+- `src/models/rule_models.py` - Rule data models
+- `src/utils/rules_parser.py` - Advanced markdown parsing
+- `src/templates/rules_examples/` - Example rules for different project types
+
+**Functionalities:**
+- Support rule categories: technology, architecture, style, testing, documentation
+- Priority levels: mandatory, recommended, optional
+- Rule inheritance from template files
+- Context-specific rules (e.g., apply only to specific directories)
+- Rule versioning and compatibility
+
+### Implementation Prompt
+
+```
+I am developing ProjectPrompt, an intelligent project assistant.
+
+I am in **Phase 2**, task **2.1 Rules Categories and Priorities** and need to implement advanced rule categorization following the specifications in `implement_project_prompt_rules.md`.
+
+Please help me to:
+1. Create branch feature/rules-categories
+2. Implement rule categories system supporting:
+   - Technology constraints (frameworks, libraries)
+   - Architecture patterns (MVC, microservices, etc.)
+   - Code style preferences
+   - Testing requirements
+   - Documentation standards
+3. Add priority levels (mandatory/recommended/optional)
+4. Create example rule templates for common project types
+
+Rules should be structured like:
+```markdown
+## Technology Rules
+### Mandatory
+- Use Streamlit exclusively for UI components
+- PostgreSQL for all database operations
+
+### Recommended
+- Prefer pandas for data manipulation
+- Use pytest for testing
+
+## Architecture Rules
+### Mandatory
+- All services must inherit from BaseService class
+- Use dependency injection for external services
+```
+
+Refer to the complete rule structure and examples in `implement_project_prompt_rules.md`.
+```
+
+### 2.2 Interactive Rules Configuration
+
+**Branch:** `feature/rules-configuration-ui`  
+**Description:** Add interactive commands for rules management
+
+**Files to create:**
+- `src/commands/rules_commands.py` - CLI commands for rules
+- `src/ui/rules_wizard.py` - Interactive rules setup wizard
+- `src/generators/rules_report_generator.py` - Generate rules compliance reports
+
+**Functionalities:**
+- `pp rules init` - Initialize rules file with wizard
+- `pp rules validate` - Check rules syntax and conflicts
+- `pp rules apply` - Apply rules to existing codebase
+- `pp rules report` - Generate compliance report
+- `pp rules template [type]` - Generate template for project type
+
+### Implementation Prompt
+
+```
+I am developing ProjectPrompt, an intelligent project assistant.
+
+I am in **Phase 2**, task **2.2 Interactive Rules Configuration** and need to create interactive rules management as detailed in `implement_project_prompt_rules.md`.
+
+Please help me to:
+1. Create branch feature/rules-configuration-ui
+2. Implement CLI commands:
+   - rules init: Interactive wizard to create project-prompt-rules.md
+   - rules validate: Check syntax and logic of rules
+   - rules apply: Analyze project compliance with rules
+   - rules report: Generate detailed compliance report
+   - rules template: Provide templates for common project types
+3. Create an interactive wizard that guides users through rule creation
+4. Generate reports showing rule compliance and violations
+
+The wizard should ask about:
+- Primary technology stack
+- Architecture preferences
+- Code style requirements
+- Testing standards
+- Documentation needs
+
+Use the command specifications and examples from `implement_project_prompt_rules.md`.
+```
+
+## Phase 3: AI-Powered Rules Enhancement
+
+### 3.1 Smart Rules Suggestions
+
+**Branch:** `feature/smart-rules-suggestions`  
+**Description:** Use AI to suggest appropriate rules based on project analysis
+
+**Files to create:**
+- `src/analyzers/rules_suggester.py` - AI-powered rules suggestions
+- `src/integrations/anthropic_rules_analyzer.py` - Specialized AI analysis for rules
+- `src/templates/suggested_rules_template.md` - Template for AI suggestions
+
+**Functionalities:**
+- Analyze existing codebase to infer current patterns
+- Suggest rules based on detected technologies and patterns
+- Identify inconsistencies that could benefit from rules
+- Generate draft rules file based on analysis
+- Learn from user's rule acceptance/rejection
+
+### Implementation Prompt
+
+```
+I am developing ProjectPrompt, an intelligent project assistant.
+
+I am in **Phase 3**, task **3.1 Smart Rules Suggestions** and need to implement AI-powered rule suggestions based on the design in `implement_project_prompt_rules.md`.
+
+Please help me to:
+1. Create branch feature/smart-rules-suggestions
+2. Create an AI analyzer that:
+   - Examines the existing codebase
+   - Identifies patterns and conventions already in use
+   - Suggests appropriate rules based on findings
+   - Generates a draft project-prompt-rules.md
+3. Use Anthropic API to analyze code patterns and suggest rules
+4. Create an approval workflow for suggested rules
+
+The AI should detect patterns like:
+- Consistent use of specific frameworks
+- Naming conventions already in use
+- Architecture patterns being followed
+- Testing practices
+- Documentation style
+
+Follow the AI integration patterns and rule format specified in `implement_project_prompt_rules.md`.
+```
+
+## Example project-prompt-rules.md
+
+```markdown
+# Project Rules and Context
+
+## Project Overview
+This is a financial data analysis platform built with Python, focusing on real-time market data processing and visualization.
+
+## Technology Constraints
+
+### Mandatory Technologies
+- **UI Framework**: Use Streamlit exclusively for all user interfaces
+- **Data Processing**: pandas for all data manipulation
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **API Framework**: FastAPI for all REST endpoints
+- **Testing**: pytest with minimum 80% coverage
+
+### Prohibited Technologies
+- Do NOT use Flask or Django
+- Avoid matplotlib, use plotly for all visualizations
+- No raw SQL queries, always use ORM
+
+## Architecture Rules
+
+### Service Structure
+- All service classes MUST inherit from `BaseService`
+- Services must follow dependency injection pattern
+- Each service should have a corresponding interface
+
+### File Organization
+```
+src/
+  ├── models/       # Database models only
+  ├── services/     # Business logic
+  ├── api/          # FastAPI endpoints
+  ├── ui/           # Streamlit pages
+  ├── utils/        # Helper functions
+  └── config/       # Configuration files
+```
+
+### Naming Conventions
+- Services: `*Service` (e.g., `UserService`, `DataService`)
+- Models: Singular nouns (e.g., `User`, `Transaction`)
+- API endpoints: RESTful conventions (`/api/v1/users`)
+- Streamlit pages: `page_*.py`
+
+## Code Style Requirements
+
+### Python Specific
+- Type hints required for all function parameters and returns
+- Docstrings mandatory for all public methods
+- Maximum function length: 50 lines
+- Maximum file length: 500 lines
+
+### Error Handling
+- All exceptions must be logged with context
+- Use custom exceptions inheriting from `BaseException`
+- Never use bare `except:` clauses
+
+## Testing Requirements
+
+### Unit Tests
+- Minimum 80% code coverage
+- Test files must mirror source structure
+- Use fixtures for common test data
+- Mock all external dependencies
+
+### Integration Tests
+- Required for all API endpoints
+- Database tests must use transactions and rollback
+
+## AI Analysis Preferences
+
+### Focus Areas
+1. Performance optimization in data processing
+2. Security vulnerabilities in API endpoints
+3. Streamlit-specific best practices
+4. Database query optimization
+
+### Suggestion Priorities
+1. Code that violates mandatory rules
+2. Performance bottlenecks
+3. Security issues
+4. Code duplication
+5. Missing tests
+
+## Documentation Standards
+
+### Code Documentation
+- All public functions must have docstrings
+- Complex algorithms need inline comments
+- README required for each major module
+
+### API Documentation
+- OpenAPI/Swagger for all endpoints
+- Request/response examples required
+- Error responses must be documented
+
+## Custom Analysis Rules
+
+### When analyzing this project:
+1. Always check Streamlit compatibility first
+2. Prioritize performance for data processing functions
+3. Ensure all database operations use ORM
+4. Verify dependency injection is properly implemented
+5. Check that all services have corresponding tests
+
+### When suggesting improvements:
+1. Only suggest Streamlit-compatible UI solutions
+2. Prefer pandas operations over pure Python loops
+3. Suggest caching strategies for expensive operations
+4. Recommend async patterns where applicable
+5. Focus on maintainability over premature optimization
+```
+
+## Implementation Files Structure
+
+```
+project-output/
+├── project-prompt-rules.md          # User's custom rules
+├── rules/
+│   ├── templates/                   # Rule templates
+│   │   ├── web-app-rules.md
+│   │   ├── data-science-rules.md
+│   │   ├── api-service-rules.md
+│   │   └── cli-tool-rules.md
+│   ├── validation-report.md         # Last validation results
+│   └── compliance-report.md         # Rule compliance analysis
+└── analyses/
+    └── rules-influenced/            # Analyses that considered rules
+        ├── group_analysis_with_rules.md
+        └── suggestions_with_rules.md
+```
+
+## Success Criteria
+
+1. **Seamless Integration**: Rules automatically loaded during any analysis
+2. **AI Context**: Anthropic API always receives rules as context
+3. **Validation**: Clear error messages for invalid rules
+4. **Flexibility**: Support for various project types and constraints
+5. **Performance**: Rules parsing doesn't slow down analysis
+6. **User Experience**: Easy to create and modify rules
+
+## Testing Strategy
+
+Create comprehensive tests:
+- `tests/test_rules_manager.py` - Rules loading and parsing
+- `tests/test_rules_validator.py` - Validation logic
+- `tests/test_rules_integration.py` - Integration with analyzers
+- `tests/test_rules_ai_context.py` - AI context building
+- `tests/test_rules_compliance.py` - Compliance checking
+
+Each test should verify that rules are properly applied and influence analysis results.

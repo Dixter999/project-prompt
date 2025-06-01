@@ -16,6 +16,8 @@ from src.analyzers.code_quality_analyzer import CodeQualityAnalyzer, get_code_qu
 from src.analyzers.project_progress_tracker import ProjectProgressTracker, get_project_progress_tracker
 from src.analyzers.project_structure_analyzer import ProjectStructureAnalyzer, get_project_structure_analyzer
 from src.analyzers.ai_insights_analyzer_lightweight import AIInsightsAnalyzer
+from src.analyzers.rules_suggester import RulesSuggester, get_rules_suggester
+from src.models.suggestion_models import SuggestionContext
 
 __all__ = [
     'ProjectScanner', 'get_project_scanner',
@@ -29,4 +31,5 @@ __all__ = [
     'CodeQualityAnalyzer', 'get_code_quality_analyzer',
     'ProjectStructureAnalyzer', 'get_project_structure_analyzer',
     'AIInsightsAnalyzer',
+    'RulesSuggester', 'get_rules_suggester', 'SuggestionContext',
 ]

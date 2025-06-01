@@ -1,0 +1,23 @@
+                                                                                                                             
+ Usage: main.py analyze [OPTIONS] [PATH]                                                                                     
+                                                                                                                             
+ Analizar la estructura y funcionalidades de un proyecto existente.                                                          
+                                                                                                                             
+╭─ Arguments ───────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│   path      [PATH]  Ruta al proyecto a analizar [default: .]                                                              │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --output           -o                               TEXT     Ruta para guardar el análisis en formato JSON                │
+│                                                              [default: None]                                              │
+│ --max-files        -m                               INTEGER  Número máximo de archivos a analizar [default: 10000]        │
+│ --max-size         -s                               FLOAT    Tamaño máximo de archivo a analizar en MB [default: 5.0]     │
+│ --functionalities  -f   --no-functionalities  -nf            Detectar funcionalidades del proyecto                        │
+│                                                              [default: functionalities]                                   │
+│ --structure        -st  --no-structure        -nst           Mostrar estructura del proyecto [default: no-structure]      │
+│ --rules            -r                               TEXT     Archivo de reglas para aplicar durante el análisis           │
+│                                                              [default: None]                                              │
+│ --compliance       -c   --no-compliance       -nc            Verificar cumplimiento de reglas durante el análisis         │
+│                                                              [default: no-compliance]                                     │
+│ --help                                                       Show this message and exit.                                  │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+

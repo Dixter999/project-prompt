@@ -81,6 +81,10 @@ app.add_typer(premium_app, name="premium")
 telemetry_app = typer.Typer(help="Comandos para gestionar la telemetría anónima")
 app.add_typer(telemetry_app, name="telemetry")
 
+# Submenu para comandos de reglas
+from src.commands.rules_commands import rules_app
+app.add_typer(rules_app, name="rules")
+
 # Decorador para telemetría de comandos
 import time
 import functools
@@ -199,10 +203,14 @@ def analyze(
                                        help="Detectar funcionalidades del proyecto"),
     structure: bool = typer.Option(False, "--structure/--no-structure", "-st/-nst", 
                                  help="Mostrar estructura del proyecto"),
+    rules_file: Optional[str] = typer.Option(None, "--rules", "-r", help="Archivo de reglas para aplicar durante el análisis"),
+    check_compliance: bool = typer.Option(False, "--compliance/--no-compliance", "-c/-nc", 
+                                        help="Verificar cumplimiento de reglas durante el análisis"),
 ):
     """Analizar la estructura y funcionalidades de un proyecto existente."""
     from src.analyzers.project_scanner import get_project_scanner
     from src.analyzers.functionality_detector import get_functionality_detector
+    from src.utils.enhanced_rules_manager import EnhancedRulesManager
     import json
     import os
     from datetime import datetime
@@ -211,9 +219,46 @@ def analyze(
     if not os.path.isdir(project_path):
         cli.print_error(f"La ruta especificada no es un directorio válido: {project_path}")
         return
+    
+    # Initialize rules manager if rules file provided or compliance checking enabled
+    rules_manager = None
+    if rules_file or check_compliance:
+        try:
+            rules_manager = EnhancedRulesManager(project_root=project_path)
+            
+            # Look for rules file in project if not explicitly provided
+            if not rules_file:
+                default_rules_path = os.path.join(project_path, "project-prompt-rules.md")
+                if os.path.exists(default_rules_path):
+                    rules_file = default_rules_path
+                    cli.print_info(f"Usando archivo de reglas encontrado: {rules_file}")
+                elif check_compliance:
+                    cli.print_warning("Verificación de cumplimiento solicitada pero no se encontró archivo de reglas")
+                    cli.print_info("Usa 'project-prompt rules-init' para crear un archivo de reglas desde una plantilla")
+            
+            # Load rules if we have a file
+            if rules_file or check_compliance:
+                success = rules_manager.load_rules()
+                if success:
+                    all_rules = rules_manager.get_all_rules()
+                    cli.print_success(f"✅ Reglas cargadas: {len(all_rules)} reglas encontradas")
+                else:
+                    cli.print_warning("No se pudo cargar el archivo de reglas")
+                    if check_compliance:
+                        cli.print_info("Continuando análisis sin verificación de cumplimiento")
+                        check_compliance = False
+                        rules_manager = None
+        except Exception as e:
+            cli.print_error(f"Error al inicializar el sistema de reglas: {e}")
+            if check_compliance:
+                cli.print_warning("Continuando análisis sin verificación de cumplimiento")
+                check_compliance = False
+            rules_manager = None
         
     cli.print_header("Análisis Completo de Proyecto")
     cli.print_info(f"Analizando proyecto en: {project_path}")
+    if rules_manager:
+        cli.print_info(f"🔍 Aplicando reglas: {len(rules_manager.get_all_rules())} reglas cargadas")
     
     try:
         # Crear función de callback para el progreso
@@ -320,6 +365,92 @@ def analyze(
             # Mostrar funcionalidades
             analysis_view.show_functionalities(functionality_data)
         
+        # Perform rules compliance checking if enabled
+        compliance_data = {}
+        if check_compliance and rules_manager:
+            cli.print_header("Verificación de Cumplimiento de Reglas")
+            
+            # Check compliance for key files
+            important_files = project_data.get('important_files', {})
+            
+            compliance_summary = {
+                'total_files_checked': 0,
+                'total_violations': 0,
+                'total_applicable_rules': 0,
+                'files_with_violations': [],
+                'compliance_by_category': {},
+                'compliance_by_priority': {}
+            }
+            
+            # Files to check - prioritize important files
+            files_to_check = []
+            
+            # Add important files first
+            for category, file_list in important_files.items():
+                if isinstance(file_list, list):
+                    files_to_check.extend(file_list)
+                elif isinstance(file_list, dict):
+                    for subcategory, subfiles in file_list.items():
+                        if isinstance(subfiles, list):
+                            files_to_check.extend(subfiles)
+            
+            # Add some additional source files from the scan
+            source_files = project_data.get('source_files', [])[:20]  # Limit to 20 files for demo
+            files_to_check.extend(source_files)
+            
+            # Remove duplicates and ensure files exist
+            files_to_check = list(set([f for f in files_to_check if f and os.path.exists(os.path.join(project_path, f))]))
+            
+            if files_to_check:
+                with cli.progress_bar("Verificando cumplimiento", total=len(files_to_check)) as progress:
+                    task = progress.add_task("Checking compliance...", total=len(files_to_check))
+                    
+                    for i, file_path in enumerate(files_to_check):
+                        full_path = os.path.join(project_path, file_path)
+                        progress.update(task, completed=i+1, description=f"Checking {file_path}")
+                        
+                        try:
+                            file_compliance = rules_manager.check_rule_compliance(full_path)
+                            compliance_summary['total_files_checked'] += 1
+                            compliance_summary['total_applicable_rules'] += file_compliance.get('applicable_rules_count', 0)
+                            
+                            # Check for violations
+                            violations = file_compliance.get('violations', [])
+                            if violations:
+                                compliance_summary['total_violations'] += len(violations)
+                                compliance_summary['files_with_violations'].append({
+                                    'file': file_path,
+                                    'violations': violations
+                                })
+                        except Exception as e:
+                            logger.warning(f"Error checking compliance for {file_path}: {e}")
+            
+            # Display compliance results
+            if compliance_summary['total_files_checked'] > 0:
+                compliance_score = 1.0 - (compliance_summary['total_violations'] / max(compliance_summary['total_applicable_rules'], 1))
+                
+                cli.print_success(f"📊 Resumen de Cumplimiento:")
+                cli.print_info(f"  • Archivos verificados: {compliance_summary['total_files_checked']}")
+                cli.print_info(f"  • Reglas aplicables: {compliance_summary['total_applicable_rules']}")
+                cli.print_info(f"  • Violaciones encontradas: {compliance_summary['total_violations']}")
+                cli.print_info(f"  • Puntuación de cumplimiento: {compliance_score:.1%}")
+                
+                if compliance_summary['files_with_violations']:
+                    cli.print_warning(f"⚠️  Archivos con violaciones ({len(compliance_summary['files_with_violations'])}):")
+                    for file_violation in compliance_summary['files_with_violations'][:5]:  # Show first 5
+                        cli.print_info(f"    • {file_violation['file']}: {len(file_violation['violations'])} violaciones")
+                    
+                    if len(compliance_summary['files_with_violations']) > 5:
+                        cli.print_info(f"    ... y {len(compliance_summary['files_with_violations']) - 5} archivos más")
+                    
+                    cli.print_info("    Use 'project-prompt rules-report' para ver un informe detallado")
+                else:
+                    cli.print_success("✅ No se encontraron violaciones de reglas!")
+                
+                compliance_data = compliance_summary
+            else:
+                cli.print_warning("No se pudieron verificar archivos para cumplimiento de reglas")
+        
         # Guardar resultados si se especificó un archivo de salida
         if output:
             output_path = output
@@ -344,6 +475,10 @@ def analyze(
             # Añadir funcionalidades si se detectaron
             if functionality_data:
                 combined_result['functionalities'] = functionality_data
+                
+            # Añadir datos de cumplimiento si se generaron
+            if compliance_data:
+                combined_result['compliance'] = compliance_data
                 
             # Guardar en formato JSON
             with open(output_path, 'w', encoding='utf-8') as f:
@@ -980,6 +1115,10 @@ def help():
     table.add_row("subscription", "Gestionar suscripción premium")
     table.add_row("premium", "Acceder a comandos premium")
     table.add_row("diagnose", "Diagnosticar instalación y problemas")
+    table.add_row("rules-init", "Inicializar archivo de reglas del proyecto")
+    table.add_row("rules-validate", "Validar sintaxis del archivo de reglas")
+    table.add_row("rules-apply", "Aplicar reglas y verificar cumplimiento")
+    table.add_row("rules-report", "Generar reporte de cumplimiento de reglas")
     table.add_row("help", "Mostrar esta ayuda")
     
     # Comandos premium
@@ -1736,7 +1875,7 @@ def premium_verify_completeness(
         # Mostrar desglose de criterios
         criteria_table = cli.create_table("Criterios Evaluados", ["Criterio", "Estado", "Peso"])
         for criteria in results.get("criteria", []):
-            status_icon = "✅" if criteria.get("satisfied") else "❌"
+            status_icon = "✅" if criteria.get("satisfied") else "❌" if criteria.get("satisfied") is False else "⚠️"
             criteria_table.add_row(
                 criteria.get("name", ""),
                 f"{status_icon} {criteria.get('status', '')}",
@@ -1843,8 +1982,7 @@ def premium_implementation_assistant(
 @telemetry_app.command("status")
 def telemetry_status():
     """
-    Muestra el estado actual de la telemetría anónima.
-    """
+   Muestra el estado actual de la telemetría anónima."""
     try:
         # Registrar el comando para telemetría (sólo si está activada)
         record_command("telemetry_status")
@@ -2207,32 +2345,14 @@ def status():
 def app_callback():
     """
     Callback que se ejecuta al iniciar la aplicación.
-    Configura el entorno y la telemetría de forma no bloqueante.
+    Configura el entorno de forma simple sin telemetría bloqueante.
     """
     try:
-        # Inicializar telemetría de forma no bloqueante
-        import threading
-        def initialize_telemetry_async():
-            try:
-                initialize_telemetry()
-                check_first_run_telemetry_consent()
-            except Exception as e:
-                # Registro silencioso para no interferir con la CLI
-                pass
-        
-        # Ejecutar en hilo separado para no bloquear la CLI
-        telemetry_thread = threading.Thread(
-            target=initialize_telemetry_async, 
-            daemon=True
-        )
-        telemetry_thread.start()
-        
-    except Exception:
-        # Ignorar completamente errores de telemetría para no bloquear la CLI
+        # Simplificar inicialización - solo configurar lo esencial
         pass
-    
-    # El callback de Typer no debe retornar nada para continuar con la ejecución normal
-    return
+    except Exception:
+        # Ignorar errores para no bloquear la CLI
+        pass
     
 def check_first_run_telemetry_consent():
     """
@@ -2689,3 +2809,20 @@ def diagnose():
     console.print("• Run [cyan]project-prompt help[/cyan] to see all available commands")
     console.print("• Run [cyan]project-prompt menu[/cyan] for interactive setup")
     console.print("• Check [cyan]INSTALLATION_TROUBLESHOOTING.md[/cyan] for detailed solutions")
+
+
+def main():
+    """Main entry point for the application."""
+    try:
+        # Initialize telemetry system
+        initialize_telemetry()
+        
+        # Run the app
+        app()
+    finally:
+        # Ensure telemetry is properly shut down
+        shutdown_telemetry()
+
+
+if __name__ == "__main__":
+    main()

@@ -17,14 +17,45 @@ from rich.panel import Panel
 from rich.tree import Tree
 from rich.syntax import Syntax
 
-from src.ui.cli import cli
 from src.analyzers.project_scanner import get_project_scanner
 from src.analyzers.functionality_detector import get_functionality_detector
 from src.utils.logger import get_logger
 
+# Create console instance
+console = Console()
+
 # Configurar logger
 logger = get_logger()
-console = Console()
+
+# Create local CLI helper functions to replace the removed dependency
+class LocalCLI:
+    def print_header(self, text: str):
+        console.print(f"\n[bold cyan]{text}[/bold cyan]")
+        console.print("─" * len(text))
+    
+    def print_info(self, text: str):
+        console.print(f"[cyan]ℹ[/cyan] {text}")
+    
+    def print_warning(self, text: str):
+        console.print(f"[yellow]⚠[/yellow] {text}")
+    
+    def print_error(self, text: str):
+        console.print(f"[red]❌[/red] {text}")
+    
+    def create_table(self, title: str, headers: List[str]) -> Table:
+        table = Table(title=title, show_header=True, header_style="bold magenta")
+        for header in headers:
+            table.add_column(header)
+        return table
+    
+    def print_panel(self, content: str, title: str = None, **kwargs):
+        console.print(Panel(content, title=title, **kwargs))
+    
+    def status(self, text: str):
+        return console.status(text)
+
+# Create local CLI instance
+cli = LocalCLI()
 
 class AnalysisView:
     """Clase para mostrar resultados del análisis de proyectos."""

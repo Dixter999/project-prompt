@@ -19,7 +19,7 @@ from rich.table import Table
 from rich.tree import Tree
 import typer
 
-from src.ui.cli import cli, console
+from src.ui.cli import cli
 from src.ui.markdown_viewer import get_markdown_viewer
 from src.utils.documentation_system import get_documentation_system
 from src.utils.markdown_manager import get_markdown_manager
@@ -27,6 +27,9 @@ from src.utils.project_structure import get_project_structure
 from src.utils.logger import get_logger
 
 logger = get_logger()
+
+# Create console instance
+console = Console()
 
 
 class DocumentationNavigator:

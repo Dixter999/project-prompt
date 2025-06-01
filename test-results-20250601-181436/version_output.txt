@@ -1,0 +1,21 @@
+
+Version Information v1.2.6
+Asistente inteligente para proyectos usando IA
+────────────────────────────────────────────────────────────
+i ProjectPrompt v1.2.6
+[06/01/25 18:14:39] INFO     Validando todas las claves de API configuradas...                                               
+[06/01/25 18:14:41] INFO     Clave API de Anthropic verificada correctamente                                                 
+               Details               
+┏━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━┓
+┃ Component     ┃ Version/Status    ┃
+┡━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━┩
+│ Python        │ 3.10.12           │
+│ API Anthropic │ Configured ✅     │
+│ API GitHub    │ Not configured ❌ │
+└───────────────┴───────────────────┘
+
+💡 Consejos para resolución de problemas:
+  • Para configurar GitHub API: project-prompt set-api github
+  • Para verificar el estado de las APIs: project-prompt verify-api
+  • Las advertencias de conexión con el servidor son normales si no hay conexión a Internet
+    ProjectPrompt funciona completamente sin conexión con sus características básicas.

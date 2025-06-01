@@ -25,10 +25,22 @@ from rich.live import Live
 from src import __version__
 from src.utils import logger, LogLevel, set_level
 from src.utils.config import config_manager
-from src.ui.themes import get_current_theme, apply_theme_to_console
+# Lazy import to avoid circular dependencies
+# console will be initialized when first accessed
 
-# Console para output estándar con tema aplicado
-console = apply_theme_to_console(Console())
+_console = None
+
+def get_console() -> Console:
+    """Get console with theme applied, lazy initialization to avoid circular imports."""
+    global _console
+    if _console is None:
+        try:
+            from src.ui.themes import apply_theme_to_console
+            _console = apply_theme_to_console(Console())
+        except ImportError:
+            # Fallback to basic console if themes not available
+            _console = Console()
+    return _console
 
 
 class CLI:
@@ -40,34 +52,34 @@ class CLI:
     @staticmethod
     def print_header(title: str = "ProjectPrompt"):
         """Muestra un header con el título especificado."""
-        console.print(f"\n[bold blue]{title}[/bold blue] [cyan]v{__version__}[/cyan]")
-        console.print("[dim]Asistente inteligente para proyectos usando IA[/dim]")
-        console.print("─" * 60)
+        get_console().print(f"\n[bold blue]{title}[/bold blue] [cyan]v{__version__}[/cyan]")
+        get_console().print("[dim]Asistente inteligente para proyectos usando IA[/dim]")
+        get_console().print("─" * 60)
     
     @staticmethod
     def print_success(message: str):
         """Muestra un mensaje de éxito."""
-        console.print(f"[bold green]✓[/bold green] {message}")
+        get_console().print(f"[bold green]✓[/bold green] {message}")
     
     @staticmethod
     def print_error(message: str):
         """Muestra un mensaje de error."""
-        console.print(f"[bold red]✗[/bold red] {message}")
+        get_console().print(f"[bold red]✗[/bold red] {message}")
     
     @staticmethod
     def print_warning(message: str):
         """Muestra un mensaje de advertencia."""
-        console.print(f"[bold yellow]![/bold yellow] {message}")
+        get_console().print(f"[bold yellow]![/bold yellow] {message}")
     
     @staticmethod
     def print_info(message: str):
         """Muestra un mensaje informativo."""
-        console.print(f"[bold blue]i[/bold blue] {message}")
+        get_console().print(f"[bold blue]i[/bold blue] {message}")
     
     @staticmethod
     def print_panel(title: str, content: str, style: str = "blue"):
         """Muestra un panel con título y contenido."""
-        console.print(Panel(content, title=title, border_style=style))
+        get_console().print(Panel(content, title=title, border_style=style))
     
     @staticmethod
     def create_table(title: str, columns: List[str]) -> Table:
@@ -133,7 +145,7 @@ class CLI:
         is_available = subscription_manager.can_use_feature(feature_name)
         
         if not is_available:
-            console.print(Panel(
+            get_console().print(Panel(
                 f"La característica '[bold]{feature_name}[/bold]' requiere una suscripción premium.\n"
                 f"Tu suscripción actual es: [bold]{subscription_manager.get_subscription_type().upper()}[/bold]\n\n"
                 f"Ejecuta '[bold]project-prompt subscription plans[/bold]' para ver los planes disponibles\n"
@@ -237,7 +249,7 @@ class CLI:
         return Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
-            console=console
+            console=get_console()
         )
     
     @staticmethod
@@ -256,7 +268,7 @@ class CLI:
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
             TaskProgressColumn(),
-            console=console
+            console=get_console()
         )
         
     @staticmethod
@@ -270,7 +282,7 @@ class CLI:
             line_numbers: Si debe mostrar números de línea
         """
         syntax = Syntax(code, language, line_numbers=line_numbers)
-        console.print(syntax)
+        get_console().print(syntax)
     
     @staticmethod
     def display_markdown(text: str):
@@ -281,7 +293,7 @@ class CLI:
             text: Texto en Markdown
         """
         md = Markdown(text)
-        console.print(md)
+        get_console().print(md)
     
     @staticmethod
     def clear_screen():
@@ -347,9 +359,9 @@ class CLI:
             raise ValueError("La lista de opciones no puede estar vacía")
             
         # Mostrar opciones numeradas
-        console.print(f"\n{prompt_text}")
+        get_console().print(f"\n{prompt_text}")
         for i, choice in enumerate(choices):
-            console.print(f"  [cyan]{i+1}.[/cyan] {choice}")
+            get_console().print(f"  [cyan]{i+1}.[/cyan] {choice}")
         
         # Solicitar selección
         while True:
@@ -357,15 +369,15 @@ class CLI:
                 selected = IntPrompt.ask(
                     "\nSeleccione una opción",
                     default=default + 1,
-                    console=console
+                    console=get_console()
                 )
                 
                 if 1 <= selected <= len(choices):
                     return choices[selected - 1]
                 else:
-                    console.print("[red]Opción inválida. Intente de nuevo.[/red]")
+                    get_console().print("[red]Opción inválida. Intente de nuevo.[/red]")
             except ValueError:
-                console.print("[red]Por favor ingrese un número.[/red]")
+                get_console().print("[red]Por favor ingrese un número.[/red]")
     
     @staticmethod
     def ask_input(prompt_text: str, default: str = "", password: bool = False) -> str:
@@ -384,7 +396,7 @@ class CLI:
             prompt_text, 
             default=default, 
             password=password,
-            console=console
+            console=get_console()
         )
     
     @staticmethod
@@ -399,15 +411,14 @@ class CLI:
         Returns:
             True si el usuario confirma, False en caso contrario
         """
-        return Confirm.ask(prompt_text, default=default, console=console)
+        return Confirm.ask(prompt_text, default=default, console=get_console())
     
     @staticmethod
     def apply_theme():
         """Aplica el tema actual a la consola."""
-        # Importar aquí para evitar dependencias circulares
-        from src.ui.themes import apply_theme_to_console
-        global console
-        console = apply_theme_to_console(console)
+        # Reset console to force reinitialization with new theme
+        global _console
+        _console = None
 
 
 # Exportar una instancia global para uso directo

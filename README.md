@@ -10,6 +10,7 @@
 
 - **🔍 Smart Project Analysis**: Automatically detects technologies, frameworks, and project structure
 - **🤖 AI-Powered Insights**: Integration with Anthropic Claude and OpenAI for intelligent code analysis
+- **📋 AI Rules Generation**: Automatically generate development rules based on project patterns and best practices
 - **📊 Visual Dashboards**: Generate comprehensive project dashboards in HTML or Markdown
 - **🔗 Dependency Analysis**: Advanced dependency mapping with functional groups
 - **🌐 Multi-Language Support**: Python, JavaScript, TypeScript, Java, C++, and more
@@ -152,6 +153,17 @@ When you run ProjectPrompt on your project, you can expect:
 | `ai refactor` | Get refactoring suggestions | `project-prompt ai refactor file.py` |
 | `ai explain` | Explain code functionality | `project-prompt ai explain file.py --detail advanced` |
 | `ai generate` | Generate code or documentation | `project-prompt ai generate` |
+
+### AI-Powered Rules Management 🤖
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `rules suggest` | Generate AI-powered rule suggestions | `project-prompt rules suggest --ai --threshold 0.8` |
+| `rules analyze-patterns` | Analyze project patterns for rules | `project-prompt rules analyze-patterns --detailed` |
+| `rules generate-project-rules` | Generate clean project-rules.md format | `project-prompt rules generate-project-rules --ai` |
+| `rules auto-generate` | Auto-generate complete rules files | `project-prompt rules auto-generate --output rules.yaml` |
+| `rules generate-structured-rules` | **NEW**: Generate sophisticated structured rules | `project-prompt rules generate-structured-rules --ai` |
+| `rules validate-structured-rules` | **NEW**: Validate structured YAML rules | `project-prompt rules validate-structured-rules rules.yaml` |
 
 ### Premium Features
 
@@ -299,6 +311,60 @@ project-prompt menu
 - **Quick Start**: `QUICKSTART_GUIDE.md`
 - **User Guide**: `docs/guides/user_guide.md`
 - **API Reference**: `docs/reference/api_reference.md`
+
+## 🤖 AI-Powered Rules Management
+
+ProjectPrompt includes sophisticated AI capabilities for automatic rule generation with advanced structured rule modeling:
+
+### Smart Rule Suggestions
+```bash
+# Generate AI-powered development rules for your project
+project-prompt rules suggest --ai --threshold 0.8
+
+# Get detailed pattern analysis  
+project-prompt rules analyze-patterns --detailed
+
+# Generate a clean project-rules.md file
+project-prompt rules generate-project-rules --ai --output project-rules.md
+
+# NEW: Generate structured rules with sophisticated models
+project-prompt rules generate-structured-rules --ai --confidence 0.7
+```
+
+### Structured Rules System 🏗️
+The new structured rules system provides enterprise-grade rule management:
+
+- **RuleSet**: Complete rule collections with versioning and metadata
+- **RuleGroup**: Organized rule categories (Technology, Architecture, Security, etc.)
+- **RuleItem**: Individual rules with priority, context, and examples
+- **RuleContext**: File-specific targeting (extensions, directories, patterns)
+- **YAML Export**: Professional rule documentation and sharing
+
+### What You Get
+- **Technology Detection**: Automatically identifies frameworks, tools, and patterns
+- **Best Practice Suggestions**: AI-generated rules based on industry standards  
+- **Confidence Scoring**: Each suggestion includes a confidence level (0.0-1.0)
+- **Implementation Roadmap**: Prioritized phases for implementing suggested rules
+- **Multiple Formats**: Structured YAML, Markdown reports, or JSON export
+- **Context-Aware Rules**: File-specific rules with directory and pattern targeting
+- **Rule Validation**: Built-in validation for structured rule files
+
+### Example Output
+```markdown
+## Technology Constraints
+### Mandatory Technologies
+- **Python 3.8+**: Core language - follow PEP 8 standards and use type hints
+- **Typer**: CLI framework for all command-line interfaces
+
+### Architecture Rules
+- All analysis classes MUST inherit from appropriate base classes
+- Use lazy loading for expensive resources (AI clients, large models)
+
+### Implementation Roadmap
+### Phase 1: Critical Rules (Week 1-2)
+- [ ] API Key Security Validation (Confidence: 1.0/1.0)
+- [ ] File System Security (Confidence: 0.9/1.0)
+```
 
 ## 🚀 Advanced Features
 

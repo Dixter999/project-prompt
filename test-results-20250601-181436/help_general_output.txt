@@ -1,0 +1,44 @@
+
+Ayuda de ProjectPrompt v1.2.6
+Asistente inteligente para proyectos usando IA
+────────────────────────────────────────────────────────────
+╭───────────────────────────────────────────────── Acerca de ProjectPrompt ─────────────────────────────────────────────────╮
+│ ProjectPrompt es un asistente inteligente para analizar proyectos de código y generar prompts contextuales utilizando IA. │
+│                                                                                                                           │
+│ Permite analizar la estructura de proyectos, detectar funcionalidades, y generar documentación progresiva.                │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+                        Comandos Premium                        
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Comando                     ┃ Descripción                    ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ premium dashboard           │ Dashboard avanzado interactivo │
+│ premium test-generator      │ Generador de tests unitarios   │
+│ premium verify-completeness │ Verificador de completitud     │
+│ premium implementation      │ Asistente de implementación    │
+└─────────────────────────────┴────────────────────────────────┘
+                                Comandos Disponibles                                
+┏━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Comando                 ┃ Descripción                                            ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ init                    │ Inicializar un nuevo proyecto                          │
+│ analyze                 │ Analizar la estructura de un proyecto                  │
+│ version                 │ Mostrar la versión actual                              │
+│ config                  │ Gestionar la configuración                             │
+│ set-api                 │ Configurar claves de API                               │
+│ verify-api              │ Verificar estado de APIs                               │
+│ interview               │ Realizar entrevista guiada sobre una funcionalidad     │
+│ analyze-feature         │ Analizar funcionalidad específica                      │
+│ list-interviews         │ Listar entrevistas existentes                          │
+│ implementation-proposal │ Generar propuesta de implementación                    │
+│ implementation-prompt   │ Generar prompt detallado para implementación (premium) │
+│ generate_prompts        │ Generar prompts contextuales del proyecto              │
+│ set-log-level           │ Cambiar el nivel de logging                            │
+│ menu                    │ Iniciar el menú interactivo                            │
+│ dashboard               │ Generar dashboard básico del proyecto                  │
+│ subscription            │ Gestionar suscripción premium                          │
+│ premium                 │ Acceder a comandos premium                             │
+│ diagnose                │ Diagnosticar instalación y problemas                   │
+│ help                    │ Mostrar esta ayuda                                     │
+└─────────────────────────┴────────────────────────────────────────────────────────┘
+i Para más información sobre un comando específico, use:
+  project-prompt [COMANDO] --help

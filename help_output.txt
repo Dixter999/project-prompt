@@ -1,0 +1,43 @@
+                                                                                                                             
+ Usage: main.py [OPTIONS] COMMAND [ARGS]...                                                                                  
+                                                                                                                             
+ ProjectPrompt: Asistente inteligente para proyectos                                                                         
+                                                                                                                             
+╭─ Options ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ --install-completion        [bash|zsh|fish|powershell|pwsh]  Install completion for the specified shell. [default: None]  │
+│ --show-completion           [bash|zsh|fish|powershell|pwsh]  Show completion for the specified shell, to copy it or       │
+│                                                              customize the installation.                                  │
+│                                                              [default: None]                                              │
+│ --help                                                       Show this message and exit.                                  │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ai                      Comandos premium de IA (Copilot/Anthropic)                                                        │
+│ analyze                 Analizar la estructura y funcionalidades de un proyecto existente.                                │
+│ analyze-group           Analizar un grupo funcional específico con IA (Anthropic Claude).                                 │
+│ check-env               Verificar configuración de archivos .env y variables de entorno.                                  │
+│ config                  Gestionar la configuración de ProjectPrompt.                                                      │
+│ dashboard               Generar un dashboard visual con el estado y progreso del proyecto.                                │
+│ delete                  Elimina archivos generados por ProjectPrompt.                                                     │
+│ deps                    Análisis eficiente de dependencias usando Madge (comando directo optimizado).                     │
+│ diagnose                Diagnose ProjectPrompt installation and provide troubleshooting information.                      │
+│ docs                    Comandos de navegación de documentación                                                           │
+│ generate-suggestions    Generar sugerencias de mejora estructuradas para un grupo funcional.                              │
+│ help                    Mostrar ayuda detallada sobre ProjectPrompt.                                                      │
+│ init                    Initialize a new project with ProjectPrompt.                                                      │
+│ init-project-folder     Inicializa una carpeta project-prompt organizada en el directorio actual.                         │
+│ menu                    Iniciar el menú interactivo de ProjectPrompt.                                                     │
+│ premium                 Comandos premium para acceso a funcionalidades avanzadas                                          │
+│ rules                   Interactive rules management commands                                                             │
+│ set-api                 Configurar una clave API para servicios usando archivos .env (recomendado por seguridad).         │
+│ set-log-level           Cambiar el nivel de logging.                                                                      │
+│ setup-alias             Ofrece crear un alias 'pp' para simplificar el uso del comando.                                   │
+│ setup-deps              Instala Node.js, npm y Madge si el usuario lo desea (recomendado para análisis avanzados).        │
+│ status                  Mostrar estado de sincronización.                                                                 │
+│ subscription            Comandos para gestionar la suscripción                                                            │
+│ telemetry               Comandos para gestionar la telemetría anónima                                                     │
+│ track-progress          Rastrear y gestionar el progreso de implementación de mejoras.                                    │
+│ update                  Comandos para gestionar actualizaciones y sincronización                                          │
+│ verify-api              Verificar el estado de configuración de APIs.                                                     │
+│ version                 Show the current version of ProjectPrompt.                                                        │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+

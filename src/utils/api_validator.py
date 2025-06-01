@@ -16,9 +16,17 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from src.utils.config import ConfigManager
 from src.utils.logger import get_logger
+
 # Lazy imports to avoid circular imports
-from src.integrations.anthropic import AnthropicAPI, get_anthropic_client
-from src.integrations.copilot import CopilotAPI, get_copilot_client
+def _get_anthropic_client():
+    """Lazy import to avoid circular dependency"""
+    from src.integrations.anthropic import get_anthropic_client
+    return get_anthropic_client()
+
+def _get_copilot_client():
+    """Lazy import to avoid circular dependency"""
+    from src.integrations.copilot import get_copilot_client
+    return get_copilot_client()
 
 # Configurar logger
 logger = get_logger()
@@ -111,7 +119,7 @@ class APIValidator:
         Returns:
             Diccionario con estado y mensaje
         """
-        client = get_anthropic_client(self.config)
+        client = _get_anthropic_client()
         self._api_clients["anthropic"] = client
         
         if not client.is_configured:
@@ -138,7 +146,7 @@ class APIValidator:
         Returns:
             Diccionario con estado y mensaje
         """
-        client = get_copilot_client(self.config)
+        client = _get_copilot_client()
         self._api_clients["github"] = client
         
         if not client.is_configured:
@@ -181,12 +189,12 @@ class APIValidator:
             # Actualizar en el cliente correspondiente
             if api_name == "anthropic":
                 if "anthropic" not in self._api_clients:
-                    self._api_clients["anthropic"] = get_anthropic_client(self.config)
+                    self._api_clients["anthropic"] = _get_anthropic_client()
                 self._api_clients["anthropic"].set_api_key(api_key)
                 
             elif api_name == "github":
                 if "github" not in self._api_clients:
-                    self._api_clients["github"] = get_copilot_client(self.config)
+                    self._api_clients["github"] = _get_copilot_client()
                 self._api_clients["github"].set_api_token(api_key)
                 
             # Validar la nueva clave

@@ -14,7 +14,34 @@ from rich.table import Table
 
 from src import __version__
 from src.utils import logger, config_manager
-from src.ui.cli import cli, print_header, print_success, print_error, print_warning, print_info
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt
+
+# Create console instance
+console = Console()
+
+def print_header(title: str = "ProjectPrompt"):
+    """Muestra un header con el título especificado."""
+    console.print(f"\n[bold blue]{title}[/bold blue]")
+    console.print("[dim]Asistente inteligente para proyectos usando IA[/dim]")
+    console.print("─" * 60)
+
+def print_success(message: str):
+    """Muestra un mensaje de éxito."""
+    console.print(f"[bold green]✓[/bold green] {message}")
+
+def print_error(message: str):
+    """Muestra un mensaje de error."""
+    console.print(f"[bold red]✗[/bold red] {message}")
+
+def print_warning(message: str):
+    """Muestra un mensaje de advertencia."""
+    console.print(f"[bold yellow]![/bold yellow] {message}")
+
+def print_info(message: str):
+    """Muestra un mensaje informativo."""
+    console.print(f"[bold blue]i[/bold blue] {message}")
 
 
 # Tipo para las opciones del menú

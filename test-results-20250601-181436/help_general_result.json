@@ -1,0 +1,12 @@
+{
+  "name": "help_general",
+  "command": "project-prompt help",
+  "description": "Show general help",
+  "category": "basic",
+  "result": "passed",
+  "exit_code": 0,
+  "duration": 0.8538434505462646,
+  "expect_success": true,
+  "requires_api": false,
+  "timestamp": "2025-06-01T18:14:42.185928"
+}
