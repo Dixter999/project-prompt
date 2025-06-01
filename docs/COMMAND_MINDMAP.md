@@ -1,6 +1,6 @@
 # ProjectPrompt Command Mind Map
 
-This mermaid mind map shows the complete command structure and hierarchy of ProjectPrompt v1.2.7.
+This mermaid mind map shows the complete command structure and hierarchy of ProjectPrompt v1.2.8.
 
 ## 🗺️ Complete Command Overview
 
@@ -347,4 +347,4 @@ project-prompt premium implementation "user authentication"
 
 ---
 
-*This mind map represents the complete command structure of ProjectPrompt v1.2.7 - your comprehensive project analysis and AI-powered development assistant.*
+*This mind map represents the complete command structure of ProjectPrompt v1.2.8 - your comprehensive project analysis and AI-powered development assistant.*

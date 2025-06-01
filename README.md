@@ -2,7 +2,7 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.2.7-green)](https://github.com/Dixter999/project-prompt/releases)
+[![Version](https://img.shields.io/badge/version-1.2.8-green)](https://github.com/Dixter999/project-prompt/releases)
 
 **ProjectPrompt** is an intelligent CLI tool that analyzes code projects and provides AI-powered insights, documentation generation, and improvement suggestions. It helps developers understand their codebase structure, generate contextual prompts, and maintain better project documentation.
 
