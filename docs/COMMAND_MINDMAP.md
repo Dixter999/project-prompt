@@ -1,350 +1,408 @@
 # ProjectPrompt Command Mind Map
 
-This mermaid mind map shows the complete command structure and hierarchy of ProjectPrompt v1.2.8.
+This interactive markmap shows the complete command structure and hierarchy of ProjectPrompt v1.2.8.
 
 ## 🗺️ Complete Command Overview
 
-```mermaid
-mindmap
-  root((ProjectPrompt))
-    Core Commands
-      analyze
-        ::icon(🔍)
-        Basic project analysis
-        --max-files
-        --max-size
-        --functionalities
-        --structure
-        --output
-      dashboard
-        ::icon(📊)
-        Generate visual dashboard
-        --format html/markdown
-        --output
-        --interactive
-      version
-        ::icon(ℹ️)
-        Show version info
-        API status check
-      help
-        ::icon(❓)
-        Detailed help system
-        Command reference
-      init
-        ::icon(🚀)
-        Initialize new project
-        --path
-        Project structure setup
-      menu
-        ::icon(🎛️)
-        Interactive interface
-        GUI navigation
-        
-    API Configuration
-      set-api
-        ::icon(🔑)
-        Configure AI services
-        anthropic
-        openai
-        github
-      verify-api
-        ::icon(✅)
-        Check API status
-        Connection test
-      check-env
-        ::icon(🌍)
-        Environment validation
-        Variable check
-        
-    Project Analysis
-      analyze-group
-        ::icon(📂)
-        Functional group analysis
-        Group selection
-        Progress tracking
-      generate-suggestions
-        ::icon(💡)
-        AI improvement suggestions
-        Architecture recommendations
-        Best practices
-      track-progress
-        ::icon(📈)
-        Development progress
-        Phase tracking
-        Completion metrics
-        
-    AI Features
-      ai analyze
-        ::icon(🤖)
-        AI-powered code analysis
-        --detail advanced/basic
-        --output json/markdown
-      ai refactor
-        ::icon(🔧)
-        Refactoring suggestions
-        Code improvements
-        Pattern detection
-      ai explain
-        ::icon(📝)
-        Code explanation
-        Function analysis
-        Architecture insights
-      ai generate
-        ::icon(✨)
-        Code generation
-        Documentation creation
-        Template generation
-        
-    Rules Management
-      rules suggest
-        ::icon(📋)
-        AI rule suggestions
-        --ai flag
-        --threshold
-        --confidence
-      rules analyze-patterns
-        ::icon(🔍)
-        Pattern analysis
-        --detailed
-        Project insights
-      rules generate-project-rules
-        ::icon(📄)
-        Clean rules format
-        --ai enhancement
-        --output markdown
-      rules auto-generate
-        ::icon(⚡)
-        Complete auto-generation
-        --output yaml/json
-      rules generate-structured-rules
-        ::icon(🏗️)
-        Sophisticated rules
-        Enterprise-grade
-        YAML export
-      rules validate-structured-rules
-        ::icon(✔️)
-        Rule validation
-        Syntax checking
-        Compliance verification
-      rules wizard
-        ::icon(🧙)
-        Interactive setup
-        Guided configuration
-        Template selection
-      rules init
-        ::icon(🔰)
-        Initialize rules file
-        Basic setup
-      rules validate
-        ::icon(🔍)
-        Syntax validation
-        Rule checking
-      rules apply
-        ::icon(⚙️)
-        Apply and verify
-        Compliance check
-      rules report
-        ::icon(📊)
-        Compliance reports
-        Violation tracking
-        
-    Premium Features
-      premium dashboard
-        ::icon(💎)
-        Advanced dashboard
-        Interactive visualization
-        Real-time metrics
-      premium implementation
-        ::icon(🛠️)
-        Implementation assistant
-        Feature guidance
-        Code scaffolding
-      premium test-generator
-        ::icon(🧪)
-        Unit test generation
-        Coverage analysis
-      premium verify-completeness
-        ::icon(📋)
-        Completeness verification
-        Quality assurance
-        
-    Documentation
-      docs list
-        ::icon(📚)
-        Available documents
-        Navigation tree
-      docs view
-        ::icon(👁️)
-        Document viewer
-        Markdown rendering
-      docs generate
-        ::icon(📝)
-        Auto-documentation
-        Project docs
-      docs navigate
-        ::icon(🧭)
-        Interactive navigation
-        Document browser
-        
-    Utilities
-      delete
-        ::icon(🗑️)
-        Cleanup generated files
-        --force flag
-        Selective removal
-      setup-alias
-        ::icon(🔗)
-        Command shortcuts
-        Shell integration
-      setup-deps
-        ::icon(📦)
-        Optional dependencies
-        Feature enablement
-      set-log-level
-        ::icon(📊)
-        Logging control
-        debug/info/warning
-      diagnose
-        ::icon(🔧)
-        Issue diagnosis
-        Installation check
-        Troubleshooting
-        
-    Subscription
-      subscription plans
-        ::icon(💳)
-        Available plans
-        Feature comparison
-      subscription activate
-        ::icon(🔓)
-        License activation
-        Premium unlock
-      subscription info
-        ::icon(ℹ️)
-        Current status
-        Plan details
-        
-    Telemetry
-      telemetry enable
-        ::icon(📊)
-        Usage analytics
-        Anonymous data
-      telemetry disable
-        ::icon(🚫)
-        Opt-out analytics
-        Privacy mode
-      telemetry status
-        ::icon(📈)
-        Current settings
-        Data collection info
-        
-    Update System
-      update check
-        ::icon(🔄)
-        Version checking
-        Update availability
-      update install
-        ::icon(⬇️)
-        Auto-update
-        Version upgrade
-      update sync
-        ::icon(🔄)
-        Synchronization
-        Remote updates
-```
+<!-- markmap: {"colorFreezeLevel": 2, "duration": 800, "maxWidth": 300} -->
+
+# 🚀 ProjectPrompt
+
+## 🔧 Core Commands
+
+### 🔍 analyze
+- Basic project analysis
+- `--max-files` limit file count
+- `--max-size` size threshold
+- `--functionalities` detect features
+- `--structure` show hierarchy
+- `--output` save results
+
+### 📊 dashboard
+- Generate visual dashboard
+- `--format` html/markdown
+- `--output` destination
+- `--interactive` mode
+
+### ℹ️ version
+- Show version info
+- API status check
+- System diagnostics
+
+### ❓ help
+- Detailed help system
+- Command reference
+- Usage examples
+
+### 🚀 init
+- Initialize new project
+- `--path` target directory
+- Project structure setup
+
+### 🎛️ menu
+- Interactive interface
+- GUI navigation
+- Visual command selection
+
+## 🔑 API Configuration
+
+### 🔑 set-api
+- Configure AI services
+- Anthropic Claude
+- OpenAI GPT
+- GitHub integration
+
+### ✅ verify-api
+- Check API status
+- Connection test
+- Authentication verify
+
+### 🌍 check-env
+- Environment validation
+- Variable check
+- Configuration audit
+
+## 📊 Project Analysis
+
+### 📂 analyze-group
+- Functional group analysis
+- Group selection
+- Progress tracking
+- Dependency mapping
+
+### 💡 generate-suggestions
+- AI improvement suggestions
+- Architecture recommendations
+- Best practices
+- Code optimization
+
+### 📈 track-progress
+- Development progress
+- Phase tracking
+- Completion metrics
+- Timeline analysis
+
+## 🤖 AI Features
+
+### 🤖 ai analyze
+- AI-powered code analysis
+- `--detail` advanced/basic
+- `--output` json/markdown
+- Deep insights
+
+### 🔧 ai refactor
+- Refactoring suggestions
+- Code improvements
+- Pattern detection
+- Optimization tips
+
+### 📝 ai explain
+- Code explanation
+- Function analysis
+- Architecture insights
+- Documentation generation
+
+### ✨ ai generate
+- Code generation
+- Documentation creation
+- Template generation
+- Boilerplate code
+
+## 📋 Rules Management
+
+### 📋 rules suggest
+- AI rule suggestions
+- `--ai` flag enable
+- `--threshold` confidence
+- `--confidence` level
+
+### 🔍 rules analyze-patterns
+- Pattern analysis
+- `--detailed` mode
+- Project insights
+- Rule recommendations
+
+### 📄 rules generate-project-rules
+- Clean rules format
+- `--ai` enhancement
+- `--output` markdown
+- Project-specific
+
+### ⚡ rules auto-generate
+- Complete auto-generation
+- `--output` yaml/json
+- Smart detection
+- Best practices
+
+### 🏗️ rules generate-structured-rules
+- Sophisticated rules
+- Enterprise-grade
+- YAML export
+- Comprehensive coverage
+
+### ✔️ rules validate-structured-rules
+- Rule validation
+- Syntax checking
+- Compliance verification
+- Error reporting
+
+### 🧙 rules wizard
+- Interactive setup
+- Guided configuration
+- Template selection
+- Step-by-step
+
+### 🔰 rules init
+- Initialize rules file
+- Basic setup
+- Default templates
+- Quick start
+
+### 🔍 rules validate
+- Syntax validation
+- Rule checking
+- Format verification
+- Error detection
+
+### ⚙️ rules apply
+- Apply and verify
+- Compliance check
+- Enforcement mode
+- Auto-correction
+
+### 📊 rules report
+- Compliance reports
+- Violation tracking
+- Statistics
+- Audit trail
+
+## 💎 Premium Features
+
+### 💎 premium dashboard
+- Advanced dashboard
+- Interactive visualization
+- Real-time metrics
+- Custom widgets
+
+### 🛠️ premium implementation
+- Implementation assistant
+- Feature guidance
+- Code scaffolding
+- Best practices
+
+### 🧪 premium test-generator
+- Unit test generation
+- Coverage analysis
+- Test strategies
+- Quality assurance
+
+### 📋 premium verify-completeness
+- Completeness verification
+- Quality assurance
+- Feature coverage
+- Requirement tracking
+
+## 📚 Documentation
+
+### 📚 docs list
+- Available documents
+- Navigation tree
+- Document index
+- Quick access
+
+### 👁️ docs view
+- Document viewer
+- Markdown rendering
+- Interactive browsing
+- Search functionality
+
+### 📝 docs generate
+- Auto-documentation
+- Project docs
+- API reference
+- User guides
+
+### 🧭 docs navigate
+- Interactive navigation
+- Document browser
+- Cross-references
+- Smart linking
+
+## 🛠️ Utilities
+
+### 🗑️ delete
+- Cleanup generated files
+- `--force` flag
+- Selective removal
+- Safe deletion
+
+### 🔗 setup-alias
+- Command shortcuts
+- Shell integration
+- Custom aliases
+- Quick access
+
+### 📦 setup-deps
+- Optional dependencies
+- Feature enablement
+- Package management
+- Installation guide
+
+### 📊 set-log-level
+- Logging control
+- debug/info/warning
+- Verbosity settings
+- Output control
+
+### 🔧 diagnose
+- Issue diagnosis
+- Installation check
+- Troubleshooting
+- System health
+
+## 💳 Subscription
+
+### 💳 subscription plans
+- Available plans
+- Feature comparison
+- Pricing tiers
+- Upgrade options
+
+### 🔓 subscription activate
+- License activation
+- Premium unlock
+- Key validation
+- Account linking
+
+### ℹ️ subscription info
+- Current status
+- Plan details
+- Usage metrics
+- Renewal info
+
+## 📊 Telemetry
+
+### 📊 telemetry enable
+- Usage analytics
+- Anonymous data
+- Performance metrics
+- Improvement insights
+
+### 🚫 telemetry disable
+- Opt-out analytics
+- Privacy mode
+- Data protection
+- Local-only mode
+
+### 📈 telemetry status
+- Current settings
+- Data collection info
+- Privacy status
+- Control options
+
+## 🔄 Update System
+
+### 🔄 update check
+- Version checking
+- Update availability
+- Release notes
+- Security updates
+
+### ⬇️ update install
+- Auto-update
+- Version upgrade
+- Safe installation
+- Rollback support
+
+### 🔄 update sync
+- Synchronization
+- Remote updates
+- Configuration sync
+- Cross-device
 
 ## 📖 Command Categories Explained
 
 ### 🔧 Core Commands
-Essential commands for basic ProjectPrompt functionality:
-- **analyze**: Main project analysis engine
-- **dashboard**: Visual project overview generation
-- **version**: System information and status
-- **help**: Comprehensive help system
-- **init**: Project initialization
-- **menu**: Interactive GUI interface
+Essential commands for basic ProjectPrompt functionality - the foundation of your workflow.
 
-### 🔑 API Configuration
-Commands for setting up AI integrations:
-- **set-api**: Configure API keys for AI services
-- **verify-api**: Test API connections
-- **check-env**: Validate environment setup
+### 🔑 API Configuration  
+Set up AI integrations with Anthropic Claude, OpenAI, and GitHub for enhanced features.
 
 ### 📊 Project Analysis
-Advanced project examination tools:
-- **analyze-group**: Analyze specific functional groups
-- **generate-suggestions**: AI-powered improvement recommendations
-- **track-progress**: Development progress monitoring
+Advanced project examination tools for deep insights and progress tracking.
 
 ### 🤖 AI Features
-AI-powered analysis and generation:
-- **ai analyze**: Deep code analysis with AI
-- **ai refactor**: Intelligent refactoring suggestions
-- **ai explain**: Code explanation and documentation
-- **ai generate**: Content and code generation
+AI-powered analysis, refactoring, explanation, and code generation capabilities.
 
 ### 📋 Rules Management
-Comprehensive rule system for project governance:
-- **rules suggest**: AI-generated development rules
-- **rules wizard**: Interactive rule configuration
-- **rules validate**: Rule syntax and compliance checking
-- **rules generate-structured-rules**: Enterprise-grade rule generation
+Comprehensive rule system for project governance and compliance management.
 
 ### 💎 Premium Features
-Advanced functionality requiring subscription:
-- **premium dashboard**: Enhanced interactive dashboards
-- **premium implementation**: Implementation assistance
-- **premium test-generator**: Automated test creation
+Advanced functionality requiring subscription for enterprise-grade capabilities.
 
 ### 📚 Documentation
-Documentation management and navigation:
-- **docs list**: Browse available documentation
-- **docs view**: Interactive document viewer
-- **docs generate**: Auto-generate project documentation
+Documentation management, navigation, and auto-generation tools.
 
 ### 🛠️ Utilities
-System maintenance and configuration:
-- **delete**: Clean up generated files
-- **diagnose**: Troubleshoot installation issues
-- **setup-deps**: Install optional dependencies
+System maintenance, configuration, and troubleshooting utilities.
 
-### 💳 Subscription & Telemetry
-Account and analytics management:
-- **subscription**: Premium license management
-- **telemetry**: Usage analytics control
+### 💳 Subscription & 📊 Telemetry
+Account management and analytics control for usage insights.
 
-## 🎯 Command Usage Patterns
+### 🔄 Update System
+Version management and synchronization for keeping ProjectPrompt current.
 
-### Quick Start Commands
+## 🎯 Quick Start Workflows
+
+### Basic Analysis Workflow
 ```bash
-project-prompt analyze          # Basic analysis
-project-prompt dashboard        # Generate overview
-project-prompt help            # Get help
+project-prompt analyze          # Analyze current project
+project-prompt dashboard        # Generate visual overview  
+project-prompt help            # Get comprehensive help
 ```
 
-### AI-Powered Workflow
+### AI-Enhanced Development
 ```bash
-project-prompt set-api anthropic YOUR_KEY
-project-prompt ai analyze src/
-project-prompt rules suggest --ai
-project-prompt generate-suggestions
+project-prompt set-api anthropic YOUR_KEY  # Configure AI
+project-prompt ai analyze src/             # Deep analysis
+project-prompt rules suggest --ai          # Generate rules
+project-prompt generate-suggestions        # Get improvements
 ```
 
-### Rules Management Workflow
+### Rules Management Workflow  
 ```bash
-project-prompt rules wizard     # Interactive setup
-project-prompt rules validate   # Check rules
-project-prompt rules apply      # Enforce rules
-project-prompt rules report     # Generate compliance report
+project-prompt rules wizard     # Interactive rule setup
+project-prompt rules validate   # Check rule syntax
+project-prompt rules apply      # Enforce compliance
+project-prompt rules report     # Generate audit report
 ```
 
-### Premium Features
+### Premium Enterprise Features
 ```bash
 project-prompt subscription activate LICENSE_KEY
 project-prompt premium dashboard
 project-prompt premium implementation "user authentication"
+project-prompt premium test-generator
 ```
+
+## 🌟 Interactive Features
+
+This markmap provides:
+- **🖱️ Interactive Navigation** - Click nodes to expand/collapse
+- **🔍 Zoom & Pan** - Explore the command hierarchy 
+- **📱 Responsive Design** - Works on all devices
+- **🎨 Visual Hierarchy** - Clear command organization
+- **⚡ Fast Loading** - Optimized for performance
+
+## 🚀 How to Use This Mind Map
+
+1. **📋 View in Markmap** - Copy this content to [markmap.js.org/repl](https://markmap.js.org/repl)
+2. **🔍 Explore Commands** - Click branches to discover functionality
+3. **📖 Find Examples** - Each command includes usage patterns
+4. **🎯 Plan Workflows** - Use categories to structure your development process
 
 ---
 
-*This mind map represents the complete command structure of ProjectPrompt v1.2.8 - your comprehensive project analysis and AI-powered development assistant.*
+*This interactive mind map represents the complete command structure of ProjectPrompt v1.2.8 - your comprehensive project analysis and AI-powered development assistant.*
+
+> **💡 Tip**: For the best interactive experience, paste this content into the [Markmap REPL](https://markmap.js.org/repl) or use the [VS Code Markmap extension](https://marketplace.visualstudio.com/items?itemName=gera2ld.markmap-vscode).
