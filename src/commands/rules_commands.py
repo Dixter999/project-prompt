@@ -1185,17 +1185,27 @@ def _generate_suggestions_output(suggestions: List, pattern_analysis,
                                project_path: str) -> None:
     """Generate output file with suggestions"""
     
+    # Create project-output/suggestions directory for rules
+    project_suggestions_dir = os.path.join(project_path, "project-output", "suggestions", "rules")
+    os.makedirs(project_suggestions_dir, exist_ok=True)
+    
     if format == "yaml":
         # Generate YAML rules file
         suggester = get_rules_suggester(project_path)
         if not output_path:
-            output_path = "suggested_rules.yaml"
+            output_path = os.path.join(project_suggestions_dir, "suggested_rules.yaml")
+        elif not os.path.isabs(output_path) and not output_path.startswith('project-output'):
+            # Relative path - place in project-output structure
+            output_path = os.path.join(project_suggestions_dir, output_path)
         suggester.generate_draft_rules_file(suggestions, output_path)
         
     elif format == "json":
         # Generate JSON output
         if not output_path:
-            output_path = "suggestions.json"
+            output_path = os.path.join(project_suggestions_dir, "suggestions.json")
+        elif not os.path.isabs(output_path) and not output_path.startswith('project-output'):
+            # Relative path - place in project-output structure
+            output_path = os.path.join(project_suggestions_dir, output_path)
         
         data = {
             'timestamp': datetime.now().isoformat(),
@@ -1226,7 +1236,10 @@ def _generate_suggestions_output(suggestions: List, pattern_analysis,
     elif format == "markdown":
         # Generate detailed markdown report
         if not output_path:
-            output_path = "suggestions_report.md"
+            output_path = os.path.join(project_suggestions_dir, "suggestions_report.md")
+        elif not os.path.isabs(output_path) and not output_path.startswith('project-output'):
+            # Relative path - place in project-output structure
+            output_path = os.path.join(project_suggestions_dir, output_path)
         
         _generate_markdown_report(suggestions, pattern_analysis, output_path, project_path)
     

@@ -60,13 +60,11 @@ class AIGroupAnalyzer:
             Diccionario con los resultados del análisis
         """
         try:
-            # Verificar acceso premium
-            if not self.ai_client.verify_premium_access():
-                return {
-                    "success": False,
-                    "error": "Esta función requiere suscripción premium",
-                    "group_name": group_name
-                }
+            # Verificar acceso premium - si no está disponible, usar análisis básico
+            has_premium_access = self.ai_client.verify_premium_access()
+            if not has_premium_access:
+                logger.info(f"Acceso premium no disponible, usando análisis básico para grupo '{group_name}'")
+                return self._analyze_group_fallback(project_path, group_name)
             
             # Obtener grupos funcionales del proyecto
             groups = self._get_functional_groups(project_path)
@@ -1331,8 +1329,420 @@ Mantén cada sección concisa y específica."""
         
         return recommendations[:6]
 
-    # ...existing code...
+    def _analyze_group_fallback(self, project_path: str, group_name: str) -> Dict[str, Any]:
+        """
+        Análisis básico sin IA cuando no hay acceso premium.
+        
+        Args:
+            project_path: Ruta al proyecto
+            group_name: Nombre del grupo a analizar
+            
+        Returns:
+            Análisis básico del grupo
+        """
+        try:
+            # Obtener grupos funcionales usando método básico
+            groups = self._get_functional_groups_basic(project_path)
+            
+            if not groups:
+                return {
+                    "success": False,
+                    "error": "No se encontraron grupos funcionales en el proyecto",
+                    "group_name": group_name
+                }
+            
+            # Buscar el grupo específico
+            target_group = None
+            for group in groups:
+                if group.get('name', '').lower() == group_name.lower():
+                    target_group = group
+                    break
+                # También buscar por coincidencia parcial
+                if group_name.lower() in group.get('name', '').lower():
+                    target_group = group
+                    break
+            
+            if not target_group:
+                available_groups = [g.get('name', 'Sin nombre') for g in groups]
+                return {
+                    "success": False,
+                    "error": f"Grupo '{group_name}' no encontrado. Grupos disponibles: {', '.join(available_groups)}",
+                    "group_name": group_name,
+                    "available_groups": available_groups
+                }
+            
+            # Mostrar información del grupo
+            self.cli.print_info(f"\n📊 Analizando grupo (modo básico): {target_group['name']}")
+            self.cli.print_info(f"📁 Archivos en el grupo: {target_group['size']}")
+            
+            # Análisis básico de archivos del grupo
+            analysis_results = self._analyze_group_files_basic(project_path, target_group)
+            
+            # Generar reporte de análisis básico
+            report_path = self._generate_basic_analysis_report(project_path, target_group, analysis_results)
+            
+            return {
+                "success": True,
+                "group_name": target_group['name'],
+                "files_analyzed": len(analysis_results),
+                "report_path": report_path,
+                "analysis_results": analysis_results,
+                "analysis_type": "basic"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error en análisis básico del grupo '{group_name}': {e}")
+            return {
+                "success": False,
+                "error": f"Error en análisis básico: {str(e)}",
+                "group_name": group_name
+            }
 
+    def _get_functional_groups_basic(self, project_path: str) -> List[Dict[str, Any]]:
+        """
+        Obtener grupos funcionales usando análisis básico de directorios.
+        
+        Args:
+            project_path: Ruta al proyecto
+            
+        Returns:
+            Lista de grupos funcionales básicos
+        """
+        return self._create_directory_based_groups(project_path)
+
+    def _analyze_group_files_basic(self, project_path: str, group: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Análisis básico de archivos sin IA.
+        
+        Args:
+            project_path: Ruta al proyecto
+            group: Grupo a analizar
+            
+        Returns:
+            Lista con análisis básico de cada archivo
+        """
+        from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn
+        from rich.console import Console
+        
+        files = group.get('files', [])
+        analysis_results = []
+        
+        # Filtrar archivos válidos para análisis
+        valid_files = self._filter_analyzable_files(project_path, files)
+        
+        if not valid_files:
+            logger.warning("No hay archivos válidos para analizar en el grupo")
+            return []
+        
+        total_files = len(valid_files)
+        console = Console()
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            console=console
+        ) as progress:
+            
+            main_task = progress.add_task(f"📊 Análisis básico de {total_files} archivos", total=total_files)
+            
+            for file_info in valid_files:
+                try:
+                    file_path = file_info.get('path', 'unknown')
+                    progress.update(main_task, description=f"📄 Analizando: {os.path.basename(file_path)}")
+                    
+                    file_analysis = self._analyze_single_file_basic(project_path, file_info)
+                    if file_analysis:
+                        analysis_results.append(file_analysis)
+                    
+                    progress.update(main_task, advance=1)
+                    
+                except Exception as e:
+                    logger.error(f"Error en análisis básico del archivo {file_info.get('path', '')}: {e}")
+                    progress.update(main_task, advance=1)
+                    continue
+        
+        self.cli.print_success(f"✅ Análisis básico completado: {len(analysis_results)} archivos procesados")
+        return analysis_results
+
+    def _analyze_single_file_basic(self, project_path: str, file_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """
+        Análisis básico de un archivo individual sin IA.
+        
+        Args:
+            project_path: Ruta al proyecto
+            file_info: Información del archivo
+            
+        Returns:
+            Análisis básico del archivo o None si falla
+        """
+        file_path = file_info.get('path', '')
+        full_path = os.path.join(project_path, file_path)
+        
+        try:
+            # Leer contenido del archivo
+            with open(full_path, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+            
+            if not content.strip():
+                return None
+            
+            # Análisis básico estático
+            lines = content.split('\n')
+            lines_count = len(lines)
+            char_count = len(content)
+            
+            # Detectar lenguaje
+            language = self._detect_file_language(file_path)
+            
+            # Análisis básico de funcionalidad
+            functionality = self._detect_basic_functionality(file_path, content, language)
+            
+            # Análisis básico de dependencias
+            dependencies = self._detect_basic_dependencies(content, language)
+            
+            # Evaluación básica de complejidad
+            complexity = self._evaluate_basic_complexity(content, lines_count)
+            
+            # Generar análisis estructurado
+            analysis_data = {
+                'file_path': file_path,
+                'file_name': os.path.basename(file_path),
+                'analysis': {
+                    'functionality': functionality,
+                    'internal_dependencies': dependencies.get('internal', []),
+                    'external_dependencies': dependencies.get('external', []),
+                    'complexity': complexity,
+                    'responsibilities': self._detect_basic_responsibilities(file_path, content, language),
+                    'improvements': self._suggest_basic_improvements(content, language)
+                },
+                'metrics': {
+                    'lines_of_code': lines_count,
+                    'character_count': char_count,
+                    'file_size_kb': round(char_count / 1024, 2)
+                },
+                'analysis_timestamp': datetime.now().isoformat(),
+                'analysis_type': 'basic'
+            }
+            
+            return analysis_data
+            
+        except Exception as e:
+            logger.error(f"Error en análisis básico del archivo {file_path}: {e}")
+            return None
+
+    def _detect_basic_functionality(self, file_path: str, content: str, language: str) -> str:
+        """Detectar funcionalidad básica del archivo basada en patrones."""
+        if 'test' in file_path.lower():
+            return "Archivo de pruebas"
+        elif 'config' in file_path.lower():
+            return "Archivo de configuración"
+        elif language == 'python':
+            if 'class ' in content:
+                return "Definición de clases Python"
+            elif 'def ' in content:
+                return "Funciones Python"
+            elif 'import ' in content:
+                return "Módulo Python"
+        elif language == 'javascript':
+            if 'function ' in content or '=>' in content:
+                return "Funciones JavaScript"
+            elif 'class ' in content:
+                return "Clases JavaScript"
+        
+        return f"Archivo de código {language}"
+
+    def _detect_basic_dependencies(self, content: str, language: str) -> Dict[str, List[str]]:
+        """Detectar dependencias básicas del archivo."""
+        import re
+        
+        dependencies = {'internal': [], 'external': []}
+        
+        if language == 'python':
+            # Buscar imports
+            import_patterns = [
+                r'import\s+([a-zA-Z_][a-zA-Z0-9_]*)',
+                r'from\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+import'
+            ]
+            for pattern in import_patterns:
+                matches = re.findall(pattern, content)
+                dependencies['external'].extend(matches)
+        
+        elif language == 'javascript':
+            # Buscar requires e imports
+            import_patterns = [
+                r'require\([\'"]([^\'"]+)[\'"]\)',
+                r'import.*from\s+[\'"]([^\'"]+)[\'"]'
+            ]
+            for pattern in import_patterns:
+                matches = re.findall(pattern, content)
+                dependencies['external'].extend(matches)
+        
+        # Limpiar duplicados
+        dependencies['external'] = list(set(dependencies['external']))
+        
+        return dependencies
+
+    def _evaluate_basic_complexity(self, content: str, lines_count: int) -> str:
+        """Evaluar complejidad básica del archivo."""
+        if lines_count < 50:
+            return "Baja"
+        elif lines_count < 200:
+            return "Media"
+        else:
+            return "Alta"
+
+    def _detect_basic_responsibilities(self, file_path: str, content: str, language: str) -> str:
+        """Detectar responsabilidades básicas del archivo."""
+        filename = os.path.basename(file_path).lower()
+        
+        if 'main' in filename:
+            return "Punto de entrada principal del sistema"
+        elif 'test' in filename:
+            return "Pruebas unitarias y validación de funcionalidad"
+        elif 'config' in filename:
+            return "Gestión de configuración del sistema"
+        elif 'util' in filename:
+            return "Funciones de utilidad y helpers"
+        elif language == 'python' and 'class ' in content:
+            return "Implementación de clases y lógica de negocio"
+        
+        return "Lógica de aplicación general"
+
+    def _suggest_basic_improvements(self, content: str, language: str) -> str:
+        """Sugerir mejoras básicas del archivo."""
+        suggestions = []
+        
+        lines = content.split('\n')
+        
+        # Verificar documentación
+        if language == 'python':
+            if '"""' not in content and "'''" not in content:
+                suggestions.append("Agregar docstrings para documentar funciones y clases")
+        
+        # Verificar longitud de líneas
+        long_lines = [i for i, line in enumerate(lines) if len(line) > 100]
+        if long_lines:
+            suggestions.append("Reducir longitud de líneas muy largas para mejorar legibilidad")
+        
+        # Verificar funciones muy largas
+        if language == 'python':
+            function_lines = [i for i, line in enumerate(lines) if line.strip().startswith('def ')]
+            for func_start in function_lines:
+                func_end = func_start + 1
+                while func_end < len(lines) and (lines[func_end].startswith('    ') or lines[func_end].strip() == ''):
+                    func_end += 1
+                if func_end - func_start > 30:
+                    suggestions.append("Dividir funciones muy largas en funciones más pequeñas")
+                    break
+        
+        if not suggestions:
+            suggestions.append("Mantener buenas prácticas de codificación")
+        
+        return '; '.join(suggestions[:3])
+
+    def _generate_basic_analysis_report(self, project_path: str, group: Dict[str, Any], analysis_results: List[Dict[str, Any]]) -> str:
+        """
+        Generar reporte de análisis básico.
+        
+        Args:
+            project_path: Ruta al proyecto
+            group: Grupo analizado
+            analysis_results: Resultados del análisis
+            
+        Returns:
+            Ruta al archivo de reporte generado
+        """
+        # Usar el mismo directorio que el análisis con IA
+        project_name = os.path.basename(project_path)
+        safe_group_name = "".join(c for c in group['name'] if c.isalnum() or c in (' ', '-', '_')).strip()
+        safe_group_name = safe_group_name.replace(' ', '_')
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{safe_group_name}_basic_analysis_{timestamp}.md"
+        
+        # Crear directorio de salida
+        output_dir = os.path.join(project_path, "project-output", "analyses", "functionality_groups")
+        os.makedirs(output_dir, exist_ok=True)
+        report_path = os.path.join(output_dir, filename)
+        
+        # Generar contenido del reporte
+        with open(report_path, 'w', encoding='utf-8') as f:
+            f.write(f"# Análisis Básico del Grupo Funcional: {group['name']}\n\n")
+            f.write(f"**Fecha de análisis:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"**Proyecto:** {project_name}\n")
+            f.write(f"**Tipo de análisis:** Básico (sin IA)\n")
+            f.write(f"**Archivos analizados:** {len(analysis_results)}\n\n")
+            
+            f.write("## Resumen del Grupo\n\n")
+            f.write(f"- **Nombre:** {group['name']}\n")
+            f.write(f"- **Tipo:** {group.get('type', 'Desconocido')}\n")
+            f.write(f"- **Total de archivos:** {group.get('size', 0)}\n")
+            f.write(f"- **Archivos procesados:** {len(analysis_results)}\n\n")
+            
+            if analysis_results:
+                f.write("## Análisis por Archivo\n\n")
+                
+                for i, result in enumerate(analysis_results, 1):
+                    f.write(f"### {i}. {result['file_name']}\n\n")
+                    f.write(f"**Ruta:** `{result['file_path']}`\n\n")
+                    
+                    analysis = result['analysis']
+                    metrics = result['metrics']
+                    
+                    f.write(f"- **Funcionalidad:** {analysis['functionality']}\n")
+                    f.write(f"- **Responsabilidades:** {analysis['responsibilities']}\n")
+                    f.write(f"- **Complejidad:** {analysis['complexity']}\n")
+                    f.write(f"- **Líneas de código:** {metrics['lines_of_code']}\n")
+                    f.write(f"- **Tamaño:** {metrics['file_size_kb']} KB\n\n")
+                    
+                    if analysis['external_dependencies']:
+                        f.write(f"**Dependencias externas:** {', '.join(analysis['external_dependencies'][:5])}\n")
+                        if len(analysis['external_dependencies']) > 5:
+                            f.write(f" (+{len(analysis['external_dependencies']) - 5} más)\n")
+                        f.write("\n")
+                    
+                    f.write(f"**Mejoras sugeridas:** {analysis['improvements']}\n\n")
+                    f.write("---\n\n")
+                
+                # Agregar resumen y recomendaciones
+                f.write("## Resumen y Recomendaciones\n\n")
+                f.write("### Estadísticas Generales\n\n")
+                
+                total_lines = sum(r['metrics']['lines_of_code'] for r in analysis_results)
+                total_size = sum(r['metrics']['file_size_kb'] for r in analysis_results)
+                
+                f.write(f"- **Total de líneas:** {total_lines:,}\n")
+                f.write(f"- **Tamaño total:** {total_size:.2f} KB\n")
+                f.write(f"- **Promedio de líneas por archivo:** {total_lines // len(analysis_results) if analysis_results else 0}\n\n")
+                
+                # Análisis de complejidad
+                complexity_counts = {}
+                for result in analysis_results:
+                    complexity = result['analysis']['complexity']
+                    complexity_counts[complexity] = complexity_counts.get(complexity, 0) + 1
+                
+                f.write("### Distribución de Complejidad\n\n")
+                for complexity, count in complexity_counts.items():
+                    f.write(f"- **{complexity}:** {count} archivos\n")
+                f.write("\n")
+                
+                f.write("### Recomendaciones Generales\n\n")
+                f.write("- Revisar archivos de alta complejidad para posibles refactorizaciones\n")
+                f.write("- Mejorar documentación en archivos con pocas líneas de comentarios\n")
+                f.write("- Considerar dividir archivos muy grandes en módulos más pequeños\n")
+                f.write("- Implementar pruebas unitarias si no las hay\n")
+                f.write("- Validar y optimizar dependencias externas\n\n")
+            else:
+                f.write("## Sin Resultados\n\n")
+                f.write("No se pudieron procesar archivos en este grupo.\n\n")
+            
+            f.write("---\n")
+            f.write("*Reporte generado por ProjectPrompt (Análisis Básico)*\n")
+        
+        return report_path
 
 def get_ai_group_analyzer(config: Optional[ConfigManager] = None) -> AIGroupAnalyzer:
     """

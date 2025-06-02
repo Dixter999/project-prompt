@@ -40,7 +40,6 @@ from src.ui.cli import cli
 from src.ui.consent_manager import ConsentManager
 from src.ui.analysis_view import analysis_view
 from src.ui.documentation_navigator import get_documentation_navigator
-from src.ui.subscription_view import show_subscription, activate_license, deactivate_license, show_plans
 from src.ui.dashboard import DashboardCLI
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
 
@@ -64,10 +63,6 @@ app.add_typer(docs_app, name="docs")
 # Submenu para comandos de IA avanzada
 ai_app = typer.Typer(help="Comandos premium de IA (Copilot/Anthropic)")
 app.add_typer(ai_app, name="ai")
-
-# Submenu para comandos de suscripción
-subscription_app = typer.Typer(help="Comandos para gestionar la suscripción")
-app.add_typer(subscription_app, name="subscription")
 
 # Submenu para comandos de actualización y sincronización
 update_app = typer.Typer(help="Comandos para gestionar actualizaciones y sincronización")
@@ -453,11 +448,17 @@ def analyze(
         
         # Guardar resultados si se especificó un archivo de salida
         if output:
-            output_path = output
+            # Check if output path is absolute or starts with project-output
+            if os.path.isabs(output) or output.startswith('project-output'):
+                output_path = output
+            else:
+                # Relative path - place it in project-output/analyses/
+                project_name = os.path.basename(project_path)
+                output_path = str(ANALYSES_DIR / project_name / output)
             
             # Si no se especificó extensión, añadir .json
-            if not output.endswith('.json'):
-                output_path = f"{output}.json"
+            if not output_path.endswith('.json'):
+                output_path = f"{output_path}.json"
                 
             # Asegurar que el directorio existe
             os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
@@ -1112,8 +1113,7 @@ def help():
     table.add_row("set-log-level", "Cambiar el nivel de logging")
     table.add_row("menu", "Iniciar el menú interactivo")
     table.add_row("dashboard", "Generar dashboard básico del proyecto")
-    table.add_row("subscription", "Gestionar suscripción premium")
-    table.add_row("premium", "Acceder a comandos premium")
+    table.add_row("premium", "Acceder a comandos premium (ahora disponibles para todos)")
     table.add_row("diagnose", "Diagnosticar instalación y problemas")
     table.add_row("rules-init", "Inicializar archivo de reglas del proyecto")
     table.add_row("rules-validate", "Validar sintaxis del archivo de reglas")
@@ -1154,7 +1154,7 @@ def docs(
     # Determinar directorio de documentación
     output_dir = output
     if not output_dir:
-        output_dir = os.path.join(project_path, '.project-prompt')
+        output_dir = os.path.join(project_path, 'project-output/documentation')
     
     cli.print_header("Sistema de Documentación")
     cli.print_info(f"Generando documentación para proyecto en: {project_path}")
@@ -1276,15 +1276,10 @@ def ai_generate_code(
     """
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
     from src.integrations.copilot_advanced import get_advanced_copilot_client
-    from src.utils.subscription_manager import get_subscription_manager
     
     cli.print_header("Generación de Código con IA")
     
-    # Verificar suscripción
-    subscription = get_subscription_manager()
-    if not subscription.is_premium_feature_available("ai_integrations"):
-        cli.print_error("Esta es una característica premium. Actualiza tu suscripción para acceder.")
-        return
+    # Premium features now available for all users
     
     # Seleccionar cliente según proveedor
     if provider.lower() == "anthropic":
@@ -1340,16 +1335,11 @@ def ai_analyze_code(
     """
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
     from src.integrations.copilot_advanced import get_advanced_copilot_client
-    from src.utils.subscription_manager import get_subscription_manager
     import os
     
     cli.print_header("Análisis de Código con IA")
     
-    # Verificar suscripción
-    subscription = get_subscription_manager()
-    if not subscription.is_premium_feature_available("ai_integrations"):
-        cli.print_error("Esta es una característica premium. Actualiza tu suscripción para acceder.")
-        return
+    # Premium features now available for all users
     
     # Verificar archivo
     if not os.path.isfile(file_path):
@@ -1453,16 +1443,11 @@ def ai_refactor_code(
     """
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
     from src.integrations.copilot_advanced import get_advanced_copilot_client
-    from src.utils.subscription_manager import get_subscription_manager
     import os
     
     cli.print_header("Refactorización de Código con IA")
     
-    # Verificar suscripción
-    subscription = get_subscription_manager()
-    if not subscription.can_use_feature("ai_integrations"):
-        cli.check_premium_feature("ai_integrations")
-        return
+    # Premium features now available for all users
     
     # Verificar archivo
     if not os.path.isfile(file_path):
@@ -1558,17 +1543,11 @@ def ai_explain_code(
     Generar una explicación detallada del código (característica premium para nivel avanzado).
     """
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
-    from src.utils.subscription_manager import get_subscription_manager
     import os
     
     cli.print_header("Explicación de Código con IA")
     
-    # Verificar suscripción para nivel avanzado
-    if detail_level == "advanced":
-        subscription = get_subscription_manager()
-        if not subscription.is_premium_feature_available("ai_integrations"):
-            cli.print_warning("El nivel avanzado requiere suscripción premium. Usando nivel estándar.")
-            detail_level = "standard"
+    # Premium features now available for all users - advanced level enabled
     
     # Verificar archivo
     if not os.path.isfile(file_path):
@@ -1676,34 +1655,7 @@ def dashboard(
         logger.error(f"Error en dashboard: {str(e)}", exc_info=True)
 
 
-# Implementación de comandos de suscripción
-@subscription_app.command("info")
-def subscription_info():
-    """Mostrar información de la suscripción actual."""
-    show_subscription()
-
-
-@subscription_app.command("activate")
-def subscription_activate(
-    license_key: str = typer.Argument(..., help="Clave de licencia a activar")
-):
-    """Activar una licencia premium."""
-    activate_license(license_key)
-
-
-@subscription_app.command("deactivate")
-def subscription_deactivate():
-    """Desactivar la licencia actual y volver a la versión gratuita."""
-    deactivate_license()
-
-
-@subscription_app.command("plans")
-def subscription_plans():
-    """Mostrar los planes de suscripción disponibles."""
-    show_plans()
-
-
-# Implementación de comandos premium
+# Implementación de comandos premium (ahora disponibles para todos los usuarios)
 
 @premium_app.command("dashboard")
 def premium_dashboard(
@@ -1714,15 +1666,10 @@ def premium_dashboard(
     detailed: bool = typer.Option(False, "--detailed", help="Incluir análisis detallado de dependencias y arquitectura")
 ):
     """Genera un dashboard premium con análisis avanzado de arquitectura y métricas detalladas."""
-    from src.utils.subscription_manager import get_subscription_manager
     
     cli.print_header("Dashboard Premium de Proyecto")
     
-    # Verificar suscripción
-    subscription = get_subscription_manager()
-    if not subscription.can_use_feature("project_dashboard"):
-        cli.check_premium_feature("project_dashboard")
-        return
+    # Premium features now available for all users
     
     # Crear instancia del CLI del dashboard
     dashboard_cli = DashboardCLI()
@@ -1753,16 +1700,11 @@ def premium_generate_tests(
 ):
     """Genera tests unitarios automáticamente para un componente o archivo (característica premium)."""
     from src.generators.test_generator import TestGenerator
-    from src.utils.subscription_manager import get_subscription_manager
     import os
     
     cli.print_header("Generación de Tests Unitarios")
     
-    # Verificar suscripción
-    subscription = get_subscription_manager()
-    if not subscription.can_use_feature("test_generation"):
-        cli.check_premium_feature("test_generation")
-        return
+    # Premium features now available for all users
     
     # Verificar que el objetivo existe
     target_path = os.path.abspath(target)
@@ -1826,16 +1768,11 @@ def premium_verify_completeness(
 ):
     """Verifica la completitud de una implementación según criterios predefinidos (característica premium)."""
     from src.analyzers.completeness_verifier import CompletenessVerifier
-    from src.utils.subscription_manager import get_subscription_manager
     import os
     
     cli.print_header("Verificación de Completitud")
     
-    # Verificar suscripción
-    subscription = get_subscription_manager()
-    if not subscription.can_use_feature("completeness_verification"):
-        cli.check_premium_feature("completeness_verification")
-        return
+    # Premium features now available for all users
     
     # Si es una ruta, verificar que existe
     if os.path.exists(target):
@@ -1914,15 +1851,10 @@ def premium_implementation_assistant(
 ):
     """Genera una guía detallada de implementación para una funcionalidad (característica premium)."""
     from src.generators.implementation_prompt_generator import get_implementation_prompt_generator
-    from src.utils.subscription_manager import get_subscription_manager
     
     cli.print_header("Asistente de Implementación Premium")
     
-    # Verificar suscripción
-    subscription = get_subscription_manager()
-    if not subscription.can_use_feature("implementation_prompts"):
-        cli.check_premium_feature("implementation_prompts")
-        return
+    # Premium features now available for all users
     
     cli.print_info(f"Generando guía de implementación para: {functionality}")
     
@@ -2386,16 +2318,16 @@ atexit.register(shutdown_telemetry)
 def init_project_folder(
     project_name: Optional[str] = typer.Argument(None, help="Nombre del proyecto (opcional)")
 ):
-    """Inicializa una carpeta project-prompt organizada en el directorio actual.
+    """Inicializa una carpeta project-output organizada en el directorio actual.
     
     Crea una estructura de carpetas organizadas para gestionar los archivos generados por ProjectPrompt.
     """
     try:
-        # Crear la carpeta principal project-prompt
-        project_prompt_dir = os.path.join(os.getcwd(), "project-prompt")
+        # Crear la carpeta principal project-output
+        project_prompt_dir = os.path.join(os.getcwd(), "project-output")
         
         if os.path.exists(project_prompt_dir):
-            cli.print_warning("La carpeta 'project-prompt' ya existe en este directorio.")
+            cli.print_warning("La carpeta 'project-output' ya existe en este directorio.")
             overwrite = typer.confirm("¿Deseas sobrescribir la estructura existente?")
             if not overwrite:
                 cli.print_info("Operación cancelada.")
@@ -2481,7 +2413,7 @@ project-prompt delete all
 *Generado por ProjectPrompt v{__version__} el {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
 """)
 
-        cli.print_success(f"Carpeta 'project-prompt' inicializada correctamente en {project_prompt_dir}")
+        cli.print_success(f"Carpeta 'project-output' inicializada correctamente en {project_prompt_dir}")
         cli.print_info(f"Proyecto: {project_config['project_name']}")
         cli.print_info(f"Estructura creada con {len(folders_to_create)} directorios organizados")
         
@@ -2592,14 +2524,14 @@ def delete(
     
     # Determinar qué eliminar
     if scope == "project-prompt-folder":
-        # Eliminar toda la carpeta project-prompt en el directorio actual
-        project_prompt_dir = os.path.join(os.getcwd(), "project-prompt")
+        # Eliminar toda la carpeta project-output en el directorio actual
+        project_prompt_dir = os.path.join(os.getcwd(), "project-output")
         if not os.path.exists(project_prompt_dir):
-            cli.print_warning("No se encontró la carpeta 'project-prompt' en el directorio actual.")
+            cli.print_warning("No se encontró la carpeta 'project-output' en el directorio actual.")
             return
         
         if not force:
-            console.print(f"[yellow]¿Estás seguro de que deseas eliminar completamente la carpeta 'project-prompt' y todo su contenido?[/yellow]")
+            console.print(f"[yellow]¿Estás seguro de que deseas eliminar completamente la carpeta 'project-output' y todo su contenido?[/yellow]")
             confirmation = typer.confirm("Esta acción no se puede deshacer")
             if not confirmation:
                 cli.print_info("Operación cancelada.")

@@ -131,7 +131,10 @@ class RulesSuggester:
                                  output_path: Optional[str] = None) -> str:
         """Generate a draft rules file from suggestions"""
         if not output_path:
-            output_path = str(self.project_root / "suggested_rules.yaml")
+            # Create project-output/suggestions/rules directory
+            rules_dir = os.path.join(self.project_root, "project-output", "suggestions", "rules")
+            os.makedirs(rules_dir, exist_ok=True)
+            output_path = os.path.join(rules_dir, "suggested_rules.yaml")
         
         # Group suggestions by category
         grouped_suggestions = {}

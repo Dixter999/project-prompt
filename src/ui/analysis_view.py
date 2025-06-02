@@ -207,9 +207,9 @@ class AnalysisView:
             # Mostrar panel
             if panel_content:
                 cli.print_panel(
-                    f"{func_name.capitalize()} ({func_data.get('confidence', 0)}%)",
                     "\n".join(panel_content),
-                    "blue"
+                    f"{func_name.capitalize()} ({func_data.get('confidence', 0)}%)",
+                    border_style="blue"
                 )
                 
     @staticmethod

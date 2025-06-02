@@ -5,6 +5,27 @@ All notable changes to ProjectPrompt will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-06-02
+
+### Changed
+- **Made all features available for all users**: Removed premium subscription requirements
+- All AI-powered analysis, code generation, refactoring, and testing features are now freely accessible
+- Eliminated subscription checks and premium feature restrictions
+
+### Removed
+- Premium subscription system and license validation
+- Subscription manager and related premium-only feature gates
+- Premium status checks across all commands
+
+### Features Now Available to All Users
+- AI-powered code analysis and error detection
+- Advanced code refactoring capabilities
+- Detailed code explanations with advanced analysis levels
+- Premium dashboard with architecture analysis
+- Automatic test generation
+- Completeness verification tools
+- Implementation assistant with detailed guides
+
 ## [1.0.0] - 2025-05-27
 
 ### Added

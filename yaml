@@ -1,0 +1,44 @@
+# AI-Generated Rules Suggestions
+# Generated on: 2025-06-02 10:58:52
+# Review and modify these suggestions before applying
+
+rules:
+  # TESTING RULES
+  - description: |
+      Unit test coverage requirement
+    content: |
+      All public functions must have corresponding unit tests
+    category: "testing"
+    priority: "mandatory"
+    # AI Reasoning: Testing infrastructure detected, ensure comprehensive coverage
+    # Confidence: 0.80
+
+  # SECURITY RULES
+  - description: |
+      Configuration security requirement
+    content: |
+      Validate and sanitize all configuration inputs
+    category: "security"
+    priority: "mandatory"
+    # AI Reasoning: Configuration files detected, ensure input validation
+    # Confidence: 0.80
+
+  # CODE_STYLE RULES
+  - description: |
+      Consistent indentation style
+    content: |
+      Use 4 spaces for indentation, never tabs
+    category: "code_style"
+    priority: "recommended"
+    # AI Reasoning: 4-space indentation detected as the current pattern
+    # Confidence: 0.80
+
+  # DOCUMENTATION RULES
+  - description: |
+      Code documentation requirement
+    content: |
+      All public functions and classes must have docstrings
+    category: "documentation"
+    priority: "recommended"
+    # AI Reasoning: Docstrings detected in project, maintain consistency
+    # Confidence: 0.80

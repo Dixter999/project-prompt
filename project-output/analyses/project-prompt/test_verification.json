@@ -1,0 +1,1998 @@
+{
+  "project_path": "/mnt/h/Projects/project-prompt",
+  "scan_time": 7.48,
+  "stats": {
+    "total_files": 268,
+    "total_dirs": 72,
+    "analyzed_files": 268,
+    "binary_files": 0,
+    "skipped_files": 0,
+    "total_size_kb": 2314.15,
+    "gitignore_excluded": 1
+  },
+  "languages": {
+    "YAML": {
+      "files": 10,
+      "size_kb": 23.769999999999996,
+      "percentage": 3.8
+    },
+    "Markdown": {
+      "files": 57,
+      "size_kb": 175.4,
+      "percentage": 21.8
+    },
+    "Python": {
+      "files": 171,
+      "size_kb": 2010.2499999999993,
+      "percentage": 65.5
+    },
+    "Shell": {
+      "files": 4,
+      "size_kb": 0.0,
+      "percentage": 1.5
+    },
+    "JSON": {
+      "files": 8,
+      "size_kb": 70.61,
+      "percentage": 3.1
+    },
+    "TOML": {
+      "files": 2,
+      "size_kb": 3.54,
+      "percentage": 0.8
+    },
+    "TypeScript": {
+      "files": 3,
+      "size_kb": 14.280000000000001,
+      "percentage": 1.1
+    },
+    "JavaScript": {
+      "files": 4,
+      "size_kb": 8.719999999999999,
+      "percentage": 1.5
+    },
+    "CSS": {
+      "files": 1,
+      "size_kb": 2.24,
+      "percentage": 0.4
+    },
+    "HTML": {
+      "files": 1,
+      "size_kb": 1.48,
+      "percentage": 0.4
+    },
+    "_main": [
+      "Markdown",
+      "Python"
+    ],
+    "_secondary": [
+      "YAML",
+      "JSON"
+    ]
+  },
+  "important_files": {
+    "config": [
+      ".gitignore",
+      "config.yaml.example",
+      "project-output/project-config.json",
+      "pyproject.toml",
+      "requirements.txt",
+      "src/templates/backend-api/requirements.txt",
+      "src/templates/cli-tool/requirements.txt",
+      "src/templates/game-dev/package.json",
+      "src/templates/game-dev/tsconfig.json",
+      "src/templates/library/pyproject.toml",
+      "src/templates/mobile-app/package.json",
+      "src/utils/config.py",
+      "src/utils/config.py.backup"
+    ],
+    "documentation": [
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "docs/api/examples/advanced_integration.md",
+      "docs/api/examples/basic_usage.md",
+      "docs/api/README.md",
+      "docs/api/reference/analyzers.md",
+      "docs/api/reference/generators.md",
+      "docs/api/reference/integrations.md",
+      "docs/api/reference/utils.md",
+      "docs/COMMAND_MINDMAP.md",
+      "docs/guides/deployment_guide.md",
+      "docs/guides/testing_guide.md",
+      "docs/guides/user_guide.md",
+      "docs/guides/verification_guide.md",
+      "docs/README.md",
+      "docs/reference/api_reference.md",
+      "docs/reference/script_reference.md",
+      "examples/README.md",
+      "examples/simple-project/README.md",
+      "project-output/analyses/README.md",
+      "project-output/backups/README.md",
+      "project-output/documentation/README.md",
+      "project-output/exports/README.md",
+      "project-output/prompts/README.md",
+      "project-output/README.md",
+      "project-output/suggestions/README.md",
+      "README.md",
+      "src/README.md",
+      "src/templates/backend-api/README.md",
+      "src/templates/cli-tool/README.md",
+      "src/templates/data-science/README.md",
+      "src/templates/documentation/functionality.md",
+      "src/templates/documentation/project_analysis.md",
+      "src/templates/game-dev/README.md",
+      "src/templates/library/README.md",
+      "src/templates/mobile-app/README.md",
+      "src/templates/web-project/README.md"
+    ],
+    "main": [
+      "examples/simple-project/src/main.py",
+      "src/main.py",
+      "src/templates/backend-api/main.py",
+      "src/templates/web-project/js/main.js"
+    ],
+    "test": [
+      "project-output/analyses/project-prompt/test_analysis.json",
+      "src/analyzers/markdown_test.py",
+      "src/generators/test_generator.py",
+      "src/integrations/test_anthropic.py",
+      "src/models/test_models.py",
+      "src/templates/tests/class_test.py",
+      "src/templates/tests/class_test.py.new",
+      "src/templates/tests/default.py",
+      "src/templates/tests/module_test.py",
+      "src/templates/tests/module_test.py.new",
+      "src/utils/test_minimal_parser.py",
+      "src/utils/test_parser.py",
+      "tests/test_enhanced_rules_manager.py",
+      "tests/test_rules_manager.py",
+      "tests/test_rules_validator.py",
+      "test_all_commands.sh",
+      "test_comprehensive.py",
+      "test_execution_summary.py",
+      "test_rule_models.py"
+    ]
+  },
+  "dependencies": {
+    "src": {
+      "count": 93,
+      "files": [
+        "analyze_commands.py",
+        "examples/demo_enhanced_prompts.py",
+        "examples/simple_premium_demo.py",
+        "src/analyzers/advanced_functionality_detector.py",
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py",
+        "src/analyzers/ai_insights_analyzer_lightweight.py",
+        "src/analyzers/analysis_cache.py",
+        "src/analyzers/code_quality_analyzer.py",
+        "src/analyzers/completeness_verifier.py",
+        "src/analyzers/connection_analyzer.py",
+        "src/analyzers/dependency_graph.py",
+        "src/analyzers/file_analyzer.py",
+        "src/analyzers/functionality_analyzer.py",
+        "src/analyzers/functionality_detector.py",
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_progress_tracker.py",
+        "src/analyzers/project_scanner.py",
+        "src/analyzers/rules_suggester.py",
+        "src/analyzers/structured_rules_suggester.py",
+        "src/analyzers/testability_analyzer.py",
+        "src/analyzers/__init__.py",
+        "src/commands/analyze_group.py",
+        "src/commands/generate_suggestions.py",
+        "src/commands/rules_commands.py",
+        "src/commands/track_progress.py",
+        "src/commands/track_progress_clean.py",
+        "src/core/analyze_project_with_anthropic.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/factory.py",
+        "src/generators/branch_strategy_generator.py",
+        "src/generators/contextual_prompt_generator.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/generators/implementation_prompt_generator_simple.py",
+        "src/generators/implementation_proposal_generator.py",
+        "src/generators/markdown_generator.py",
+        "src/generators/prompt_generator.py",
+        "src/generators/rules_report_generator.py",
+        "src/generators/test_generator.py",
+        "src/generators/__init__.py",
+        "src/integrations/anthropic.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/integrations/anthropic_rules_analyzer.py",
+        "src/integrations/copilot.py",
+        "src/integrations/copilot_advanced.py",
+        "src/integrations/test_anthropic.py",
+        "src/main.py",
+        "src/models/suggestion_models.py",
+        "src/templates/cli-tool/cli.py",
+        "src/templates/functionality_patterns/__init__.py",
+        "src/templates/__init__.py",
+        "src/ui/analysis_view.py",
+        "src/ui/cli.py",
+        "src/ui/consent_manager.py",
+        "src/ui/dashboard.py",
+        "src/ui/documentation_navigator.py",
+        "src/ui/interactive_group_analyzer.py",
+        "src/ui/interview_system.py",
+        "src/ui/markdown_dashboard.py",
+        "src/ui/markdown_viewer.py",
+        "src/ui/menu.py",
+        "src/ui/rules_wizard.py",
+        "src/ui/subscription_view.py",
+        "src/ui/themes.py",
+        "src/ui/wizards/base_wizard.py",
+        "src/ui/wizards/config_wizard.py",
+        "src/ui/wizards/project_wizard.py",
+        "src/ui/wizards/prompt_wizard.py",
+        "src/ui/wizards/__init__.py",
+        "src/ui/__init__.py",
+        "src/utils/api_validator.py",
+        "src/utils/check_premium_status.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/documentation_system.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/gitignore_parser.py",
+        "src/utils/license_validator.py",
+        "src/utils/markdown_manager.py",
+        "src/utils/project_structure.py",
+        "src/utils/prompt_optimizer.py",
+        "src/utils/quick_init.py",
+        "src/utils/set_anthropic_key.py",
+        "src/utils/simple_analyze.py",
+        "src/utils/structure_improvement.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/token_counter.py",
+        "src/utils/__init__.py",
+        "tests/test_rules_manager.py",
+        "tests/test_rules_validator.py"
+      ]
+    },
+    "os": {
+      "count": 100,
+      "files": [
+        "analyze_commands.py",
+        "examples/demo_enhanced_prompts.py",
+        "examples/simple_premium_demo.py",
+        "src/analyzers/advanced_functionality_detector.py",
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py",
+        "src/analyzers/ai_insights_analyzer_lightweight.py",
+        "src/analyzers/analysis_cache.py",
+        "src/analyzers/code_quality_analyzer.py",
+        "src/analyzers/completeness_verifier.py",
+        "src/analyzers/connection_analyzer.py",
+        "src/analyzers/dependency_graph.py",
+        "src/analyzers/file_analyzer.py",
+        "src/analyzers/functionality_analyzer.py",
+        "src/analyzers/functionality_detector.py",
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_analyzer.py",
+        "src/analyzers/project_progress_tracker.py",
+        "src/analyzers/project_scanner.py",
+        "src/analyzers/project_structure_analyzer.py",
+        "src/analyzers/rules_suggester.py",
+        "src/analyzers/structured_rules_suggester.py",
+        "src/analyzers/testability_analyzer.py",
+        "src/commands/analyze_group.py",
+        "src/commands/generate_suggestions.py",
+        "src/commands/rules_commands.py",
+        "src/commands/track_progress.py",
+        "src/commands/track_progress_clean.py",
+        "src/core/analyze_and_suggest.py",
+        "src/core/analyze_project_with_anthropic.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/core/project_analyzer.py",
+        "src/core/project_prompt.py",
+        "src/core/project_prompt_cli.py",
+        "src/generators/branch_strategy_generator.py",
+        "src/generators/contextual_prompt_generator.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/generators/implementation_proposal_generator.py",
+        "src/generators/markdown_generator.py",
+        "src/generators/prompt_generator.py",
+        "src/generators/rules_report_generator.py",
+        "src/generators/test_generator.py",
+        "src/integrations/anthropic.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/integrations/anthropic_rules_analyzer.py",
+        "src/integrations/copilot.py",
+        "src/integrations/copilot_advanced.py",
+        "src/integrations/openai_integration.py",
+        "src/integrations/test_anthropic.py",
+        "src/main.py",
+        "src/templates/cli-tool/cli.py",
+        "src/templates/cli-tool/src/commands/analyze_command.py",
+        "src/ui/analysis_view.py",
+        "src/ui/cli.py",
+        "src/ui/consent_manager.py",
+        "src/ui/dashboard.py",
+        "src/ui/documentation_navigator.py",
+        "src/ui/interactive_group_analyzer.py",
+        "src/ui/interview_system.py",
+        "src/ui/markdown_dashboard.py",
+        "src/ui/markdown_viewer.py",
+        "src/ui/menu.py",
+        "src/ui/rules_wizard.py",
+        "src/ui/subscription_view.py",
+        "src/ui/wizards/config_wizard.py",
+        "src/ui/wizards/project_wizard.py",
+        "src/ui/wizards/prompt_wizard.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/api_validator.py",
+        "src/utils/check_api_key.py",
+        "src/utils/check_premium_status.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/documentation_system.py",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/gitignore_parser.py",
+        "src/utils/license_validator.py",
+        "src/utils/logger.py",
+        "src/utils/markdown_manager.py",
+        "src/utils/mock_keyring.py",
+        "src/utils/project_structure.py",
+        "src/utils/quick_analyze.py",
+        "src/utils/quick_init.py",
+        "src/utils/restructure_project.py",
+        "src/utils/rules_manager.py",
+        "src/utils/send_analysis_to_anthropic.py",
+        "src/utils/set_anthropic_key.py",
+        "src/utils/simple_analyze.py",
+        "src/utils/structure_improvement.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/token_counter.py",
+        "src/utils/updater.py",
+        "src/validators/rules_validator.py",
+        "tests/test_rules_manager.py",
+        "tests/test_rules_validator.py"
+      ]
+    },
+    "sys": {
+      "count": 37,
+      "files": [
+        "analyze_commands.py",
+        "examples/demo_enhanced_prompts.py",
+        "examples/simple_premium_demo.py",
+        "src/analyzers/project_scanner.py",
+        "src/commands/analyze_group.py",
+        "src/commands/generate_suggestions.py",
+        "src/commands/rules_commands.py",
+        "src/core/analyze_and_suggest.py",
+        "src/core/analyze_project_with_anthropic.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/core/project_analyzer.py",
+        "src/core/project_prompt.py",
+        "src/core/project_prompt_cli.py",
+        "src/integrations/test_anthropic.py",
+        "src/main.py",
+        "src/templates/cli-tool/cli.py",
+        "src/ui/cli.py",
+        "src/ui/dashboard.py",
+        "src/ui/documentation_navigator.py",
+        "src/ui/markdown_dashboard.py",
+        "src/ui/markdown_viewer.py",
+        "src/ui/menu.py",
+        "src/utils/check_premium_status.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/logger.py",
+        "src/utils/quick_analyze.py",
+        "src/utils/quick_init.py",
+        "src/utils/restructure_project.py",
+        "src/utils/send_analysis_to_anthropic.py",
+        "src/utils/set_anthropic_key.py",
+        "src/utils/simple_analyze.py",
+        "src/utils/structure_improvement.py",
+        "src/utils/sync_manager.py",
+        "src/utils/updater.py",
+        "tests/test_rules_manager.py",
+        "tests/test_rules_validator.py"
+      ]
+    },
+    "pathlib": {
+      "count": 55,
+      "files": [
+        "examples/demo_enhanced_prompts.py",
+        "examples/simple_premium_demo.py",
+        "src/analyzers/advanced_functionality_detector.py",
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/analysis_cache.py",
+        "src/analyzers/code_quality_analyzer.py",
+        "src/analyzers/completeness_verifier.py",
+        "src/analyzers/file_analyzer.py",
+        "src/analyzers/functionality_analyzer.py",
+        "src/analyzers/functionality_detector.py",
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_analyzer.py",
+        "src/analyzers/project_scanner.py",
+        "src/analyzers/project_structure_analyzer.py",
+        "src/analyzers/rules_suggester.py",
+        "src/analyzers/structured_rules_suggester.py",
+        "src/commands/generate_suggestions.py",
+        "src/commands/rules_commands.py",
+        "src/commands/track_progress.py",
+        "src/commands/track_progress_clean.py",
+        "src/core/analyze_project_with_anthropic.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/core/project_analyzer.py",
+        "src/generators/contextual_prompt_generator.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/generators/markdown_generator.py",
+        "src/generators/prompt_generator.py",
+        "src/generators/rules_report_generator.py",
+        "src/generators/test_generator.py",
+        "src/main.py",
+        "src/ui/analysis_view.py",
+        "src/ui/documentation_navigator.py",
+        "src/ui/interview_system.py",
+        "src/ui/rules_wizard.py",
+        "src/ui/wizards/config_wizard.py",
+        "src/ui/wizards/project_wizard.py",
+        "src/ui/wizards/prompt_wizard.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/check_premium_status.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/gitignore_parser.py",
+        "src/utils/markdown_manager.py",
+        "src/utils/mock_keyring.py",
+        "src/utils/restructure_project.py",
+        "src/utils/rules_manager.py",
+        "src/utils/rules_parser.py",
+        "src/utils/structure_improvement.py",
+        "src/utils/sync_manager.py",
+        "src/utils/updater.py",
+        "src/validators/rules_validator.py",
+        "tests/test_rules_manager.py"
+      ]
+    },
+    "yaml": {
+      "count": 12,
+      "files": [
+        "examples/simple_premium_demo.py",
+        "src/analyzers/project_analyzer.py",
+        "src/analyzers/structured_rules_suggester.py",
+        "src/ui/markdown_viewer.py",
+        "src/utils/check_premium_status.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/documentation_system.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/project_structure.py",
+        "src/utils/send_analysis_to_anthropic.py",
+        "src/utils/set_anthropic_key.py"
+      ]
+    },
+    "typing": {
+      "count": 99,
+      "files": [
+        "src/analyzers/advanced_functionality_detector.py",
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py",
+        "src/analyzers/ai_insights_analyzer_lightweight.py",
+        "src/analyzers/analysis_cache.py",
+        "src/analyzers/code_quality_analyzer.py",
+        "src/analyzers/completeness_verifier.py",
+        "src/analyzers/connection_analyzer.py",
+        "src/analyzers/dependency_graph.py",
+        "src/analyzers/file_analyzer.py",
+        "src/analyzers/functionality_analyzer.py",
+        "src/analyzers/functionality_detector.py",
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_analyzer.py",
+        "src/analyzers/project_progress_tracker.py",
+        "src/analyzers/project_scanner.py",
+        "src/analyzers/project_structure_analyzer.py",
+        "src/analyzers/rules_suggester.py",
+        "src/analyzers/structured_rules_suggester.py",
+        "src/analyzers/testability_analyzer.py",
+        "src/commands/analyze_group.py",
+        "src/commands/generate_suggestions.py",
+        "src/commands/rules_commands.py",
+        "src/commands/track_progress.py",
+        "src/commands/track_progress_clean.py",
+        "src/factory.py",
+        "src/generators/branch_strategy_generator.py",
+        "src/generators/contextual_prompt_generator.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/generators/implementation_proposal_generator.py",
+        "src/generators/markdown_generator.py",
+        "src/generators/prompt_generator.py",
+        "src/generators/rules_report_generator.py",
+        "src/generators/test_generator.py",
+        "src/integrations/anthropic.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/integrations/anthropic_rules_analyzer.py",
+        "src/integrations/copilot.py",
+        "src/integrations/copilot_advanced.py",
+        "src/integrations/openai_integration.py",
+        "src/integrations/test_anthropic.py",
+        "src/main.py",
+        "src/models/rule_models.py",
+        "src/models/rule_models_original.py",
+        "src/models/suggestion_models.py",
+        "src/templates/backend-api/middleware/auth.py",
+        "src/templates/backend-api/models/item.py",
+        "src/templates/backend-api/models/token.py",
+        "src/templates/backend-api/models/user.py",
+        "src/templates/backend-api/routes/items.py",
+        "src/templates/backend-api/routes/users.py",
+        "src/templates/backend-api/services/user_service.py",
+        "src/templates/common_functionalities.py",
+        "src/templates/functionality_patterns/auth.py",
+        "src/templates/functionality_patterns/database.py",
+        "src/templates/functionality_patterns/__init__.py",
+        "src/templates/library/src/testlib/calculator.py",
+        "src/templates/premium/premium_templates.py",
+        "src/templates/prompt_templates.py",
+        "src/ui/analysis_view.py",
+        "src/ui/cli.py",
+        "src/ui/consent_manager.py",
+        "src/ui/dashboard.py",
+        "src/ui/documentation_navigator.py",
+        "src/ui/interactive_group_analyzer.py",
+        "src/ui/interview_system.py",
+        "src/ui/markdown_dashboard.py",
+        "src/ui/markdown_viewer.py",
+        "src/ui/menu.py",
+        "src/ui/rules_wizard.py",
+        "src/ui/subscription_view.py",
+        "src/ui/themes.py",
+        "src/ui/wizards/base_wizard.py",
+        "src/ui/wizards/config_wizard.py",
+        "src/ui/wizards/project_wizard.py",
+        "src/ui/wizards/prompt_wizard.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/api_validator.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/documentation_system.py",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/gitignore_parser.py",
+        "src/utils/license_validator.py",
+        "src/utils/logger.py",
+        "src/utils/markdown_manager.py",
+        "src/utils/project_structure.py",
+        "src/utils/prompt_optimizer.py",
+        "src/utils/rules_manager.py",
+        "src/utils/rules_parser.py",
+        "src/utils/set_anthropic_key.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/token_counter.py",
+        "src/utils/updater.py",
+        "src/validators/rules_validator.py"
+      ]
+    },
+    "re": {
+      "count": 36,
+      "files": [
+        "src/analyzers/advanced_functionality_detector.py",
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/code_quality_analyzer.py",
+        "src/analyzers/completeness_verifier.py",
+        "src/analyzers/connection_analyzer.py",
+        "src/analyzers/dependency_graph.py",
+        "src/analyzers/file_analyzer.py",
+        "src/analyzers/functionality_analyzer.py",
+        "src/analyzers/functionality_detector.py",
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_progress_tracker.py",
+        "src/analyzers/testability_analyzer.py",
+        "src/commands/track_progress_clean.py",
+        "src/generators/branch_strategy_generator.py",
+        "src/generators/contextual_prompt_generator.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/generators/markdown_generator.py",
+        "src/generators/prompt_generator.py",
+        "src/generators/rules_report_generator.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/integrations/copilot_advanced.py",
+        "src/models/rule_models.py",
+        "src/templates/backend-api/models/user.py",
+        "src/templates/common_functionalities.py",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/fix_config_in_telemetry.py",
+        "src/utils/gitignore_parser.py",
+        "src/utils/license_validator.py",
+        "src/utils/markdown_manager.py",
+        "src/utils/prompt_optimizer.py",
+        "src/utils/rules_manager.py",
+        "src/utils/rules_parser.py",
+        "src/utils/structure_improvement.py",
+        "src/utils/telemetry.py",
+        "src/utils/token_counter.py",
+        "src/validators/rules_validator.py"
+      ]
+    },
+    "json": {
+      "count": 61,
+      "files": [
+        "src/analyzers/advanced_functionality_detector.py",
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py",
+        "src/analyzers/ai_insights_analyzer_lightweight.py",
+        "src/analyzers/code_quality_analyzer.py",
+        "src/analyzers/completeness_verifier.py",
+        "src/analyzers/connection_analyzer.py",
+        "src/analyzers/dependency_graph.py",
+        "src/analyzers/file_analyzer.py",
+        "src/analyzers/functionality_analyzer.py",
+        "src/analyzers/functionality_detector.py",
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_analyzer.py",
+        "src/analyzers/project_progress_tracker.py",
+        "src/analyzers/project_scanner.py",
+        "src/analyzers/project_structure_analyzer.py",
+        "src/analyzers/rules_suggester.py",
+        "src/analyzers/testability_analyzer.py",
+        "src/commands/generate_suggestions.py",
+        "src/commands/rules_commands.py",
+        "src/commands/track_progress.py",
+        "src/commands/track_progress_clean.py",
+        "src/core/analyze_and_suggest.py",
+        "src/core/analyze_project_with_anthropic.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/core/project_analyzer.py",
+        "src/generators/contextual_prompt_generator.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/generators/prompt_generator.py",
+        "src/generators/rules_report_generator.py",
+        "src/generators/test_generator.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/integrations/anthropic_rules_analyzer.py",
+        "src/integrations/copilot.py",
+        "src/integrations/copilot_advanced.py",
+        "src/main.py",
+        "src/models/rule_models_original.py",
+        "src/templates/cli-tool/src/commands/analyze_command.py",
+        "src/ui/analysis_view.py",
+        "src/ui/dashboard.py",
+        "src/ui/interview_system.py",
+        "src/ui/rules_wizard.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/api_validator.py",
+        "src/utils/check_premium_status.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/documentation_system.py",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/license_validator.py",
+        "src/utils/mock_keyring.py",
+        "src/utils/prompt_optimizer.py",
+        "src/utils/send_analysis_to_anthropic.py",
+        "src/utils/structure_improvement.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/updater.py"
+      ]
+    },
+    "collections": {
+      "count": 12,
+      "files": [
+        "src/analyzers/advanced_functionality_detector.py",
+        "src/analyzers/code_quality_analyzer.py",
+        "src/analyzers/connection_analyzer.py",
+        "src/analyzers/dependency_graph.py",
+        "src/analyzers/functionality_analyzer.py",
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_scanner.py",
+        "src/analyzers/project_structure_analyzer.py",
+        "src/core/project_analyzer.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/quick_analyze.py",
+        "src/utils/structure_improvement.py"
+      ]
+    },
+    "rich": {
+      "count": 17,
+      "files": [
+        "src/analyzers/ai_group_analyzer.py",
+        "src/commands/rules_commands.py",
+        "src/main.py",
+        "src/ui/analysis_view.py",
+        "src/ui/cli.py",
+        "src/ui/consent_manager.py",
+        "src/ui/documentation_navigator.py",
+        "src/ui/interactive_group_analyzer.py",
+        "src/ui/interview_system.py",
+        "src/ui/markdown_viewer.py",
+        "src/ui/menu.py",
+        "src/ui/rules_wizard.py",
+        "src/ui/subscription_view.py",
+        "src/ui/themes.py",
+        "src/ui/wizards/base_wizard.py",
+        "src/utils/logger.py",
+        "src/utils/quick_init.py"
+      ]
+    },
+    "datetime": {
+      "count": 38,
+      "files": [
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py",
+        "src/analyzers/completeness_verifier.py",
+        "src/analyzers/project_analyzer.py",
+        "src/analyzers/project_progress_tracker.py",
+        "src/analyzers/rules_suggester.py",
+        "src/analyzers/structured_rules_suggester.py",
+        "src/analyzers/testability_analyzer.py",
+        "src/commands/generate_suggestions.py",
+        "src/commands/rules_commands.py",
+        "src/commands/track_progress.py",
+        "src/commands/track_progress_clean.py",
+        "src/generators/markdown_generator.py",
+        "src/generators/prompt_generator.py",
+        "src/generators/rules_report_generator.py",
+        "src/integrations/anthropic_rules_analyzer.py",
+        "src/main.py",
+        "src/templates/backend-api/middleware/auth.py",
+        "src/templates/backend-api/models/item.py",
+        "src/templates/backend-api/routes/auth.py",
+        "src/templates/premium/premium_templates.py",
+        "src/templates/tests/class_test.py.new",
+        "src/templates/tests/default.py",
+        "src/templates/tests/module_test.py.new",
+        "src/ui/dashboard.py",
+        "src/ui/markdown_dashboard.py",
+        "src/ui/rules_wizard.py",
+        "src/ui/subscription_view.py",
+        "src/utils/documentation_system.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/license_validator.py",
+        "src/utils/markdown_manager.py",
+        "src/utils/project_structure.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/updater.py"
+      ]
+    },
+    "time": {
+      "count": 19,
+      "files": [
+        "src/analyzers/ai_group_analyzer.py",
+        "src/analyzers/analysis_cache.py",
+        "src/analyzers/project_scanner.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/project_analyzer.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/main.py",
+        "src/ui/cli.py",
+        "src/ui/consent_manager.py",
+        "src/ui/interactive_group_analyzer.py",
+        "src/ui/interview_system.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/license_validator.py",
+        "src/utils/quick_analyze.py",
+        "src/utils/rules_manager.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/telemetry.py"
+      ]
+    },
+    "functools": {
+      "count": 4,
+      "files": [
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py",
+        "src/main.py",
+        "src/utils/rules_manager.py"
+      ]
+    },
+    "signal": {
+      "count": 2,
+      "files": [
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py"
+      ]
+    },
+    "dataclasses": {
+      "count": 13,
+      "files": [
+        "src/analyzers/ai_insights_analyzer.py",
+        "src/analyzers/ai_insights_analyzer_backup.py",
+        "src/analyzers/ai_insights_analyzer_lightweight.py",
+        "src/analyzers/rules_suggester.py",
+        "src/generators/rules_report_generator.py",
+        "src/integrations/anthropic_rules_analyzer.py",
+        "src/models/rule_models.py",
+        "src/models/rule_models_original.py",
+        "src/models/suggestion_models.py",
+        "src/ui/themes.py",
+        "src/utils/license_validator.py",
+        "src/utils/rules_manager.py",
+        "src/utils/token_counter.py"
+      ]
+    },
+    "glob": {
+      "count": 1,
+      "files": [
+        "src/analyzers/ai_insights_analyzer_lightweight.py"
+      ]
+    },
+    "hashlib": {
+      "count": 8,
+      "files": [
+        "src/analyzers/analysis_cache.py",
+        "src/integrations/anthropic_rules_analyzer.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/license_validator.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py"
+      ]
+    },
+    "ast": {
+      "count": 2,
+      "files": [
+        "src/analyzers/connection_analyzer.py",
+        "src/analyzers/testability_analyzer.py"
+      ]
+    },
+    "textwrap": {
+      "count": 1,
+      "files": [
+        "src/analyzers/dependency_graph.py"
+      ]
+    },
+    "mimetypes": {
+      "count": 1,
+      "files": [
+        "src/analyzers/file_analyzer.py"
+      ]
+    },
+    "subprocess": {
+      "count": 10,
+      "files": [
+        "src/analyzers/madge_analyzer.py",
+        "src/analyzers/project_progress_tracker.py",
+        "src/core/analyze_and_suggest.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/core/project_prompt.py",
+        "src/core/project_prompt_cli.py",
+        "src/main.py",
+        "src/utils/sync_manager.py",
+        "src/utils/updater.py"
+      ]
+    },
+    "": {
+      "count": 14,
+      "files": [
+        "src/analyzers/project_analyzer.py",
+        "src/integrations/__init__.py",
+        "src/models/__init__.py",
+        "src/templates/game-dev/src/entities/game-entities.ts",
+        "src/templates/game-dev/src/systems/render-system.ts",
+        "src/templates/mobile-app/App.js",
+        "src/templates/mobile-app/src/context/AuthContext.js",
+        "src/utils/api_validator.py",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/rules_parser.py",
+        "src/utils/sync_manager.py",
+        "src/utils/updater.py",
+        "src/validators/rules_validator.py",
+        "src/validators/__init__.py"
+      ]
+    },
+    "logging": {
+      "count": 23,
+      "files": [
+        "src/analyzers/project_analyzer.py",
+        "src/analyzers/project_structure_analyzer.py",
+        "src/integrations/anthropic.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/integrations/openai_integration.py",
+        "src/integrations/test_anthropic.py",
+        "src/templates/cli-tool/cli.py",
+        "src/templates/cli-tool/src/commands/analyze_command.py",
+        "src/templates/data-science/src/preprocessing.py",
+        "src/utils/adaptive_system.py",
+        "src/utils/api_validator.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/enhanced_rules_manager.py",
+        "src/utils/logger.py",
+        "src/utils/rules_manager.py",
+        "src/utils/rules_parser.py",
+        "src/utils/set_anthropic_key.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/updater.py",
+        "src/validators/rules_validator.py"
+      ]
+    },
+    "asyncio": {
+      "count": 4,
+      "files": [
+        "src/analyzers/rules_suggester.py",
+        "src/analyzers/structured_rules_suggester.py",
+        "src/commands/rules_commands.py",
+        "src/integrations/anthropic_rules_analyzer.py"
+      ]
+    },
+    "keyword": {
+      "count": 1,
+      "files": [
+        "src/analyzers/testability_analyzer.py"
+      ]
+    },
+    "builtins": {
+      "count": 1,
+      "files": [
+        "src/analyzers/testability_analyzer.py"
+      ]
+    },
+    "inspect": {
+      "count": 3,
+      "files": [
+        "src/analyzers/testability_analyzer.py",
+        "src/main.py",
+        "src/templates/tests/class_test.py.new"
+      ]
+    },
+    "argparse": {
+      "count": 15,
+      "files": [
+        "src/commands/analyze_group.py",
+        "src/commands/generate_suggestions.py",
+        "src/core/analyze_and_suggest.py",
+        "src/core/analyze_project_with_anthropic.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/core/project_prompt.py",
+        "src/core/project_prompt_cli.py",
+        "src/templates/cli-tool/cli.py",
+        "src/ui/dashboard.py",
+        "src/utils/check_premium_status.py",
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/quick_init.py",
+        "src/utils/send_analysis_to_anthropic.py",
+        "src/utils/set_anthropic_key.py"
+      ]
+    },
+    "typer": {
+      "count": 6,
+      "files": [
+        "src/commands/rules_commands.py",
+        "src/main.py",
+        "src/ui/cli.py",
+        "src/ui/documentation_navigator.py",
+        "src/ui/subscription_view.py",
+        "src/utils/quick_init.py"
+      ]
+    },
+    "jinja2": {
+      "count": 3,
+      "files": [
+        "src/commands/rules_commands.py",
+        "src/generators/markdown_generator.py",
+        "src/utils/markdown_manager.py"
+      ]
+    },
+    "requests": {
+      "count": 12,
+      "files": [
+        "src/core/analyze_and_suggest.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/integrations/anthropic.py",
+        "src/integrations/anthropic_advanced.py",
+        "src/integrations/copilot.py",
+        "src/integrations/copilot_advanced.py",
+        "src/utils/license_validator.py",
+        "src/utils/send_analysis_to_anthropic.py",
+        "src/utils/subscription_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/updater.py"
+      ]
+    },
+    "tempfile": {
+      "count": 7,
+      "files": [
+        "src/core/analyze_and_suggest.py",
+        "src/core/analyze_project_with_anthropic.py",
+        "src/core/analyze_with_anthropic_direct.py",
+        "src/core/analyze_with_anthropic_simple.py",
+        "src/ui/dashboard.py",
+        "src/utils/updater.py",
+        "tests/test_rules_manager.py"
+      ]
+    },
+    "fnmatch": {
+      "count": 2,
+      "files": [
+        "src/core/project_analyzer.py",
+        "src/models/rule_models.py"
+      ]
+    },
+    "random": {
+      "count": 3,
+      "files": [
+        "src/generators/contextual_prompt_generator.py",
+        "src/generators/implementation_prompt_generator.py",
+        "src/generators/prompt_generator.py"
+      ]
+    },
+    "dotenv": {
+      "count": 4,
+      "files": [
+        "src/generators/implementation_prompt_generator.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup",
+        "src/utils/set_anthropic_key.py"
+      ]
+    },
+    "string": {
+      "count": 1,
+      "files": [
+        "src/generators/implementation_prompt_generator.py"
+      ]
+    },
+    "html": {
+      "count": 1,
+      "files": [
+        "src/generators/rules_report_generator.py"
+      ]
+    },
+    "tiktoken": {
+      "count": 1,
+      "files": [
+        "src/integrations/anthropic_advanced.py"
+      ]
+    },
+    "openai": {
+      "count": 1,
+      "files": [
+        "src/integrations/openai_integration.py"
+      ]
+    },
+    "platform": {
+      "count": 5,
+      "files": [
+        "src/main.py",
+        "src/ui/cli.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py",
+        "src/utils/updater.py"
+      ]
+    },
+    "threading": {
+      "count": 2,
+      "files": [
+        "src/main.py",
+        "src/utils/telemetry.py"
+      ]
+    },
+    "atexit": {
+      "count": 1,
+      "files": [
+        "src/main.py"
+      ]
+    },
+    "enum": {
+      "count": 6,
+      "files": [
+        "src/main.py",
+        "src/models/rule_models.py",
+        "src/models/rule_models_original.py",
+        "src/ui/consent_manager.py",
+        "src/ui/themes.py",
+        "src/utils/logger.py"
+      ]
+    },
+    "getpass": {
+      "count": 1,
+      "files": [
+        "src/main.py"
+      ]
+    },
+    "shutil": {
+      "count": 10,
+      "files": [
+        "src/main.py",
+        "src/ui/cli.py",
+        "src/ui/wizards/project_wizard.py",
+        "src/utils/documentation_system.py",
+        "src/utils/markdown_manager.py",
+        "src/utils/project_structure.py",
+        "src/utils/quick_init.py",
+        "src/utils/restructure_project.py",
+        "src/utils/sync_manager.py",
+        "src/utils/updater.py"
+      ]
+    },
+    "pkg_resources": {
+      "count": 4,
+      "files": [
+        "src/main.py",
+        "src/utils/sync_manager.py",
+        "src/utils/updater.py",
+        "src/__init__.py"
+      ]
+    },
+    "sqlalchemy": {
+      "count": 8,
+      "files": [
+        "src/templates/backend-api/db/database.py",
+        "src/templates/backend-api/db/models.py",
+        "src/templates/backend-api/middleware/auth.py",
+        "src/templates/backend-api/routes/auth.py",
+        "src/templates/backend-api/routes/items.py",
+        "src/templates/backend-api/routes/users.py",
+        "src/templates/backend-api/services/user_service.py",
+        "src/templates/premium/premium_templates.py"
+      ]
+    },
+    "db": {
+      "count": 7,
+      "files": [
+        "src/templates/backend-api/db/models.py",
+        "src/templates/backend-api/main.py",
+        "src/templates/backend-api/middleware/auth.py",
+        "src/templates/backend-api/routes/auth.py",
+        "src/templates/backend-api/routes/items.py",
+        "src/templates/backend-api/routes/users.py",
+        "src/templates/backend-api/services/user_service.py"
+      ]
+    },
+    "fastapi": {
+      "count": 7,
+      "files": [
+        "src/templates/backend-api/main.py",
+        "src/templates/backend-api/middleware/auth.py",
+        "src/templates/backend-api/routes/auth.py",
+        "src/templates/backend-api/routes/items.py",
+        "src/templates/backend-api/routes/users.py",
+        "src/templates/backend-api/services/user_service.py",
+        "src/templates/premium/premium_templates.py"
+      ]
+    },
+    "middleware": {
+      "count": 4,
+      "files": [
+        "src/templates/backend-api/main.py",
+        "src/templates/backend-api/routes/auth.py",
+        "src/templates/backend-api/routes/items.py",
+        "src/templates/backend-api/routes/users.py"
+      ]
+    },
+    "routes": {
+      "count": 1,
+      "files": [
+        "src/templates/backend-api/main.py"
+      ]
+    },
+    "services": {
+      "count": 3,
+      "files": [
+        "src/templates/backend-api/middleware/auth.py",
+        "src/templates/backend-api/routes/auth.py",
+        "src/templates/backend-api/routes/users.py"
+      ]
+    },
+    "jose": {
+      "count": 1,
+      "files": [
+        "src/templates/backend-api/middleware/auth.py"
+      ]
+    },
+    "models": {
+      "count": 5,
+      "files": [
+        "src/templates/backend-api/middleware/auth.py",
+        "src/templates/backend-api/routes/auth.py",
+        "src/templates/backend-api/routes/items.py",
+        "src/templates/backend-api/routes/users.py",
+        "src/templates/backend-api/services/user_service.py"
+      ]
+    },
+    "pydantic": {
+      "count": 4,
+      "files": [
+        "src/templates/backend-api/models/item.py",
+        "src/templates/backend-api/models/token.py",
+        "src/templates/backend-api/models/user.py",
+        "src/templates/premium/premium_templates.py"
+      ]
+    },
+    "passlib": {
+      "count": 1,
+      "files": [
+        "src/templates/backend-api/services/user_service.py"
+      ]
+    },
+    "traceback": {
+      "count": 1,
+      "files": [
+        "src/templates/cli-tool/cli.py"
+      ]
+    },
+    "numpy": {
+      "count": 1,
+      "files": [
+        "src/templates/data-science/src/preprocessing.py"
+      ]
+    },
+    "sklearn": {
+      "count": 1,
+      "files": [
+        "src/templates/data-science/src/preprocessing.py"
+      ]
+    },
+    "pandas": {
+      "count": 1,
+      "files": [
+        "src/templates/data-science/src/preprocessing.py"
+      ]
+    },
+    "math": {
+      "count": 2,
+      "files": [
+        "src/templates/library/src/testlib/calculator.py",
+        "src/utils/token_counter.py"
+      ]
+    },
+    "@react-navigation/native": {
+      "count": 1,
+      "files": [
+        "src/templates/mobile-app/App.js"
+      ]
+    },
+    "react-native": {
+      "count": 2,
+      "files": [
+        "src/templates/mobile-app/App.js",
+        "src/templates/mobile-app/src/context/ThemeContext.js"
+      ]
+    },
+    "react-native-safe-area-context": {
+      "count": 1,
+      "files": [
+        "src/templates/mobile-app/App.js"
+      ]
+    },
+    "react": {
+      "count": 3,
+      "files": [
+        "src/templates/mobile-app/App.js",
+        "src/templates/mobile-app/src/context/AuthContext.js",
+        "src/templates/mobile-app/src/context/ThemeContext.js"
+      ]
+    },
+    "@react-native-async-storage/async-storage": {
+      "count": 2,
+      "files": [
+        "src/templates/mobile-app/src/context/AuthContext.js",
+        "src/templates/mobile-app/src/context/ThemeContext.js"
+      ]
+    },
+    "flask": {
+      "count": 1,
+      "files": [
+        "src/templates/premium/premium_templates.py"
+      ]
+    },
+    "pytest": {
+      "count": 6,
+      "files": [
+        "src/templates/premium/premium_templates.py",
+        "src/templates/tests/class_test.py.new",
+        "src/templates/tests/default.py",
+        "src/templates/tests/module_test.py.new",
+        "tests/test_rules_manager.py",
+        "tests/test_rules_validator.py"
+      ]
+    },
+    "importlib": {
+      "count": 2,
+      "files": [
+        "src/templates/tests/module_test.py.new",
+        "src/__init__.py"
+      ]
+    },
+    "webbrowser": {
+      "count": 1,
+      "files": [
+        "src/ui/dashboard.py"
+      ]
+    },
+    "contextlib": {
+      "count": 1,
+      "files": [
+        "src/ui/interactive_group_analyzer.py"
+      ]
+    },
+    "pygments": {
+      "count": 1,
+      "files": [
+        "src/ui/markdown_viewer.py"
+      ]
+    },
+    "frontmatter": {
+      "count": 2,
+      "files": [
+        "src/ui/markdown_viewer.py",
+        "src/utils/markdown_manager.py"
+      ]
+    },
+    "prompt_toolkit": {
+      "count": 1,
+      "files": [
+        "src/ui/menu.py"
+      ]
+    },
+    "abc": {
+      "count": 1,
+      "files": [
+        "src/ui/wizards/base_wizard.py"
+      ]
+    },
+    "concurrent": {
+      "count": 1,
+      "files": [
+        "src/utils/api_validator.py"
+      ]
+    },
+    "keyring": {
+      "count": 3,
+      "files": [
+        "src/utils/api_validator.py",
+        "src/utils/config.py",
+        "src/utils/config.py.backup"
+      ]
+    },
+    "hmac": {
+      "count": 2,
+      "files": [
+        "src/utils/generate_developer_credentials.py",
+        "src/utils/license_validator.py"
+      ]
+    },
+    "base64": {
+      "count": 1,
+      "files": [
+        "src/utils/license_validator.py"
+      ]
+    },
+    "setuptools": {
+      "count": 1,
+      "files": [
+        "src/utils/quick_init.py"
+      ]
+    },
+    "uuid": {
+      "count": 3,
+      "files": [
+        "src/utils/subscription_manager.py",
+        "src/utils/sync_manager.py",
+        "src/utils/telemetry.py"
+      ]
+    },
+    "zipfile": {
+      "count": 1,
+      "files": [
+        "src/utils/sync_manager.py"
+      ]
+    },
+    "locale": {
+      "count": 1,
+      "files": [
+        "src/utils/telemetry.py"
+      ]
+    },
+    "unittest": {
+      "count": 2,
+      "files": [
+        "tests/test_rules_manager.py",
+        "tests/test_rules_validator.py"
+      ]
+    },
+    "_main": [
+      "os",
+      "typing",
+      "src",
+      "json",
+      "pathlib",
+      "datetime",
+      "sys",
+      "re",
+      "logging",
+      "time",
+      "rich",
+      "argparse",
+      "",
+      "dataclasses",
+      "yaml",
+      "collections",
+      "requests",
+      "subprocess",
+      "shutil",
+      "hashlib",
+      "sqlalchemy",
+      "tempfile",
+      "db",
+      "fastapi",
+      "typer",
+      "enum",
+      "pytest",
+      "platform",
+      "models",
+      "functools",
+      "asyncio",
+      "dotenv",
+      "pkg_resources",
+      "middleware",
+      "pydantic",
+      "inspect",
+      "jinja2",
+      "random",
+      "services",
+      "react",
+      "keyring",
+      "uuid"
+    ]
+  },
+  "functionalities": {
+    "detected": {
+      "authentication": {
+        "present": true,
+        "confidence": 100,
+        "score": 1323,
+        "evidence": {
+          "files": [
+            "docs/guides/user_guide.md",
+            "SECURITY.md",
+            "src/templates/backend-api/middleware/auth.py",
+            "src/templates/backend-api/models/user.py",
+            "src/templates/backend-api/routes/auth.py",
+            "src/templates/backend-api/routes/users.py",
+            "src/templates/backend-api/services/user_service.py",
+            "src/templates/functionality_patterns/auth.py",
+            "src/templates/mobile-app/src/context/AuthContext.js",
+            "src/templates/proposals/auth_proposal.py",
+            "src/utils/generate_developer_credentials.py"
+          ],
+          "imports": [
+            "jwt",
+            "bcrypt",
+            "passlib",
+            "firebase_auth",
+            "passport",
+            "auth0",
+            "django.contrib.auth",
+            "flask_login",
+            "flask_security",
+            "spring.*security",
+            "pyotp",
+            "authlib",
+            "microsoft.*identity",
+            "google.*auth",
+            "amazon.*cognito"
+          ],
+          "code_patterns": [
+            "token[._]",
+            "auth[._]",
+            "login",
+            "authenticate",
+            "authorization",
+            "hasRole",
+            "isAuthenticated",
+            "verify.*password",
+            "check.*password",
+            "useAuth",
+            "currentUser",
+            "signin",
+            "signup",
+            "firebase[._]auth",
+            "AuthProvider",
+            "[aA]uth.*[pP]rovider",
+            "hash.*password",
+            "jwt[._]",
+            "session[._]"
+          ],
+          "config_keys": [
+            "secret.*key",
+            "api.*key",
+            "KEY",
+            "token",
+            "auth",
+            "jwt",
+            "firebase",
+            "auth0",
+            "cognito",
+            "SESSION"
+          ]
+        }
+      },
+      "database": {
+        "present": true,
+        "confidence": 100,
+        "score": 2711,
+        "evidence": {
+          "files": [
+            "src/models/rule_models.py",
+            "src/models/rule_models_fixed.py",
+            "src/models/rule_models_original.py",
+            "src/models/rule_models_simple.py",
+            "src/models/suggestion_models.py",
+            "src/models/test_models.py",
+            "src/models/__init__.py",
+            "src/templates/backend-api/db/database.py",
+            "src/templates/backend-api/db/models.py",
+            "src/templates/backend-api/models/item.py",
+            "src/templates/backend-api/models/token.py",
+            "src/templates/backend-api/models/user.py",
+            "src/templates/functionality_patterns/database.py",
+            "src/templates/proposals/database_proposal.py",
+            "test_rule_models.py"
+          ],
+          "imports": [
+            "django.db",
+            "sqlalchemy",
+            "mongoose",
+            "sequelize",
+            "typeorm",
+            "knex",
+            "prisma",
+            "sqlite3",
+            "redis",
+            "mongodb",
+            "pymongo",
+            "psycopg\\d?",
+            "mysql",
+            "postgres",
+            "hibernate",
+            "spring.*data",
+            "spring.*jdbc",
+            "entity.*framework",
+            "peewee",
+            "tortoise"
+          ],
+          "code_patterns": [
+            "table",
+            "update ",
+            "insert ",
+            "repository",
+            "Model",
+            "save\\(",
+            "column",
+            "database",
+            "model\\(",
+            "Schema",
+            "query",
+            "findOne",
+            "findAll",
+            "findBy",
+            "select ",
+            "delete from",
+            "migration",
+            "SQL",
+            "mongo",
+            "postgres",
+            "useQuery",
+            "useMutation",
+            "createConnection",
+            "createTable",
+            "addColumn",
+            "models\\.",
+            "db\\.",
+            "entity\\(",
+            "document\\("
+          ],
+          "config_keys": [
+            "URI",
+            "port",
+            "username",
+            "password",
+            "DATABASE",
+            "MONGO",
+            "POSTGRES",
+            "MYSQL",
+            "SQLITE",
+            "REDIS",
+            "connection",
+            "database",
+            "URL",
+            "SQLALCHEMY"
+          ]
+        }
+      },
+      "api": {
+        "present": true,
+        "confidence": 100,
+        "score": 4083,
+        "evidence": {
+          "files": [
+            "docs/api/examples/advanced_integration.md",
+            "docs/api/examples/basic_usage.md",
+            "docs/api/README.md",
+            "docs/api/reference/analyzers.md",
+            "docs/api/reference/generators.md",
+            "docs/api/reference/integrations.md",
+            "docs/api/reference/utils.md",
+            "docs/reference/api_reference.md",
+            "src/templates/backend-api/db/database.py",
+            "src/templates/backend-api/db/models.py",
+            "src/templates/backend-api/main.py",
+            "src/templates/backend-api/middleware/auth.py",
+            "src/templates/backend-api/models/item.py",
+            "src/templates/backend-api/models/token.py",
+            "src/templates/backend-api/models/user.py",
+            "src/templates/backend-api/README.md",
+            "src/templates/backend-api/requirements.txt",
+            "src/templates/backend-api/routes/auth.py",
+            "src/templates/backend-api/routes/items.py",
+            "src/templates/backend-api/routes/users.py",
+            "src/templates/backend-api/services/user_service.py",
+            "src/templates/interviews/api_integration.py",
+            "src/templates/rules_examples/api-service-rules.md",
+            "src/utils/api_validator.py",
+            "src/utils/check_api_key.py",
+            "src/utils/restructure_project.py"
+          ],
+          "imports": [
+            "request",
+            "rest",
+            "requests",
+            "http",
+            "express",
+            "fetch",
+            "flask",
+            "axios",
+            "restful",
+            "fastapi",
+            "django.*rest_framework",
+            "graphql",
+            "apollo",
+            "grpc",
+            "protobuf",
+            "aiohttp",
+            "retrofit",
+            "feign",
+            "resttemplate",
+            "spring.*rest",
+            "jersey",
+            "openapi",
+            "swagger",
+            "postman"
+          ],
+          "code_patterns": [
+            "api",
+            "return.*json",
+            "return.*response",
+            "endpoint",
+            "controller",
+            "@route",
+            "@api",
+            "router",
+            "@controller",
+            "@requestmapping",
+            "@getmapping",
+            "@postmapping",
+            "return.*status",
+            "useQuery",
+            "useMutation",
+            "handleRequest",
+            "handleResponse",
+            "apiClient",
+            "apiService",
+            "http\\.",
+            "response\\.json",
+            "get\\(.*url",
+            "post\\(.*url"
+          ],
+          "config_keys": [
+            "API_",
+            "REST",
+            "KEY",
+            "PORT",
+            "TOKEN",
+            "URL",
+            "ENDPOINT",
+            "HTTP",
+            "SERVICE",
+            "CLIENT",
+            "RATE_LIMIT",
+            "GRAPHQL",
+            "SWAGGER",
+            "OPENAPI"
+          ]
+        }
+      },
+      "frontend": {
+        "present": true,
+        "confidence": 100,
+        "score": 2930,
+        "evidence": {
+          "files": [
+            ".github/ISSUE_TEMPLATE/bug_report.yml",
+            ".github/ISSUE_TEMPLATE/feature_request.yml",
+            ".github/PULL_REQUEST_TEMPLATE.md",
+            "docs/guides/deployment_guide.md",
+            "docs/guides/testing_guide.md",
+            "docs/guides/user_guide.md",
+            "docs/guides/verification_guide.md",
+            "requirements.txt",
+            "src/generators/templates/project_report.md",
+            "src/templates/backend-api/db/database.py",
+            "src/templates/backend-api/db/models.py",
+            "src/templates/backend-api/main.py",
+            "src/templates/backend-api/middleware/auth.py",
+            "src/templates/backend-api/models/item.py",
+            "src/templates/backend-api/models/token.py",
+            "src/templates/backend-api/models/user.py",
+            "src/templates/backend-api/README.md",
+            "src/templates/backend-api/requirements.txt",
+            "src/templates/backend-api/routes/auth.py",
+            "src/templates/backend-api/routes/items.py",
+            "src/templates/backend-api/routes/users.py",
+            "src/templates/backend-api/services/user_service.py",
+            "src/templates/cli-tool/cli.py",
+            "src/templates/cli-tool/README.md",
+            "src/templates/cli-tool/requirements.txt",
+            "src/templates/cli-tool/src/commands/analyze_command.py",
+            "src/templates/common_functionalities.py",
+            "src/templates/data-science/README.md",
+            "src/templates/data-science/src/preprocessing.py",
+            "src/templates/documentation/functionality.md",
+            "src/templates/documentation/project_analysis.md",
+            "src/templates/functionality_patterns/auth.py",
+            "src/templates/functionality_patterns/database.py",
+            "src/templates/functionality_patterns/__init__.py",
+            "src/templates/game-dev/package.json",
+            "src/templates/game-dev/README.md",
+            "src/templates/game-dev/src/core/engine.ts",
+            "src/templates/game-dev/src/entities/game-entities.ts",
+            "src/templates/game-dev/src/systems/render-system.ts",
+            "src/templates/game-dev/tsconfig.json",
+            "src/templates/git/branch_templates.py",
+            "src/templates/git/__init__.py",
+            "src/templates/group_analysis_template.md",
+            "src/templates/interviews/api_integration.py",
+            "src/templates/interviews/generic.py",
+            "src/templates/interviews/__init__.py",
+            "src/templates/library/pyproject.toml",
+            "src/templates/library/README.md",
+            "src/templates/library/src/testlib/calculator.py",
+            "src/templates/mobile-app/App.js",
+            "src/templates/mobile-app/package.json",
+            "src/templates/mobile-app/README.md",
+            "src/templates/mobile-app/src/context/AuthContext.js",
+            "src/templates/mobile-app/src/context/ThemeContext.js",
+            "src/templates/premium/implementation_steps.md",
+            "src/templates/premium/premium_templates.py",
+            "src/templates/project-prompt-rules-template.md",
+            "src/templates/project_rules_template.md",
+            "src/templates/prompts/functionality_analysis.md",
+            "src/templates/prompts/improvement_suggestions.md",
+            "src/templates/prompts/project_analysis.md",
+            "src/templates/prompt_templates.py",
+            "src/templates/proposals/auth_proposal.py",
+            "src/templates/proposals/database_proposal.py",
+            "src/templates/proposals/generic.py",
+            "src/templates/proposals/__init__.py",
+            "src/templates/rules_examples/api-service-rules.md",
+            "src/templates/rules_examples/cli-tool-rules.md",
+            "src/templates/rules_examples/data-science-rules.md",
+            "src/templates/rules_examples/web-app-rules.md",
+            "src/templates/suggested_rules_template.md",
+            "src/templates/tests/class_test.py",
+            "src/templates/tests/class_test.py.new",
+            "src/templates/tests/default.py",
+            "src/templates/tests/module_test.py",
+            "src/templates/tests/module_test.py.new",
+            "src/templates/verification/checklists.json",
+            "src/templates/verification/generic.json",
+            "src/templates/verification/templates.json",
+            "src/templates/web-project/css/styles.css",
+            "src/templates/web-project/index.html",
+            "src/templates/web-project/js/main.js",
+            "src/templates/web-project/README.md",
+            "src/templates/__init__.py",
+            "src/ui/analysis_view.py",
+            "src/ui/cli.py",
+            "src/ui/consent_manager.py",
+            "src/ui/dashboard.py",
+            "src/ui/documentation_navigator.py",
+            "src/ui/interactive_group_analyzer.py",
+            "src/ui/interview_system.py",
+            "src/ui/markdown_dashboard.py",
+            "src/ui/markdown_viewer.py",
+            "src/ui/menu.py",
+            "src/ui/rules_wizard.py",
+            "src/ui/subscription_view.py",
+            "src/ui/themes.py",
+            "src/ui/wizards/base_wizard.py",
+            "src/ui/wizards/config_wizard.py",
+            "src/ui/wizards/project_wizard.py",
+            "src/ui/wizards/prompt_wizard.py",
+            "src/ui/wizards/__init__.py",
+            "src/ui/__init__.py",
+            "src/utils/quick_analyze.py",
+            "src/utils/quick_init.py"
+          ],
+          "imports": [
+            "component",
+            "react",
+            "react-dom",
+            "angular",
+            "vue",
+            "svelte",
+            "preact",
+            "material-ui",
+            "antd",
+            "bootstrap",
+            "tailwind",
+            "styled-components",
+            "emotion",
+            "chakra-ui",
+            "primereact",
+            "vuetify",
+            "@angular/core",
+            "@angular/material",
+            "@angular/router",
+            "@mui/material",
+            "@chakra-ui",
+            "@emotion"
+          ],
+          "code_patterns": [
+            "render",
+            "props",
+            "component",
+            "<div",
+            "<p",
+            "template",
+            "return.*jsx",
+            "className",
+            "style=",
+            "<span",
+            "useState",
+            "useEffect",
+            "useContext",
+            "@Component",
+            "v-if",
+            "v-for",
+            "v-model",
+            "@Input",
+            "@Output",
+            "onChange",
+            "onClick",
+            "onSubmit",
+            "import.*css",
+            "import.*scss",
+            "import.*less"
+          ],
+          "config_keys": [
+            "UI",
+            "STYLE",
+            "THEME",
+            "NG_"
+          ]
+        }
+      },
+      "tests": {
+        "present": true,
+        "confidence": 100,
+        "score": 4204,
+        "evidence": {
+          "files": [
+            "docs/guides/testing_guide.md",
+            "project-output/analyses/project-prompt/test_analysis.json",
+            "src/analyzers/markdown_test.py",
+            "src/analyzers/testability_analyzer.py",
+            "src/generators/test_generator.py",
+            "src/integrations/test_anthropic.py",
+            "src/models/test_models.py",
+            "src/templates/library/src/testlib/calculator.py",
+            "src/templates/tests/class_test.py",
+            "src/templates/tests/class_test.py.new",
+            "src/templates/tests/default.py",
+            "src/templates/tests/module_test.py",
+            "src/templates/tests/module_test.py.new",
+            "src/utils/mock_keyring.py",
+            "src/utils/test_minimal_parser.py",
+            "src/utils/test_parser.py",
+            "TESTING_FRAMEWORK_COMPLETION_REPORT.md",
+            "tests/test_enhanced_rules_manager.py",
+            "tests/test_rules_manager.py",
+            "tests/test_rules_validator.py",
+            "test_all_commands.sh",
+            "test_comprehensive.py",
+            "test_execution_summary.py",
+            "test_rule_models.py"
+          ],
+          "imports": [
+            "test",
+            "pytest",
+            "expect",
+            "testing",
+            "jest",
+            "mocha",
+            "chai",
+            "assert",
+            "unittest",
+            "junit",
+            "testng",
+            "mockito",
+            "powerMock",
+            "sinon",
+            "cypress",
+            "selenium",
+            "playwright",
+            "vitest",
+            "@testing-library",
+            "supertest"
+          ],
+          "code_patterns": [
+            "test\\(",
+            "mock",
+            "pytest",
+            "it\\(",
+            "assert",
+            "beforeEach",
+            "afterEach",
+            "@Test",
+            "@Before",
+            "@After",
+            "@Mock",
+            "assertEquals",
+            "unittest",
+            "testcase",
+            "cy\\.",
+            "describe\\(",
+            "expect\\(",
+            "toBe\\("
+          ],
+          "config_keys": [
+            "TEST_",
+            "MOCK",
+            "UNIT",
+            "CI",
+            "INTEGRATION",
+            "COVERAGE",
+            "JEST",
+            "MOCHA",
+            "CHAI",
+            "CYPRESS",
+            "SELENIUM"
+          ]
+        }
+      }
+    },
+    "main_functionalities": [
+      "authentication",
+      "database",
+      "api",
+      "frontend",
+      "tests"
+    ],
+    "project_path": "/mnt/h/Projects/project-prompt",
+    "detection_threshold": 15
+  }
+}

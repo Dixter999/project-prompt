@@ -85,7 +85,8 @@ Scroll down to view the structured command reference below the markmap diagram.
 - Dependency mapping
 
 ### 💡 generate-suggestions
-- AI improvement suggestions
+- AI improvement suggestions  
+- **Requires GROUP_NAME argument**
 - Architecture recommendations
 - Best practices
 - Code optimization
@@ -100,8 +101,9 @@ Scroll down to view the structured command reference below the markmap diagram.
 
 ### 🤖 ai analyze
 - AI-powered code analysis
-- `--detail` advanced/basic
-- `--output` json/markdown
+- `--language` specify language  
+- `--provider` anthropic/copilot
+- `--output` save analysis
 - Deep insights
 
 ### 🔧 ai refactor
@@ -145,6 +147,7 @@ Scroll down to view the structured command reference below the markmap diagram.
 ### ⚡ rules auto-generate
 - Complete auto-generation
 - `--output` yaml/json
+- **Interactive suggestions**
 - Smart detection
 - Best practices
 
@@ -354,9 +357,9 @@ project-prompt help            # Get comprehensive help
 ### AI-Enhanced Development
 ```bash
 project-prompt set-api anthropic YOUR_KEY  # Configure AI
-project-prompt ai analyze src/             # Deep analysis
+project-prompt ai analyze src/main.py --provider anthropic  # Deep analysis
 project-prompt rules suggest --ai          # Generate rules
-project-prompt generate-suggestions        # Get improvements
+project-prompt generate-suggestions "Directory: src/ui"     # Get improvements
 ```
 
 ### Rules Management Workflow  
@@ -365,6 +368,19 @@ project-prompt rules wizard     # Interactive rule setup
 project-prompt rules validate   # Check rule syntax
 project-prompt rules apply      # Enforce compliance
 project-prompt rules report     # Generate audit report
+```
+
+### Corrected Command Examples
+```bash
+# ✅ Generate suggestions (requires group name)
+project-prompt analyze-group                    # First, list available groups
+project-prompt generate-suggestions "Group Name" # Then generate suggestions
+
+# ✅ AI analyze (corrected parameters)
+project-prompt ai analyze src/main.py --provider anthropic --output markdown
+
+# ✅ Rules auto-generate (with interactive suggestions)
+project-prompt rules auto-generate --output yaml  # Press Enter to see each suggestion
 ```
 
 ### Premium Enterprise Features
