@@ -14,7 +14,7 @@ import json
 
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
-from src.utils.subscription_manager import get_subscription_manager
+# Premium features now available for all users
 
 logger = get_logger()
 
@@ -34,8 +34,8 @@ class PromptOptimizer:
             config: Configuración opcional
         """
         self.config = config or ConfigManager()
-        self.subscription = get_subscription_manager()
-        self.is_premium = self.subscription.is_premium_feature_available('prompt_optimizer')
+        # Premium features now available for all users
+        self.is_premium = True
         
         # Carga de plantillas y técnicas de optimización desde configuración
         self._load_optimization_templates()

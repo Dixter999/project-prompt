@@ -19,7 +19,6 @@ import tiktoken
 from src.integrations.anthropic import AnthropicAPI, get_anthropic_client, ANTHROPIC_API_BASE_URL, ANTHROPIC_API_VERSION
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
-from src.utils.subscription_manager import get_subscription_manager
 from src.utils.prompt_optimizer import get_prompt_optimizer
 
 # Configurar logger
@@ -39,7 +38,7 @@ class AdvancedAnthropicClient:
         """
         self.config = config or ConfigManager()
         self.base_client = get_anthropic_client(config)
-        self.subscription = get_subscription_manager()
+        # Premium features now available for all users
         self.prompt_optimizer = get_prompt_optimizer(config)
         
         # Modelos preferidos para tareas premium (configurables)
@@ -63,11 +62,7 @@ class AdvancedAnthropicClient:
             logger.warning("Cliente de Anthropic no configurado para funciones premium")
             return False
         
-        # Verificar suscripción activa para funciones premium de IA
-        if not self.subscription.is_premium_feature_available("ai_integrations"):
-            logger.warning("Usuario sin acceso a funciones premium de IA")
-            return False
-        
+        # Premium features now available for all users
         return True
     
     def generate_code(self, 

@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, Tuple
 import logging
 
 from src.utils.logger import get_logger
-from src.utils.subscription_manager import get_subscription_manager
+# Premium features now available for all users
 from src.integrations.anthropic import get_anthropic_client
 from src.integrations.anthropic_advanced import get_advanced_anthropic_client
 
@@ -68,17 +68,13 @@ def test_anthropic_integration() -> Tuple[bool, Dict[str, Any]]:
         results["message"] = f"Error al verificar clave API: {str(e)}"
         return False, results
     
-    # Paso 3: Verificar acceso premium
+    # Paso 3: Verificar acceso premium - ahora disponible para todos los usuarios
     try:
-        subscription = get_subscription_manager()
-        premium_access = subscription.is_premium_feature_available("ai_integrations")
+        # Premium features now available for all users
+        premium_access = True
         results["status"]["premium_access"] = premium_access
         
-        # Esto no es un error crítico, solo un estado
-        if not premium_access:
-            logger.info("Usuario sin acceso premium a integraciones de IA")
-        else:
-            logger.info("Usuario con acceso premium a integraciones de IA")
+        logger.info("Premium features now available for all users")
     except Exception as e:
         logger.warning(f"Error al verificar estado de suscripción: {e}")
         # Seguimos aunque no podamos verificar el acceso premium

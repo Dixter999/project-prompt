@@ -26,7 +26,7 @@ if project_root not in sys.path:
 from src.analyzers.project_progress_tracker import ProjectProgressTracker, get_project_progress_tracker
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
-from src.utils.subscription_manager import get_subscription_manager
+# Premium features now available for all users
 
 # Configuración del logger
 logger = get_logger()
@@ -50,11 +50,11 @@ class DashboardGenerator:
         """
         self.project_path = os.path.abspath(project_path)
         self.config = config or ConfigManager()
-        self.subscription = get_subscription_manager()
+        # Premium features now available for all users
         self.tracker = get_project_progress_tracker(project_path, config)
         
-        # Verificar acceso premium
-        self.premium_access = self.subscription.is_premium_feature_available('project_dashboard')
+        # Premium features now available for all users
+        self.premium_access = True
         
         # Recursos para el dashboard
         self._css_template = self._get_css_template()
@@ -1327,10 +1327,10 @@ class DashboardCLI:
     
     def __init__(self):
         from src.utils.config import config_manager
-        from src.utils.subscription_manager import get_subscription_manager
+        # Premium features now available for all users
         
         self.config = config_manager
-        self.subscription = get_subscription_manager()
+        # Premium features now available for all users
     
     def run(self, args=None):
         """

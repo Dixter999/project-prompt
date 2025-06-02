@@ -138,16 +138,14 @@ class CLI:
         Returns:
             True si la característica está disponible, False en caso contrario
         """
-        # Importar aquí para evitar dependencias circulares
-        from src.utils.subscription_manager import get_subscription_manager
-        
-        subscription_manager = get_subscription_manager()
-        is_available = subscription_manager.can_use_feature(feature_name)
+        # Premium features now available for all users
+        is_available = True
         
         if not is_available:
+            # This code will never run since is_available is always True
             get_console().print(Panel(
                 f"La característica '[bold]{feature_name}[/bold]' requiere una suscripción premium.\n"
-                f"Tu suscripción actual es: [bold]{subscription_manager.get_subscription_type().upper()}[/bold]\n\n"
+                f"Premium features are now available for all users!\n\n"
                 f"Ejecuta '[bold]project-prompt subscription plans[/bold]' para ver los planes disponibles\n"
                 f"o '[bold]project-prompt subscription activate[/bold]' para activar una licencia.",
                 title="[bold red]Característica Premium[/bold red]",

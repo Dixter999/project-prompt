@@ -15,7 +15,6 @@ from typing import Dict, List, Optional, Any, Union, Tuple
 import requests
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
-from src.utils.subscription_manager import get_subscription_manager
 from src.utils.prompt_optimizer import get_prompt_optimizer
 from src.integrations.copilot import CopilotAPI, get_copilot_client, GITHUB_API_URL, COPILOT_API_URL
 
@@ -36,7 +35,6 @@ class AdvancedCopilotClient:
         """
         self.config = config or ConfigManager()
         self.base_client = get_copilot_client(config)
-        self.subscription = get_subscription_manager()
         self.prompt_optimizer = get_prompt_optimizer(config)
         
         # Configuración para solicitudes a la API
@@ -55,6 +53,7 @@ class AdvancedCopilotClient:
     def verify_premium_access(self) -> bool:
         """
         Verificar si el usuario tiene acceso a características premium.
+        Premium features are now available for all users.
         
         Returns:
             True si tiene acceso, False en caso contrario
@@ -64,10 +63,7 @@ class AdvancedCopilotClient:
             logger.warning("Cliente de Copilot no configurado para funciones premium")
             return False
         
-        # Verificar suscripción activa para funciones premium de IA
-        if not self.subscription.is_premium_feature_available("ai_integrations"):
-            logger.warning("Usuario sin acceso a funciones premium de IA")
-            return False
+        # Premium features now available for all users
         
         # Verificar que el usuario tiene Copilot habilitado
         usage_info = self.base_client.get_usage_info()

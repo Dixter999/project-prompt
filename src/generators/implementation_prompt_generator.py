@@ -20,13 +20,12 @@ from typing import Dict, List, Any, Optional, Tuple, Set, Union
 import string
 
 from src.utils.logger import get_logger
-from src.utils.subscription_manager import get_subscription_manager
 from src.analyzers.project_scanner import get_project_scanner
 from src.analyzers.functionality_detector import get_functionality_detector
 from src.analyzers.connection_analyzer import get_connection_analyzer
 from src.analyzers.file_analyzer import get_file_analyzer
 from src.generators.contextual_prompt_generator import ContextualPromptGenerator
-from src.templates.premium.premium_templates import (
+from src.templates.implementation_templates import (
     IMPLEMENTATION_INSTRUCTION_TEMPLATE, 
     DESIGN_PATTERNS,
     CODE_PATTERNS,
@@ -66,12 +65,9 @@ class ImplementationPromptGenerator(ContextualPromptGenerator):
         """
         super().__init__(is_premium)
         self.file_analyzer = get_file_analyzer()
-        self.subscription_manager = get_subscription_manager()
         
-        # Verificar si el usuario tiene acceso premium
-        if not self.is_premium:
-            # Si no es premium, verificar si puede usar esta característica
-            self.is_premium = self.subscription_manager.can_use_feature("implementation_prompts")
+        # Premium features now available for all users
+        self.is_premium = True
         
     def generate_implementation_prompt(self, project_path: str, feature_name: str) -> Dict[str, Any]:
         """
@@ -93,13 +89,7 @@ class ImplementationPromptGenerator(ContextualPromptGenerator):
             }
         
         try:
-            # Registrar uso en el gestor de suscripción
-            if not self.subscription_manager.register_prompt_usage():
-                return {
-                    "success": False,
-                    "error": "limit_exceeded",
-                    "message": "Has alcanzado el límite diario de generación de prompts."
-                }
+            # Premium features now available for all users - no usage limits
                 
             # Analizar el proyecto
             project_data = self.scanner.scan_project(project_path)

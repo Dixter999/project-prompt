@@ -22,7 +22,6 @@ from src.analyzers.completeness_verifier import CompletenessVerifier
 from src.analyzers.file_analyzer import FileAnalyzer
 from src.utils.logger import get_logger
 from src.utils.config import ConfigManager
-from src.utils.subscription_manager import get_subscription_manager
 
 # Configuración del logger
 logger = get_logger()
@@ -46,7 +45,6 @@ class ProjectProgressTracker:
         """
         self.project_path = os.path.abspath(project_path)
         self.config = config or ConfigManager()
-        self.subscription = get_subscription_manager()
         
         # Inicializar analizadores
         self.scanner = ProjectScanner(project_path)
@@ -70,8 +68,8 @@ class ProjectProgressTracker:
         # Caché para resultados
         self._cache = {}
         
-        # Verificar acceso premium para funcionalidades avanzadas
-        self.premium_access = self.subscription.is_premium_feature_available('project_dashboard')
+        # Premium features now available for all users
+        self.premium_access = True
     
     def get_project_overview(self) -> Dict[str, Any]:
         """
