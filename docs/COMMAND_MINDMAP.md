@@ -1,6 +1,6 @@
 # ProjectPrompt Command Mind Map
 
-This interactive markmap shows the complete command structure and hierarchy of ProjectPrompt v1.2.8.
+This interactive markmap shows the complete command structure and hierarchy of ProjectPrompt v1.3.0.
 
 > **🚀 Quick Start**: For the best experience, install the [VS Code Markmap extension](https://marketplace.visualstudio.com/items?itemName=gera2ld.markmap-vscode) or copy this content to [markmap.js.org/repl](https://markmap.js.org/repl)
 
@@ -97,7 +97,7 @@ Scroll down to view the structured command reference below the markmap diagram.
 - Completion metrics
 - Timeline analysis
 
-## 🤖 AI Features
+## 🤖 AI Features (Now Available for All Users!)
 
 ### 🤖 ai analyze
 - AI-powered code analysis
@@ -105,24 +105,28 @@ Scroll down to view the structured command reference below the markmap diagram.
 - `--provider` anthropic/copilot
 - `--output` save analysis
 - Deep insights
+- **✨ No subscription required**
 
 ### 🔧 ai refactor
 - Refactoring suggestions
 - Code improvements
 - Pattern detection
 - Optimization tips
+- **✨ No subscription required**
 
 ### 📝 ai explain
 - Code explanation
 - Function analysis
 - Architecture insights
 - Documentation generation
+- **✨ No subscription required**
 
 ### ✨ ai generate
 - Code generation
 - Documentation creation
 - Template generation
 - Boilerplate code
+- **✨ No subscription required**
 
 ## 📋 Rules Management
 
@@ -195,31 +199,35 @@ Scroll down to view the structured command reference below the markmap diagram.
 - Statistics
 - Audit trail
 
-## 💎 Premium Features
+## 💎 Advanced Features (Formerly Premium, Now Free!)
 
 ### 💎 premium dashboard
 - Advanced dashboard
 - Interactive visualization
 - Real-time metrics
 - Custom widgets
+- **✨ Now available for all users**
 
 ### 🛠️ premium implementation
 - Implementation assistant
 - Feature guidance
 - Code scaffolding
 - Best practices
+- **✨ Now available for all users**
 
 ### 🧪 premium test-generator
 - Unit test generation
 - Coverage analysis
 - Test strategies
 - Quality assurance
+- **✨ Now available for all users**
 
 ### 📋 premium verify-completeness
 - Completeness verification
 - Quality assurance
 - Feature coverage
 - Requirement tracking
+- **✨ Now available for all users**
 
 ## 📚 Documentation
 
@@ -330,8 +338,8 @@ AI-powered analysis, refactoring, explanation, and code generation capabilities.
 ### 📋 Rules Management
 Comprehensive rule system for project governance and compliance management.
 
-### 💎 Premium Features
-Advanced functionality requiring subscription for enterprise-grade capabilities.
+### 💎 Advanced Features (Formerly Premium, Now Free!)
+Advanced functionality now available for all users - no subscription required!
 
 ### 📚 Documentation
 Documentation management, navigation, and auto-generation tools.
@@ -383,12 +391,13 @@ project-prompt ai analyze src/main.py --provider anthropic --output markdown
 project-prompt rules auto-generate --output yaml  # Press Enter to see each suggestion
 ```
 
-### Premium Enterprise Features
+### Premium Enterprise Features (Now Free for Everyone!)
 ```bash
-project-prompt subscription activate LICENSE_KEY
+# All features now available without subscription
 project-prompt premium dashboard
 project-prompt premium implementation "user authentication"
 project-prompt premium test-generator
+project-prompt premium verify-completeness
 ```
 
 ## 🌟 Interactive Features
@@ -409,6 +418,6 @@ This markmap provides:
 
 ---
 
-*This interactive mind map represents the complete command structure of ProjectPrompt v1.2.8 - your comprehensive project analysis and AI-powered development assistant.*
+*This interactive mind map represents the complete command structure of ProjectPrompt v1.3.0 - your comprehensive project analysis and AI-powered development assistant with all premium features now available for free!*
 
 > **💡 Tip**: For the best interactive experience, paste this content into the [Markmap REPL](https://markmap.js.org/repl) or use the [VS Code Markmap extension](https://marketplace.visualstudio.com/items?itemName=gera2ld.markmap-vscode).

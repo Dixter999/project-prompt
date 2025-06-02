@@ -26,6 +26,8 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 import typer
+from typer.core import TyperGroup
+import click
 from rich.console import Console
 
 from src import __version__
@@ -43,6 +45,33 @@ from src.ui.documentation_navigator import get_documentation_navigator
 from src.ui.dashboard import DashboardCLI
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
 
+# Custom help handler for better UX
+class CustomTyperGroup(TyperGroup):
+    """Custom Typer group that shows help when command is incomplete"""
+    
+    def invoke(self, ctx):
+        # If no subcommand was provided, show help
+        if ctx.invoked_subcommand is None:
+            # Check if this is a specific app that needs custom help
+            if hasattr(ctx, 'info_name'):
+                if ctx.info_name == 'ai':
+                    # Show AI-specific help
+                    from src.ui.cli import CLI
+                    cli = CLI()
+                    show_ai_command_help()
+                    ctx.exit()
+                elif ctx.info_name == 'rules':
+                    # Show rules-specific help
+                    from src.ui.cli import CLI
+                    cli = CLI()
+                    show_rules_command_help()
+                    ctx.exit()
+            
+            # Default behavior: show standard help
+            click.echo(ctx.get_help())
+            ctx.exit()
+        return super().invoke(ctx)
+
 # Define project directories
 PROJECT_ROOT = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUTPUT_DIR = PROJECT_ROOT / "project-output"
@@ -54,26 +83,50 @@ os.makedirs(ANALYSES_DIR, exist_ok=True)
 os.makedirs(SUGGESTIONS_DIR, exist_ok=True)
 
 console = Console()
-app = typer.Typer(help="ProjectPrompt: Asistente inteligente para proyectos")
+app = typer.Typer(
+    help="ProjectPrompt: Asistente inteligente para proyectos",
+    cls=CustomTyperGroup,
+    no_args_is_help=True
+)
 
 # Submenu para comandos de documentación
-docs_app = typer.Typer(help="Comandos de navegación de documentación")
+docs_app = typer.Typer(
+    help="Comandos de navegación de documentación",
+    cls=CustomTyperGroup,
+    no_args_is_help=True
+)
 app.add_typer(docs_app, name="docs")
 
 # Submenu para comandos de IA avanzada
-ai_app = typer.Typer(help="Comandos premium de IA (Copilot/Anthropic)")
+ai_app = typer.Typer(
+    help="Comandos de IA (Copilot/Anthropic) - Ahora disponibles para todos",
+    cls=CustomTyperGroup,
+    no_args_is_help=True
+)
 app.add_typer(ai_app, name="ai")
 
 # Submenu para comandos de actualización y sincronización
-update_app = typer.Typer(help="Comandos para gestionar actualizaciones y sincronización")
+update_app = typer.Typer(
+    help="Comandos para gestionar actualizaciones y sincronización",
+    cls=CustomTyperGroup,
+    no_args_is_help=True
+)
 app.add_typer(update_app, name="update")
 
 # Submenu para comandos premium 
-premium_app = typer.Typer(help="Comandos premium para acceso a funcionalidades avanzadas")
+premium_app = typer.Typer(
+    help="Comandos avanzados (ahora disponibles para todos los usuarios)",
+    cls=CustomTyperGroup,
+    no_args_is_help=True
+)
 app.add_typer(premium_app, name="premium")
 
 # Submenu para comandos de telemetría
-telemetry_app = typer.Typer(help="Comandos para gestionar la telemetría anónima")
+telemetry_app = typer.Typer(
+    help="Comandos para gestionar la telemetría anónima",
+    cls=CustomTyperGroup,
+    no_args_is_help=True
+)
 app.add_typer(telemetry_app, name="telemetry")
 
 # Submenu para comandos de reglas
@@ -520,7 +573,12 @@ def analyze_group_command(
             project_path=project_path
         )
         if not success:
-            cli.print_error("El análisis no se completó exitosamente")
+            # If the command failed and no group_name was provided, show additional help
+            if not group_name:
+                console.print("\n")
+                show_analyze_group_help()
+            else:
+                cli.print_error("El análisis no se completó exitosamente")
     except Exception as e:
         cli.print_error(f"Error durante el análisis del grupo: {e}")
         logger.error(f"Error en analyze_group_command: {e}", exc_info=True)
@@ -529,11 +587,16 @@ def analyze_group_command(
 @app.command(name="generate-suggestions")
 @telemetry_command
 def generate_suggestions_command(
-    group_name: str = typer.Argument(..., help="Nombre del grupo funcional para generar sugerencias"),
+    group_name: Optional[str] = typer.Argument(None, help="Nombre del grupo funcional para generar sugerencias"),
     project_path: str = typer.Option(".", "--path", "-p", help="Ruta al proyecto")
 ):
     """Generar sugerencias de mejora estructuradas para un grupo funcional."""
     from src.commands.generate_suggestions import GenerateSuggestionsCommand
+    
+    # Check if group_name is provided, if not show help
+    if not group_name:
+        show_generate_suggestions_help()
+        return
     
     try:
         command = GenerateSuggestionsCommand()
@@ -615,7 +678,7 @@ def set_api(
     env_exists = os.path.exists(project_env)
     
     cli.print_info("\n📂 Ubicaciones recomendadas para el archivo .env:")
-    cli.print_info(f"  1. Proyecto actual: {project_env} {'✅ (existe)' if env_exists else '❌ (no existe)'}")
+    cli.print_info(f"  1. Proyecto actual: {project_env} {'✅' if env_exists else '❌'}")
     cli.print_info(f"  2. Directorio home: {home_env}")
     
     # Mensaje específico por API
@@ -1209,63 +1272,105 @@ def docs(
         logger.error(f"Error en docs: {e}", exc_info=True)
 
 
-# Decorador para telemetría de comandos
-import time
-import functools
-import inspect
+# Helper function to create user-friendly command guidance
+def show_command_guidance(command_name: str, available_commands: List[str]):
+    """Show helpful guidance when a command is incomplete"""
+    cli.print_warning(f"Comando incompleto: '{command_name}'")
+    cli.print_info("Comandos disponibles:")
+    for cmd in available_commands:
+        cli.print_info(f"  • {command_name} {cmd}")
+    cli.print_info(f"\nUse '{command_name} --help' para ver más detalles")
 
-def telemetry_command(func):
-    """
-    Decorador para registrar el uso de comandos en telemetría.
-    También registra errores que ocurran durante la ejecución.
-    """
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        telemetry_enabled = get_telemetry_manager().is_enabled()
-        command_name = func.__name__
-        start_time = time.time()
-        
-        try:
-            # Ejecutar el comando original
-            result = func(*args, **kwargs)
-            
-            # Registrar telemetría solo si está habilitada
-            if telemetry_enabled:
-                duration_ms = int((time.time() - start_time) * 1000)
-                record_command(command_name, duration_ms)
-                
-            return result
-        except Exception as e:
-            # Registrar el error si la telemetría está habilitada
-            if telemetry_enabled:
-                error_type = type(e).__name__
-                error_msg = str(e)
-                
-                # Obtener información del archivo y línea donde ocurrió el error
-                # Solo para errores en nuestro código, no en librerías externas
-                file = None
-                line = None
-                tb = getattr(e, '__traceback__', None)
-                while tb:
-                    if 'src' in tb.tb_frame.f_code.co_filename:
-                        file = tb.tb_frame.f_code.co_filename
-                        line = tb.tb_lineno
-                        break
-                    tb = tb.tb_next
-                
-                record_error(error_type, error_msg, file, line)
-                
-            # Re-lanzar la excepción para mantener el comportamiento normal
-            raise
-    
-    return wrapper
+# Enhanced help for generate-suggestions command
+def show_generate_suggestions_help():
+    """Show specific help for generate-suggestions command"""
+    cli.print_header("Comando: generate-suggestions")
+    cli.print_info("Este comando genera sugerencias de mejora para un grupo funcional específico.")
+    cli.print_info("")
+    cli.print_info("IMPORTANTE: Antes de usar este comando:")
+    cli.print_info("1. Ejecute 'pp analyze-group' para ver grupos disponibles")
+    cli.print_info("2. Seleccione un grupo y analícelo con IA")
+    cli.print_info("3. Luego use este comando con el nombre del grupo")
+    cli.print_info("")
+    cli.print_info("Uso:")
+    cli.print_info("  pp generate-suggestions \"Nombre del Grupo\"")
+    cli.print_info("")
+    cli.print_info("Ejemplo:")
+    cli.print_info("  pp analyze-group                    # Ver grupos disponibles")
+    cli.print_info("  pp generate-suggestions \"src/ui\"   # Generar sugerencias")
 
+# Enhanced help for ai commands
+def show_ai_command_help():
+    """Show specific help for ai commands"""
+    cli.print_header("Comandos de IA")
+    cli.print_info("Los comandos de IA utilizan modelos avanzados para análisis de código.")
+    cli.print_info("")
+    cli.print_info("Comandos disponibles:")
+    cli.print_info("  • ai analyze [archivo] --provider [anthropic|copilot]")
+    cli.print_info("  • ai refactor [archivo] --provider [anthropic|copilot]")
+    cli.print_info("  • ai explain [archivo] --provider [anthropic|copilot]")
+    cli.print_info("  • ai generate [descripción] --output [directorio]")
+    cli.print_info("")
+    cli.print_info("Ejemplos:")
+    cli.print_info("  pp ai analyze src/main.py --provider anthropic")
+    cli.print_info("  pp ai generate \"crear función de validación\" --output src/utils/")
+
+# Enhanced help for analyze-group command
+def show_analyze_group_help():
+    """Show specific help for analyze-group command"""
+    cli.print_header("Comando: analyze-group")
+    cli.print_info("Este comando analiza grupos funcionales específicos con IA avanzada.")
+    cli.print_info("")
+    cli.print_info("Flujo de trabajo:")
+    cli.print_info("1. Sin argumentos: Muestra los grupos funcionales disponibles")
+    cli.print_info("2. Con nombre de grupo: Analiza ese grupo específico con IA")
+    cli.print_info("3. Genera análisis detallado guardado en project-output/analyses/groups/")
+    cli.print_info("")
+    cli.print_info("Uso:")
+    cli.print_info("  pp analyze-group                    # Listar grupos disponibles")
+    cli.print_info("  pp analyze-group \"Nombre del Grupo\" # Analizar grupo específico")
+    cli.print_info("")
+    cli.print_info("Ejemplos:")
+    cli.print_info("  pp analyze-group                    # Ver todos los grupos")
+    cli.print_info("  pp analyze-group \"src/ui\"          # Analizar grupo de interfaz")
+    cli.print_info("  pp analyze-group \"Authentication\"  # Analizar autenticación")
+    cli.print_info("")
+    cli.print_info("Nota: Requiere API key de Anthropic configurada")
+
+# Enhanced help for rules commands
+def show_rules_command_help():
+    """Show specific help for rules commands"""
+    cli.print_header("Comandos de Reglas")
+    cli.print_info("Sistema avanzado de gestión de reglas para desarrollo con IA.")
+    cli.print_info("")
+    cli.print_info("Comandos principales:")
+    cli.print_info("  • rules suggest --ai --threshold 0.8     # Generar sugerencias de reglas")
+    cli.print_info("  • rules analyze-patterns --detailed      # Analizar patrones del proyecto")
+    cli.print_info("  • rules auto-generate --output rules.yaml # Auto-generar reglas completas")
+    cli.print_info("  • rules generate-structured-rules --ai   # Reglas estructuradas avanzadas")
+    cli.print_info("  • rules validate rules.yaml              # Validar archivo de reglas")
+    cli.print_info("  • rules apply                            # Aplicar y verificar reglas")
+    cli.print_info("  • rules report                           # Generar reporte de cumplimiento")
+    cli.print_info("")
+    cli.print_info("Flujo recomendado:")
+    cli.print_info("1. rules suggest --ai                     # Generar sugerencias")
+    cli.print_info("2. rules auto-generate --review           # Crear archivo de reglas")
+    cli.print_info("3. rules validate project-rules.yaml     # Validar sintaxis")
+    cli.print_info("4. rules apply                            # Aplicar reglas")
+    cli.print_info("5. rules report                           # Verificar cumplimiento")
+    cli.print_info("")
+    cli.print_info("Características avanzadas:")
+    cli.print_info("  • Análisis con IA para sugerencias inteligentes")
+    cli.print_info("  • Detección automática de tecnologías y patrones")
+    cli.print_info("  • Reglas estructuradas con contexto y prioridades")
+    cli.print_info("  • Exportación en múltiples formatos (YAML, JSON, Markdown)")
+    cli.print_info("  • Revisión interactiva de sugerencias")
 
 # Implementación de comandos de IA
 @ai_app.command("generate")
 @telemetry_command
 def ai_generate_code(
-    description: str = typer.Argument(..., help="Descripción del código a generar"),
+    description: Optional[str] = typer.Argument(None, help="Descripción del código a generar"),
     language: str = typer.Option("python", "--language", "-l", help="Lenguaje de programación"),
     provider: str = typer.Option("anthropic", "--provider", "-p", 
                                 help="Proveedor de IA (anthropic, copilot)"),
@@ -1274,6 +1379,10 @@ def ai_generate_code(
     """
     Generar código utilizando IA avanzada (característica premium).
     """
+    # Check if description parameter is provided
+    if not description:
+        show_ai_command_help()
+        return
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
     from src.integrations.copilot_advanced import get_advanced_copilot_client
     
@@ -1323,7 +1432,7 @@ def ai_generate_code(
 @ai_app.command("analyze")
 @telemetry_command
 def ai_analyze_code(
-    file_path: str = typer.Argument(..., help="Ruta al archivo de código a analizar"),
+    file_path: Optional[str] = typer.Argument(None, help="Ruta al archivo de código a analizar"),
     language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
     provider: str = typer.Option("anthropic", "--provider", "-p", 
                                help="Proveedor de IA (anthropic, copilot)"),
@@ -1333,6 +1442,10 @@ def ai_analyze_code(
     """
     Analizar código para detectar errores y problemas (característica premium).
     """
+    # Check if file_path parameter is provided
+    if not file_path:
+        show_ai_command_help()
+        return
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
     from src.integrations.copilot_advanced import get_advanced_copilot_client
     import os
@@ -1431,7 +1544,7 @@ def ai_analyze_code(
 @ai_app.command("refactor")
 @telemetry_command
 def ai_refactor_code(
-    file_path: str = typer.Argument(..., help="Ruta al archivo de código a refactorizar"),
+    file_path: Optional[str] = typer.Argument(None, help="Ruta al archivo de código a refactorizar"),
     language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
     provider: str = typer.Option("anthropic", "--provider", "-p", 
                                help="Proveedor de IA (anthropic, copilot)"),
@@ -1441,6 +1554,10 @@ def ai_refactor_code(
     """
     Refactorizar código para mejorar su calidad (característica premium).
     """
+    # Check if file_path parameter is provided
+    if not file_path:
+        show_ai_command_help()
+        return
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
     from src.integrations.copilot_advanced import get_advanced_copilot_client
     import os
@@ -1532,7 +1649,7 @@ def ai_refactor_code(
 @ai_app.command("explain")
 @telemetry_command
 def ai_explain_code(
-    file_path: str = typer.Argument(..., help="Ruta al archivo de código a explicar"),
+    file_path: Optional[str] = typer.Argument(None, help="Ruta al archivo de código a explicar"),
     language: Optional[str] = typer.Option(None, "--language", "-l", help="Lenguaje de programación"),
     detail_level: str = typer.Option("standard", "--detail", "-d", 
                                    help="Nivel de detalle (basic, standard, advanced)"),
@@ -1542,6 +1659,10 @@ def ai_explain_code(
     """
     Generar una explicación detallada del código (característica premium para nivel avanzado).
     """
+    # Check if file_path parameter is provided
+    if not file_path:
+        show_ai_command_help()
+        return
     from src.integrations.anthropic_advanced import get_advanced_anthropic_client
     import os
     
@@ -2503,258 +2624,3 @@ Las copias de seguridad se crean automáticamente antes de cambios importantes.
     }
     
     return descriptions.get(directory_name, f"# {directory_name.title()}\n\nDirectorio para {directory_name} del proyecto.\n")
-
-
-@app.command()
-def delete(
-    scope: str = typer.Argument(..., 
-                              help="Tipo de datos a eliminar: 'all', 'analyses', 'suggestions', 'project-prompt-folder'"),
-    force: bool = typer.Option(False, "--force", "-f", 
-                              help="Forzar eliminación sin confirmación")
-):
-    """Elimina archivos generados por ProjectPrompt.
-    
-    Puede eliminar análisis, sugerencias, todos los archivos generados, o la carpeta project-prompt completa.
-    """
-    import shutil
-    
-    if scope not in ["all", "analyses", "suggestions", "project-prompt-folder"]:
-        cli.print_error(f"Ámbito no válido: {scope}. Use 'all', 'analyses', 'suggestions' o 'project-prompt-folder'.")
-        return
-    
-    # Determinar qué eliminar
-    if scope == "project-prompt-folder":
-        # Eliminar toda la carpeta project-output en el directorio actual
-        project_prompt_dir = os.path.join(os.getcwd(), "project-output")
-        if not os.path.exists(project_prompt_dir):
-            cli.print_warning("No se encontró la carpeta 'project-output' en el directorio actual.")
-            return
-        
-        if not force:
-            console.print(f"[yellow]¿Estás seguro de que deseas eliminar completamente la carpeta 'project-output' y todo su contenido?[/yellow]")
-            confirmation = typer.confirm("Esta acción no se puede deshacer")
-            if not confirmation:
-                cli.print_info("Operación cancelada.")
-                return
-        
-        try:
-            shutil.rmtree(project_prompt_dir)
-            cli.print_success("Carpeta 'project-prompt' eliminada completamente.")
-        except Exception as e:
-            cli.print_error(f"Error al eliminar la carpeta: {e}")
-        return
-    
-    # Determinar directorios a eliminar (comportamiento original)
-    dirs_to_clean = []
-    if scope == "all" or scope == "analyses":
-        dirs_to_clean.append(ANALYSES_DIR)
-    if scope == "all" or scope == "suggestions":
-        dirs_to_clean.append(SUGGESTIONS_DIR)
-    
-    if not force:
-        # Pedir confirmación
-        dirs_str = ", ".join([os.path.basename(d) for d in dirs_to_clean])
-        console.print(f"[yellow]¿Estás seguro de que deseas eliminar los archivos en {dirs_str}?[/yellow]")
-        confirmation = typer.confirm("Confirmar eliminación")
-        if not confirmation:
-            cli.print_info("Operación cancelada.")
-            return
-    
-    # Proceder con la eliminación
-    for directory in dirs_to_clean:
-        if os.path.exists(directory):
-            try:
-                # Eliminar todos los archivos del directorio pero mantener el directorio
-                for filename in os.listdir(directory):
-                    file_path = os.path.join(directory, filename)
-                    if os.path.isfile(file_path):
-                        os.unlink(file_path)
-                cli.print_success(f"Archivos en {os.path.basename(directory)} eliminados correctamente.")
-            except Exception as e:
-                cli.print_error(f"Error al eliminar archivos en {directory}: {e}")
-    
-    cli.print_success("Limpieza completada exitosamente.")
-
-
-@app.command()
-def setup_alias():
-    """Ofrece crear un alias 'pp' para simplificar el uso del comando."""
-    import getpass
-    import platform
-    shell = os.environ.get("SHELL", "")
-    user = getpass.getuser()
-    home = os.path.expanduser("~")
-    shell_rc = None
-    if "zsh" in shell:
-        shell_rc = os.path.join(home, ".zshrc")
-    elif "bash" in shell:
-        shell_rc = os.path.join(home, ".bashrc")
-    else:
-        shell_rc = os.path.join(home, ".profile")
-    
-    typer.echo(f"¿Quieres crear un alias para usar 'pp' en vez de 'project-prompt'? [Y/n]")
-    answer = input().strip().lower()
-    if answer in ("", "y", "yes", "s", "si"):
-        alias_line = "alias pp='project-prompt'\n"
-        try:
-            with open(shell_rc, "a") as f:
-                f.write(f"\n# Alias para ProjectPrompt\n{alias_line}")
-            typer.echo(f"Alias añadido a {shell_rc}. Reinicia tu terminal o ejecuta 'source {shell_rc}' para activarlo.")
-        except Exception as e:
-            typer.echo(f"No se pudo escribir en {shell_rc}: {e}")
-            typer.echo(f"Puedes añadir manualmente este alias a tu archivo de configuración de shell:\n{alias_line}")
-    else:
-        typer.echo("Alias no añadido. Puedes crearlo manualmente si lo deseas.")
-
-
-@app.command()
-def setup_deps():
-    """
-    Instala Node.js, npm y Madge si el usuario lo desea (recomendado para análisis avanzados).
-    """
-    typer.echo("¿Deseas instalar Node.js, npm y Madge para análisis de dependencias avanzadas? [Y/n]")
-    answer = input().strip().lower()
-    if answer in ("", "y", "yes", "s", "si"):
-        import subprocess
-        cmds = [
-            "sudo apt update",
-            "sudo apt install -y nodejs npm",
-            "npm install -g madge"
-        ]
-        for cmd in cmds:
-            typer.echo(f"Ejecutando: {cmd}")
-            result = subprocess.run(cmd, shell=True)
-            if result.returncode != 0:
-                typer.echo(f"[red]Error ejecutando: {cmd}[/red]")
-                break
-        else:
-            typer.echo("[green]¡Node.js, npm y Madge instalados correctamente![/green]")
-            typer.echo("Puedes verificar con: madge --version")
-            typer.echo("Si ves advertencias de npm, son solo avisos de dependencias antiguas y no afectan el funcionamiento.")
-    else:
-        typer.echo("Instalación de dependencias opcionales omitida.")
-
-
-@app.command()
-@telemetry_command
-def diagnose():
-    """Diagnose ProjectPrompt installation and provide troubleshooting information."""
-    import shutil
-    import platform
-    from pathlib import Path
-    
-    cli.print_header("ProjectPrompt Installation Diagnosis")
-    
-    # Basic version info
-    cli.print_info(f"ProjectPrompt version: {__version__}")
-    cli.print_info(f"Python version: {sys.version.split()[0]}")
-    cli.print_info(f"Platform: {platform.system()} {platform.release()}")
-    cli.print_info(f"Shell: {os.environ.get('SHELL', 'Unknown')}")
-    
-    # Check installation details
-    console.print("\n[bold blue]📦 Installation Details[/bold blue]")
-    
-    try:
-        import pkg_resources
-        distribution = pkg_resources.get_distribution("projectprompt")
-        console.print(f"• Package location: {distribution.location}")
-        console.print(f"• Installed version: {distribution.version}")
-    except Exception as e:
-        console.print(f"• [red]Error getting package info: {e}[/red]")
-    
-    # Check PATH information
-    console.print("\n[bold blue]🛤️  PATH Information[/bold blue]")
-    
-    # Find where the executable should be
-    python_executable = sys.executable
-    console.print(f"• Python executable: {python_executable}")
-    
-    # Check common installation paths
-    paths_to_check = [
-        Path.home() / ".local" / "bin",
-        Path(python_executable).parent,
-        Path(python_executable).parent / "Scripts",  # Windows
-    ]
-    
-    for path in paths_to_check:
-        if path.exists():
-            project_prompt_path = path / "project-prompt"
-            if project_prompt_path.exists():
-                console.print(f"• [green]✅ Found executable at: {project_prompt_path}[/green]")
-            else:
-                console.print(f"• [yellow]❌ No executable at: {path}[/yellow]")
-        else:
-            console.print(f"• [gray]⚠️  Path doesn't exist: {path}[/gray]")
-    
-    # Check if executable is in PATH
-    project_prompt_in_path = shutil.which("project-prompt")
-    if project_prompt_in_path:
-        console.print(f"• [green]✅ project-prompt found in PATH: {project_prompt_in_path}[/green]")
-    else:
-        console.print("• [red]❌ project-prompt NOT found in PATH[/red]")
-    
-    # Check current PATH
-    current_path = os.environ.get("PATH", "")
-    path_entries = current_path.split(os.pathsep)
-    
-    console.print(f"\n[bold blue]🔍 Current PATH has {len(path_entries)} entries[/bold blue]")
-    
-    # Show relevant PATH entries
-    relevant_paths = [p for p in path_entries if any(keyword in p.lower() for keyword in ['python', 'local', 'bin', 'scripts'])]
-    if relevant_paths:
-        console.print("• Python-related PATH entries:")
-        for path in relevant_paths[:5]:  # Show first 5
-            console.print(f"  - {path}")
-        if len(relevant_paths) > 5:
-            console.print(f"  ... and {len(relevant_paths) - 5} more")
-    
-    # Provide solutions
-    console.print("\n[bold yellow]💡 Troubleshooting Suggestions[/bold yellow]")
-    
-    if not project_prompt_in_path:
-        console.print("• [bold]Command not found issue detected![/bold]")
-        console.print("• Try these solutions:")
-        console.print("  1. Add to PATH: [cyan]export PATH=\"$HOME/.local/bin:$PATH\"[/cyan]")
-        console.print("  2. Use Python module: [cyan]python -m projectprompt version[/cyan]")
-        console.print("  3. Reinstall with --user: [cyan]pip install --user projectprompt[/cyan]")
-        console.print("  4. See full guide: [cyan]https://github.com/Dixter999/project-prompt/blob/main/INSTALLATION_TROUBLESHOOTING.md[/cyan]")
-    else:
-        console.print("• [green]✅ Installation looks good![/green]")
-        console.print("• All commands should work properly")
-    
-    # Test basic functionality
-    console.print("\n[bold blue]🧪 Basic Functionality Test[/bold blue]")
-    
-    try:
-        # Test imports
-        from src.utils.config import config_manager
-        console.print("• [green]✅ Core modules import successfully[/green]")
-        
-        # Test configuration
-        config = config_manager.get_config()
-        console.print("• [green]✅ Configuration system works[/green]")
-        
-    except Exception as e:
-        console.print(f"• [red]❌ Module import error: {e}[/red]")
-    
-    console.print("\n[bold green]📋 Next Steps[/bold green]")
-    console.print("• Run [cyan]project-prompt help[/cyan] to see all available commands")
-    console.print("• Run [cyan]project-prompt menu[/cyan] for interactive setup")
-    console.print("• Check [cyan]INSTALLATION_TROUBLESHOOTING.md[/cyan] for detailed solutions")
-
-
-def main():
-    """Main entry point for the application."""
-    try:
-        # Initialize telemetry system
-        initialize_telemetry()
-        
-        # Run the app
-        app()
-    finally:
-        # Ensure telemetry is properly shut down
-        shutdown_telemetry()
-
-
-if __name__ == "__main__":
-    main()
