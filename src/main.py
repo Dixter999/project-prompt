@@ -50,27 +50,48 @@ class CustomTyperGroup(TyperGroup):
     """Custom Typer group that shows help when command is incomplete"""
     
     def invoke(self, ctx):
-        # If no subcommand was provided, show help
+        # If no subcommand was provided, show custom help
         if ctx.invoked_subcommand is None:
             # Check if this is a specific app that needs custom help
-            if hasattr(ctx, 'info_name'):
-                if ctx.info_name == 'ai':
+            if hasattr(ctx, 'info') and hasattr(ctx.info, 'name'):
+                command_name = ctx.info.name
+                
+                if command_name == 'ai':
                     # Show AI-specific help
-                    from src.ui.cli import CLI
-                    cli = CLI()
                     show_ai_command_help()
                     ctx.exit()
-                elif ctx.info_name == 'rules':
+                elif command_name == 'rules':
                     # Show rules-specific help
-                    from src.ui.cli import CLI
-                    cli = CLI()
                     show_rules_command_help()
+                    ctx.exit()
+                elif command_name == 'premium':
+                    # Show premium-specific help
+                    show_premium_command_help()
                     ctx.exit()
             
             # Default behavior: show standard help
             click.echo(ctx.get_help())
             ctx.exit()
         return super().invoke(ctx)
+    
+    def parse_args(self, ctx, args):
+        # Override to handle no-args case specifically
+        if not args:
+            # Check if this is a specific app that needs custom help
+            if hasattr(ctx, 'info') and hasattr(ctx.info, 'name'):
+                command_name = ctx.info.name
+                
+                if command_name == 'ai':
+                    show_ai_command_help()
+                    ctx.exit()
+                elif command_name == 'rules':
+                    show_rules_command_help()
+                    ctx.exit()
+                elif command_name == 'premium':
+                    show_premium_command_help()
+                    ctx.exit()
+        
+        return super().parse_args(ctx, args)
 
 # Define project directories
 PROJECT_ROOT = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -103,6 +124,7 @@ ai_app = typer.Typer(
     cls=CustomTyperGroup,
     no_args_is_help=True
 )
+
 app.add_typer(ai_app, name="ai")
 
 # Submenu para comandos de actualización y sincronización
@@ -119,6 +141,7 @@ premium_app = typer.Typer(
     cls=CustomTyperGroup,
     no_args_is_help=True
 )
+
 app.add_typer(premium_app, name="premium")
 
 # Submenu para comandos de telemetría
@@ -1302,6 +1325,8 @@ def show_generate_suggestions_help():
 # Enhanced help for ai commands
 def show_ai_command_help():
     """Show specific help for ai commands"""
+    from src.ui.cli import CLI
+    cli = CLI()
     cli.print_header("Comandos de IA")
     cli.print_info("Los comandos de IA utilizan modelos avanzados para análisis de código.")
     cli.print_info("")
@@ -1365,6 +1390,27 @@ def show_rules_command_help():
     cli.print_info("  • Reglas estructuradas con contexto y prioridades")
     cli.print_info("  • Exportación en múltiples formatos (YAML, JSON, Markdown)")
     cli.print_info("  • Revisión interactiva de sugerencias")
+
+# Enhanced help for premium commands
+def show_premium_command_help():
+    """Show specific help for premium commands"""
+    from src.ui.cli import CLI
+    cli = CLI()
+    cli.print_header("Comandos Premium")
+    cli.print_info("Funciones avanzadas ahora disponibles para todos los usuarios.")
+    cli.print_info("")
+    cli.print_info("Comandos disponibles:")
+    cli.print_info("  • premium dashboard                      # Dashboard interactivo avanzado")
+    cli.print_info("  • premium test-generator [archivo]      # Generador de tests unitarios")
+    cli.print_info("  • premium verify-completeness           # Verificar completitud del proyecto")
+    cli.print_info("  • premium implementation [descripción]  # Asistente de implementación")
+    cli.print_info("")
+    cli.print_info("Ejemplos:")
+    cli.print_info("  pp premium dashboard")
+    cli.print_info("  pp premium test-generator src/main.py")
+    cli.print_info("  pp premium implementation \"sistema de autenticación\"")
+    cli.print_info("")
+    cli.print_info("Nota: Todas las funciones premium ahora están disponibles gratuitamente")
 
 # Implementación de comandos de IA
 @ai_app.command("generate")
