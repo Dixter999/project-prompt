@@ -36,13 +36,8 @@ from src.utils.config import config_manager
 from src.utils.api_validator import get_api_validator
 from src.utils.updater import Updater, check_and_notify_updates
 from src.utils.sync_manager import SyncManager, get_sync_manager
-from src.utils.telemetry import initialize_telemetry, shutdown_telemetry, get_telemetry_manager, record_command, record_error
-from src.ui import menu
-from src.ui.cli import cli
-from src.ui.consent_manager import ConsentManager
-from src.ui.analysis_view import analysis_view
-from src.ui.documentation_navigator import get_documentation_navigator
-from src.ui.dashboard import DashboardCLI
+# REMOVED: Telemetry system (Fase 1 cleanup)
+# REMOVED: UI system (Fase 1 cleanup)
 # Importamos los analizadores bajo demanda para evitar carga innecesaria
 
 # Custom help handler for better UX
