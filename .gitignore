@@ -25,3 +25,4 @@ Thumbs.db
 # Output
 output/
 analysis.json
+project-prompt-output/
