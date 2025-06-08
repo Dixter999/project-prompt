@@ -8,22 +8,30 @@ Transform your codebase with intelligent analysis and personalized AI recommenda
 
 ## 📦 Installation
 
-### Method 1: Install from PyPI (Recommended)
+### Method 1: Local Development (Recommended)
 ```bash
-pip install projectprompt
+cd /path/to/project-prompt
+pip install -e .
 ```
 
 ### Method 2: Install from Source
 ```bash
-git clone https://github.com/Dixter999/projectprompt
-cd projectprompt
+git clone <your-repository-url>
+cd project-prompt
 pip install -e .
 ```
 
 ### Method 3: Quick Development Setup
 ```bash
-git clone https://github.com/Dixter999/projectprompt
-cd projectprompt
+git clone <your-repository-url>
+cd project-prompt
+pip install -e .
+```
+
+### Method 3: Quick Development Setup
+```bash
+git clone <your-repository-url>
+cd project-prompt
 pip install -r requirements.txt
 ```
 
@@ -33,7 +41,9 @@ pip install -r requirements.txt
 
 ### 1. Install ProjectPrompt
 ```bash
-pip install projectprompt
+# Local development installation
+cd /path/to/project-prompt
+pip install -e .
 ```
 
 ### 2. Set up API Keys (Optional - for AI suggestions)
