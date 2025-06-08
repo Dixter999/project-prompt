@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Sistema de mapeo bidireccional archivo ↔ grupo.
+Bidirectional file ↔ group mapping system.
 
-Parte de la Fase 3: Corrección de Problemas Críticos
-Resuelve: Problema 4 - Sin trazabilidad archivo ↔ grupo
+Part of Phase 3: Critical Problem Fixes
+Resolves: Problem 4 - No file ↔ group traceability
 """
 
 from dataclasses import dataclass
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class FileGroupMapping:
-    """Mapeo bidireccional archivo ↔ grupo"""
+    """Bidirectional file ↔ group mapping"""
     file_path: str
     group_name: str
     group_type: str
@@ -30,7 +30,7 @@ class FileGroupMapping:
 
 
 class GroupMappingManager:
-    """Gestiona mapeo archivo-grupo con trazabilidad completa"""
+    """Manages file-group mapping with complete traceability"""
     
     def __init__(self):
         """Initialize the group mapping manager."""
@@ -41,14 +41,14 @@ class GroupMappingManager:
     
     def create_mappings(self, groups: Dict[str, List[str]], assignment_reasons: Dict[str, str] = None) -> List[FileGroupMapping]:
         """
-        Crea mapeos con trazabilidad.
+        Create mappings with traceability.
         
         Args:
-            groups: Diccionario de grupos con sus archivos
-            assignment_reasons: Razones de asignación por archivo (opcional)
+            groups: Dictionary of groups with their files
+            assignment_reasons: Assignment reasons per file (optional)
             
         Returns:
-            Lista de mapeos creados
+            List of created mappings
         """
         assignment_reasons = assignment_reasons or {}
         mappings = []
@@ -61,7 +61,7 @@ class GroupMappingManager:
                     file_path=file_path,
                     group_name=group_name,
                     group_type=self._detect_group_type(group_name),
-                    confidence=1.0,  # Por ahora, confianza máxima
+                    confidence=1.0,  # For now, maximum confidence
                     assignment_reason=assignment_reasons.get(file_path, "priority_based"),
                     timestamp=datetime.now().isoformat()
                 )
@@ -75,13 +75,13 @@ class GroupMappingManager:
     
     def get_file_group(self, file_path: str) -> Optional[FileGroupMapping]:
         """
-        Encuentra el grupo de un archivo específico.
+        Find the group of a specific file.
         
         Args:
-            file_path: Ruta del archivo
+            file_path: Path of the file
             
         Returns:
-            FileGroupMapping o None si no se encuentra
+            FileGroupMapping or None if not found
         """
         mapping = self.file_to_group.get(file_path)
         

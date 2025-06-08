@@ -2,11 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-Analizador unificado de dependencias.
+Unified dependency analyzer.
 
-Parte de la Fase 3: Corrección de Problemas Críticos
-Resuelve: Problema 2 - Múltiples analizadores conflictivos de dependencias
-Consolida: dependency_graph.py, madge_analyzer.py, smart_dependency_analyzer.py, connection_analyzer.py
+Part of Phase 3: Critical Problem Fixes
+Resolves: Problem 2 - Multiple conflicting dependency analyzers
+Consolidates: dependency_graph.py, madge_analyzer.py, smart_dependency_analyzer.py, connection_analyzer.py
 """
 
 import networkx as nx
@@ -236,17 +236,17 @@ class UnifiedDependencyAnalyzer:
     
     def _resolve_import(self, import_name: str, source_file: str, file_mapping: Dict[str, str]) -> Optional[str]:
         """
-        Resuelve un import a su archivo correspondiente.
+        Resolve an import to its corresponding file.
         
         Args:
-            import_name: Nombre del import
-            source_file: Archivo fuente del import
-            file_mapping: Mapeo de módulos a archivos
+            import_name: Name of the import
+            source_file: Source file of the import
+            file_mapping: Mapping of modules to files
             
         Returns:
-            Ruta del archivo objetivo o None
+            Path of the target file or None
         """
-        # Búsqueda directa
+        # Direct search
         if import_name in file_mapping:
             return file_mapping[import_name]
         

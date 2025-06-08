@@ -5,7 +5,7 @@
 Configuration system for ProjectPrompt v2.0
 Simple .env-based configuration
 
-Fase 4: Configuración simplificada
+Phase 4: Simplified configuration
 """
 
 import os
@@ -15,7 +15,7 @@ from typing import Optional
 
 
 class Config:
-    """Configuración simple basada exclusivamente en .env"""
+    """Simple configuration based exclusively on .env"""
     
     def __init__(self, env_file: Optional[Path] = None):
         # Buscar .env en múltiples ubicaciones
@@ -72,12 +72,12 @@ class Config:
     
     @property
     def default_output_dir(self) -> str:
-        """Directorio por defecto para outputs"""
+        """Default directory for outputs"""
         return os.getenv('DEFAULT_OUTPUT_DIR', './project-prompt-output')
     
     @property
     def max_files_to_analyze(self) -> int:
-        """Máximo número de archivos a analizar"""
+        """Maximum number of files to analyze"""
         try:
             return int(os.getenv('MAX_FILES_TO_ANALYZE', '1000'))
         except ValueError:
@@ -85,7 +85,7 @@ class Config:
     
     @property
     def default_api_provider(self) -> str:
-        """Proveedor de API por defecto"""
+        """Default API provider"""
         provider = os.getenv('DEFAULT_API_PROVIDER', 'anthropic').lower()
         if provider not in ['anthropic', 'openai']:
             return 'anthropic'
@@ -93,7 +93,7 @@ class Config:
     
     @property
     def exclude_patterns(self) -> list:
-        """Patrones de archivos/directorios a excluir"""
+        """File/directory patterns to exclude"""
         patterns = os.getenv('EXCLUDE_PATTERNS', '')
         if patterns:
             return [p.strip() for p in patterns.split(',') if p.strip()]
@@ -104,10 +104,10 @@ class Config:
         ]
     
     def validate(self) -> tuple[bool, list]:
-        """Valida configuración completa"""
+        """Validate complete configuration"""
         errors = []
         
-        # Verificar que al menos una API key existe
+        # Verify that at least one API key exists
         has_anthropic = False
         has_openai = False
         
@@ -126,7 +126,7 @@ class Config:
         if not has_anthropic and not has_openai:
             errors.append("No API keys found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY.")
         
-        # Verificar directorio de output
+        # Verify output directory
         output_dir = Path(self.default_output_dir)
         try:
             output_dir.mkdir(parents=True, exist_ok=True)

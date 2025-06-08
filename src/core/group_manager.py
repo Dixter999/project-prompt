@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-GroupManager para prevenir grupos vacíos.
+GroupManager to prevent empty groups.
 
-Parte de la Fase 3: Corrección de Problemas Críticos
-Resuelve: Problema 1 - Grupos con 0 archivos
+Part of Phase 3: Critical Problem Fixes
+Resolves: Problem 1 - Groups with 0 files
 """
 
 from typing import Dict, List, Optional
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class GroupManager:
-    """Gestor de grupos que previene grupos vacíos"""
+    """Group manager that prevents empty groups"""
     
     def __init__(self, check_file_existence: bool = True):
         """Initialize the group manager.
@@ -35,25 +35,25 @@ class GroupManager:
     
     def filter_empty_groups(self, groups: Dict[str, List[str]]) -> Dict[str, List[str]]:
         """
-        Elimina grupos sin archivos o con archivos inexistentes.
+        Remove groups without files or with non-existent files.
         
         Args:
-            groups: Diccionario de grupos con listas de archivos
+            groups: Dictionary of groups with file lists
             
         Returns:
-            Diccionario filtrado sin grupos vacíos
+            Filtered dictionary without empty groups
         """
         filtered_groups = {}
         
         for group_name, files in groups.items():
-            # Filtrar archivos que realmente existen (si está habilitado)
+            # Filter files that actually exist (if enabled)
             if self.check_file_existence:
                 existing_files = [f for f in files if self._file_exists(f)]
             else:
-                # En modo test, asumir que todos los archivos existen
+                # In test mode, assume all files exist
                 existing_files = files
             
-            # Solo añadir grupo si tiene archivos válidos
+            # Only add group if it has valid files
             if existing_files and len(existing_files) > 0:
                 filtered_groups[group_name] = existing_files
                 self.logger.info(f"✅ Group '{group_name}' has {len(existing_files)} valid files")
@@ -64,13 +64,13 @@ class GroupManager:
     
     def _file_exists(self, file_path: str) -> bool:
         """
-        Verifica que el archivo existe realmente.
+        Verify that the file actually exists.
         
         Args:
-            file_path: Ruta del archivo a verificar
+            file_path: Path of the file to verify
             
         Returns:
-            True si el archivo existe
+            True if the file exists
         """
         try:
             return Path(file_path).exists()
@@ -80,26 +80,26 @@ class GroupManager:
     
     def create_groups(self, files: List[FileInfo]) -> Dict[str, List[str]]:
         """
-        Crea grupos asegurando que no estén vacíos.
+        Create groups ensuring they are not empty.
         
         Args:
-            files: Lista de FileInfo para agrupar
+            files: List of FileInfo to group
             
         Returns:
-            Diccionario de grupos válidos sin grupos vacíos
+            Dictionary of valid groups without empty groups
         """
         raw_groups = self._build_raw_groups(files)
         return self.filter_empty_groups(raw_groups)
     
     def _build_raw_groups(self, files: List[FileInfo]) -> Dict[str, List[str]]:
         """
-        Construye grupos iniciales basado en patrones de archivos.
+        Build initial groups based on file patterns.
         
         Args:
-            files: Lista de FileInfo
+            files: List of FileInfo
             
         Returns:
-            Grupos iniciales (pueden estar vacíos)
+            Initial groups (may be empty)
         """
         groups = {
             'core_modules': [],
@@ -113,7 +113,7 @@ class GroupManager:
             file_path = file_info.path
             file_name = file_info.name.lower()
             
-            # Lógica de agrupación
+            # Grouping logic
             if 'test' in file_path.lower() or file_name.startswith('test_'):
                 groups['test_modules'].append(file_path)
             elif 'core' in file_path.lower() or 'main' in file_name:
@@ -129,16 +129,16 @@ class GroupManager:
     
     def validate_groups(self, groups: Dict[str, List[str]]) -> bool:
         """
-        Valida que no hay grupos vacíos.
+        Validate that there are no empty groups.
         
         Args:
-            groups: Diccionario de grupos a validar
+            groups: Dictionary of groups to validate
             
         Returns:
-            True si todos los grupos tienen archivos
+            True if all groups have files
             
         Raises:
-            ValueError: Si se encuentra un grupo vacío
+            ValueError: If an empty group is found
         """
         for group_name, files in groups.items():
             if not files or len(files) == 0:
@@ -149,13 +149,13 @@ class GroupManager:
     
     def get_group_statistics(self, groups: Dict[str, List[str]]) -> Dict:
         """
-        Genera estadísticas de los grupos.
+        Generate group statistics.
         
         Args:
-            groups: Diccionario de grupos
+            groups: Dictionary of groups
             
         Returns:
-            Estadísticas de agrupación
+            Grouping statistics
         """
         total_files = sum(len(files) for files in groups.values())
         

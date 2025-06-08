@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 """
-Sistema de prioridad para grupos y eliminación de duplicación.
+Priority system for groups and duplication removal.
 
-Parte de la Fase 3: Corrección de Problemas Críticos
-Resuelve: Problema 3 - Mismos archivos aparecen en diferentes grupos
+Part of Phase 3: Critical Problem Fixes
+Resolves: Problem 3 - Same files appear in different groups
 """
 
 from typing import Dict, List, Set
@@ -16,16 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 class GroupPriority(Enum):
-    """Prioridades para asignación de archivos a grupos"""
-    CIRCULAR_DEPENDENCIES = 1    # Mayor prioridad
+    """Priorities for file assignment to groups"""
+    CIRCULAR_DEPENDENCIES = 1    # Highest priority
     CORE_MODULES = 2
     FEATURE_MODULES = 3
     UTILITY_MODULES = 4
-    TEST_MODULES = 5             # Menor prioridad
+    TEST_MODULES = 5             # Lowest priority
 
 
 class GroupPrioritySystem:
-    """Sistema de prioridad para evitar archivos duplicados"""
+    """Priority system to avoid duplicate files"""
     
     def __init__(self):
         """Initialize the group priority system."""
@@ -173,13 +173,13 @@ class GroupPrioritySystem:
     
     def resolve_conflicts_by_priority(self, conflicts: Dict[str, List[str]]) -> Dict[str, str]:
         """
-        Resuelve conflictos usando el sistema de prioridad.
+        Resolve conflicts using the priority system.
         
         Args:
-            conflicts: Diccionario archivo -> lista de grupos en conflicto
+            conflicts: Dictionary file -> list of conflicting groups
             
         Returns:
-            Diccionario archivo -> grupo asignado
+            Dictionary file -> assigned group
         """
         resolutions = {}
         
