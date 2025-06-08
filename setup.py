@@ -47,7 +47,7 @@ setup(
     install_requires=DEPENDENCIES,
     entry_points={
         "console_scripts": [
-            "projectprompt=main:main",
+            "projectprompt=src.cli:main",
         ],
     },
     classifiers=[

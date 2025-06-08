@@ -33,4 +33,4 @@ classifiers = [
 ]
 
 [project.scripts]
-projectprompt = "main:main"
+projectprompt = "src.cli:main"
