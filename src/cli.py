@@ -278,6 +278,78 @@ def clean(analysis_dir: Optional[str]):
         click.echo("📭 No analysis directory found to clean.")
 
 @cli.command()
+@click.argument('suggestion_name')
+@click.option('--phase', '-p', type=int, help='Generate prompt for specific phase only')
+@click.option('--analysis-dir', '-a', default=None, help='Analysis directory (default: ./project-prompt-output)')
+def generate_prompts(suggestion_name: str, phase: Optional[int], analysis_dir: Optional[str]):
+    """Generate implementation prompts from suggestion file.
+    
+    Creates detailed prompts for each phase of suggestions that can be used
+    with AI assistants to implement the recommended improvements.
+    
+    Examples:
+      projectprompt generate-prompts "feature_modules"
+      projectprompt generate-prompts "core_modules" --phase 2
+      projectprompt generate-prompts "utility_modules" --analysis-dir ./custom-output
+    """
+    from .generators import ImplementationPromptGenerator
+    
+    # Determine analysis directory
+    analysis_path = Path(analysis_dir) if analysis_dir else Path('./project-prompt-output')
+    
+    # Validate that analysis exists
+    if not analysis_path.exists():
+        click.echo("❌ Analysis directory not found.", err=True)
+        click.echo("💡 Run 'projectprompt analyze' first to create analysis data.")
+        return
+    
+    # Initialize prompt generator
+    generator = ImplementationPromptGenerator(analysis_path)
+    
+    try:
+        if phase:
+            # Generate prompt for specific phase only
+            click.echo(f"🤖 Generating implementation prompt for {suggestion_name} - Phase {phase}")
+            with click.progressbar(length=100, label='Generating prompt') as bar:
+                bar.update(50)
+                prompt_file = generator.generate_single_phase_prompt(suggestion_name, phase)
+                bar.update(50)
+            click.echo(f"✅ Generated prompt for phase {phase}: {prompt_file}")
+        else:
+            # Generate prompts for all phases
+            click.echo(f"🤖 Generating implementation prompts for: {suggestion_name}")
+            with click.progressbar(length=100, label='Generating prompts') as bar:
+                bar.update(20)
+                prompt_files = generator.generate_prompts_for_suggestion(suggestion_name)
+                bar.update(80)
+            
+            click.echo(f"✅ Generated {len(prompt_files)} implementation prompts:")
+            for file in prompt_files:
+                file_path = Path(file)
+                click.echo(f"   • {file_path.name}")
+        
+        click.echo(f"\n📁 Prompts saved to: {analysis_path}/prompts/")
+        click.echo("\n🚀 Next steps:")
+        click.echo("   1. Review the generated prompts")
+        click.echo("   2. Use each prompt with your AI assistant to implement the phases")
+        click.echo("   3. Follow the implementation steps in order")
+        click.echo("   4. Test and validate each phase before moving to the next")
+        
+    except FileNotFoundError as e:
+        click.echo(f"❌ Suggestion file not found: {suggestion_name}", err=True)
+        
+        # Show available suggestions
+        available_suggestions = generator.list_available_suggestions()
+        if available_suggestions:
+            click.echo(f"📋 Available suggestions: {', '.join(available_suggestions)}")
+        else:
+            click.echo("💡 Run 'projectprompt suggest \"group_name\"' first to generate suggestions")
+    except ValueError as e:
+        click.echo(f"❌ Error: {str(e)}", err=True)
+    except Exception as e:
+        click.echo(f"❌ Error generating prompts: {str(e)}", err=True)
+
+@cli.command()
 @click.option('--force', '-f', is_flag=True, help='Force uninstall without confirmation')
 @click.option('--keep-data', is_flag=True, help='Keep analysis data files (only remove the tool)')
 def uninstall(force: bool, keep_data: bool):
