@@ -5,7 +5,7 @@
 ProjectPrompt v2.0 - Simplified CLI
 Simple project analysis and AI suggestions
 
-Fase 4: CLI simplificado con solo 2 comandos principales
+Phase 4: Simplified CLI with only 2 main commands
 """
 
 import click
@@ -19,7 +19,7 @@ from .core.analyzer import ProjectAnalyzer
 from .generators.suggestions import SuggestionGenerator
 from .utils.config import Config
 
-# Configuración global
+# Global configuration
 config = Config()
 
 @click.group()
@@ -42,7 +42,7 @@ def cli(verbose: bool):
 @click.argument('path', type=click.Path(exists=True), default='.')
 @click.option('--output', '-o', 
               default=None, 
-              help='Output directory (default: ./project-output)')
+              help='Output directory (default: ./project-prompt-output)')
 @click.option('--max-files', '-m', 
               default=None, 
               type=int,
@@ -59,19 +59,19 @@ def analyze(path: str, output: Optional[str], max_files: Optional[int], exclude:
     
     Examples:
       projectprompt analyze .
-      projectprompt analyze /path/to/project --output ./analysis
+      projectprompt analyze /path/to/project --output ./project-prompt-output
       projectprompt analyze . --max-files 500 --exclude "*.log" --exclude "node_modules"
     """
     
-    # Configurar parámetros con defaults
+    # Configure parameters with defaults
     if output:
         output_dir = output
     else:
-        # Si no se especifica output, usar el directorio del proyecto
-        output_dir = path
+        # Use project-prompt-output as default instead of project directory
+        output_dir = str(Path(path) / "project-prompt-output")
     max_files_limit = max_files or min(config.max_files_to_analyze, 100)  # Limit for testing
     
-    # Mostrar información inicial
+    # Show initial information
     click.echo(f"🔍 Analyzing project: {Path(path).absolute()}")
     click.echo(f"📁 Output directory: {output_dir}")
     click.echo(f"📊 Max files to analyze: {max_files_limit}")
@@ -80,7 +80,7 @@ def analyze(path: str, output: Optional[str], max_files: Optional[int], exclude:
         click.echo(f"🚫 Excluding patterns: {', '.join(exclude)}")
     
     try:
-        # Realizar análisis
+        # Perform analysis
         with click.progressbar(length=100, label='Analyzing project') as bar:
             bar.update(30)
             
@@ -88,29 +88,25 @@ def analyze(path: str, output: Optional[str], max_files: Optional[int], exclude:
             from .models.project import ScanConfig
             scan_config = ScanConfig(max_files=max_files_limit)
             
-            # Analizar proyecto (incluye escaneo, agrupación y validación)
+            # Analyze project (includes scanning, grouping and validation)
             analyzer = ProjectAnalyzer(scan_config=scan_config)
-            analysis = analyzer.analyze_project(path)
-            bar.update(50)
-            
-            # Guardar resultados
             output_path = Path(output_dir)
-            output_path.mkdir(parents=True, exist_ok=True)
-            _save_analysis_results(analysis, output_path)
-            bar.update(20)
+            analysis = analyzer.analyze_project(Path(path), output_dir=output_path)
+            bar.update(70)
         
-        # Mostrar resultados
+        # Show results
         click.echo(f"✅ Analysis complete! Results saved to: {output_path}")
-        click.echo(f"📊 Found {len(analysis.groups)} functional groups:")
+        click.echo(f"📊 Found {len(analysis.get('functional_groups', {}))} functional groups:")
         
-        # Tabla de grupos
-        _display_groups_table(analysis.groups)
+        # Groups table
+        _display_groups_table(analysis.get('functional_groups', {}))
         
-        # Próximos pasos
+        # Next steps
         click.echo("\n🚀 Next steps:")
         click.echo("   Choose a group to analyze with AI:")
         
-        for group_name in analysis.groups.keys():
+        functional_groups = analysis.get('functional_groups', {})
+        for group_name in functional_groups.keys():
             click.echo(f"   • projectprompt suggest \"{group_name}\"")
             
     except Exception as e:
@@ -121,7 +117,7 @@ def analyze(path: str, output: Optional[str], max_files: Optional[int], exclude:
 @click.argument('group_name')
 @click.option('--analysis-dir', '-a', 
               default=None,
-              help='Analysis directory (default: ./project-output)')
+              help='Analysis directory (default: ./project-prompt-output)')
 @click.option('--api', '-p',
               default=None,
               type=click.Choice(['anthropic', 'openai']),
@@ -133,8 +129,11 @@ def analyze(path: str, output: Optional[str], max_files: Optional[int], exclude:
 @click.option('--save-prompt', '-s',
               is_flag=True,
               help='Save the created prompt to file')
+@click.option('--test-mode', '-t',
+              is_flag=True,
+              help='Run in test mode without making API calls')
 def suggest(group_name: str, analysis_dir: Optional[str], api: Optional[str], 
-           detail_level: str, save_prompt: bool):
+           detail_level: str, save_prompt: bool, test_mode: bool):
     """
     Create AI-powered suggestions for a specific functional group.
     
@@ -147,58 +146,58 @@ def suggest(group_name: str, analysis_dir: Optional[str], api: Optional[str],
       projectprompt suggest "Utils" --save-prompt
     """
     
-    # Configurar parámetros
-    analysis_path = Path(analysis_dir or config.default_output_dir)
+    # Configure parameters
+    analysis_path = Path(analysis_dir) if analysis_dir else Path('./project-prompt-output')
     api_provider = api or config.default_api_provider
     
-    # Validar que existe análisis previo
+    # Validate that previous analysis exists
     if not analysis_path.exists():
         click.echo("❌ Analysis directory not found.", err=True)
         click.echo("💡 Run 'projectprompt analyze' first to create analysis data.")
         return
     
-    # Validar configuración de API
+    # Validate API configuration
     if not _validate_api_config(api_provider):
         return
     
-    # Verificar que el grupo existe
+    # Verify that the group exists
     available_groups = _load_available_groups(analysis_path)
     if group_name not in available_groups:
         click.echo(f"❌ Group '{group_name}' not found.", err=True)
         click.echo(f"📋 Available groups: {', '.join(available_groups)}")
         return
     
-    # Inicializar generador
-    test_mode = not config.has_any_api_key()
-    generator = SuggestionGenerator(api_provider=api_provider, test_mode=test_mode)
+    # Initialize generator
+    use_test_mode = test_mode or not config.has_any_api_key()
+    generator = SuggestionGenerator(api_provider=api_provider, test_mode=use_test_mode)
     
     click.echo(f"🤖 Generating suggestions for group: {group_name}")
     click.echo(f"🔧 Using API: {api_provider} (detail level: {detail_level})")
-    if test_mode:
+    if use_test_mode:
         click.echo("🧪 Running in test mode - no API calls will be made")
     
     try:
         with click.progressbar(length=100, label='Generating suggestions') as bar:
             bar.update(20)
             
-            # Cargar contexto del grupo
+            # Load group context
             group_context = generator.load_group_context(group_name, analysis_path)
             bar.update(30)
             
-            # Generar prompt contextualizado
+            # Generate contextualized prompt
             prompt = generator.create_contextual_prompt(group_context, detail_level)
             bar.update(20)
             
-            # Generar sugerencias con IA
+            # Generate suggestions with AI
             suggestions = generator.generate_suggestions(prompt, group_context)
             bar.update(20)
             
-            # Guardar resultados
+            # Save results
             suggestions_file = analysis_path / "suggestions" / f"{_sanitize_filename(group_name)}-suggestions.md"
             suggestions_file.parent.mkdir(parents=True, exist_ok=True)
             suggestions_file.write_text(suggestions, encoding='utf-8')
             
-            # Guardar prompt si se solicita
+            # Save prompt if requested
             if save_prompt:
                 prompt_file = analysis_path / "prompts" / f"{_sanitize_filename(group_name)}-prompt.md"
                 prompt_file.parent.mkdir(parents=True, exist_ok=True)
@@ -207,19 +206,19 @@ def suggest(group_name: str, analysis_dir: Optional[str], api: Optional[str],
             
             bar.update(10)
         
-        # Mostrar resultados
+        # Show results
         click.echo(f"✅ Suggestions created: {suggestions_file}")
         newline_char = '\n'
         click.echo(f"📄 {len(suggestions.split(newline_char))} lines of suggestions created")
         
-        # Mostrar preview de sugerencias
+        # Show suggestions preview
         _display_suggestions_preview(suggestions)
         
     except Exception as e:
         click.echo(f"❌ Error generating suggestions: {str(e)}", err=True)
         raise click.ClickException(f"Suggestion generation failed: {str(e)}")
 
-# Comandos de utilidad adicionales
+# Additional utility commands
 
 @cli.command()
 @click.option('--analysis-dir', '-a', 
@@ -228,25 +227,25 @@ def suggest(group_name: str, analysis_dir: Optional[str], api: Optional[str],
 def status(analysis_dir: Optional[str]):
     """Show current analysis status and available groups."""
     
-    analysis_path = Path(analysis_dir or config.default_output_dir)
+    analysis_path = Path(analysis_dir) if analysis_dir else Path('./project-prompt-output')
     
     if not analysis_path.exists():
         click.echo("📭 No analysis found. Run 'projectprompt analyze' first.")
         return
     
-    # Cargar información de estado
+    # Load status information
     available_groups = _load_available_groups(analysis_path)
     suggestions_dir = analysis_path / "suggestions"
     
     click.echo(f"📊 Analysis Status for: {analysis_path}")
     click.echo("=" * 50)
     
-    # Grupos disponibles
+    # Available groups
     click.echo(f"📁 Available groups ({len(available_groups)}):")
     for group in available_groups:
         click.echo(f"   • {group}")
     
-    # Sugerencias generadas
+    # Generated suggestions
     if suggestions_dir.exists():
         suggestion_files = list(suggestions_dir.glob("*-suggestions.md"))
         click.echo(f"\n🤖 Created suggestions ({len(suggestion_files)}):")
@@ -259,7 +258,7 @@ def status(analysis_dir: Optional[str]):
     click.echo("\n🚀 Next actions:")
     if available_groups:
         click.echo("   Create suggestions with:")
-        for group in available_groups[:3]:  # Mostrar solo primeros 3
+        for group in available_groups[:3]:  # Show only first 3
             click.echo(f"   • projectprompt suggest \"{group}\"")
 
 @cli.command()
@@ -270,7 +269,7 @@ def status(analysis_dir: Optional[str]):
 def clean(analysis_dir: Optional[str]):
     """Clean analysis data and start fresh."""
     
-    analysis_path = Path(analysis_dir or config.default_output_dir)
+    analysis_path = Path(analysis_dir) if analysis_dir else Path('./project-prompt-output')
     
     if analysis_path.exists():
         shutil.rmtree(analysis_path)
@@ -278,56 +277,12 @@ def clean(analysis_dir: Optional[str]):
     else:
         click.echo("📭 No analysis directory found to clean.")
 
-# Funciones auxiliares
-
-def _save_analysis_results(analysis, output_path: Path):
-    """Save analysis results to directory structure."""
-    # Create analysis file
-    analysis_file = output_path / "analysis.json"
-    
-    # Convert analysis to dict for JSON serialization
-    analysis_data = {
-        'project_name': analysis.project_name,
-        'project_path': analysis.project_path,
-        'project_type': analysis.project_type.value if hasattr(analysis.project_type, 'value') else str(analysis.project_type),
-        'main_language': analysis.main_language,
-        'file_count': analysis.file_count,
-        'analysis_date': analysis.analysis_date,
-        'detected_functionalities': analysis.detected_functionalities,
-        'files': [{'path': f.path, 'size': f.size} for f in analysis.files] if hasattr(analysis, 'files') else [],
-        'functional_groups': analysis.groups if hasattr(analysis, 'groups') else {},
-        'analysis_summary': {
-            'total_files': analysis.file_count,
-            'total_groups': len(analysis.groups) if hasattr(analysis, 'groups') else 0,
-            'main_language': analysis.main_language
-        },
-        'status': analysis.status.value if hasattr(analysis.status, 'value') else str(analysis.status)
-    }
-    
-    # Save main analysis
-    with open(analysis_file, 'w', encoding='utf-8') as f:
-        json.dump(analysis_data, f, indent=2, ensure_ascii=False)
-    
-    # Save individual group files
-    if hasattr(analysis, 'groups') and analysis.groups:
-        groups_dir = output_path / "groups"
-        groups_dir.mkdir(exist_ok=True)
-        
-        for group_name, files in analysis.groups.items():
-            group_file = groups_dir / f"{_sanitize_filename(group_name)}.json"
-            group_data = {
-                'name': group_name,
-                'files': files,
-                'file_count': len(files)
-            }
-            
-            with open(group_file, 'w', encoding='utf-8') as f:
-                json.dump(group_data, f, indent=2, ensure_ascii=False)
+# Helper functions
 
 def _validate_config() -> bool:
-    """Valida configuración básica"""
+    """Validate basic configuration"""
     try:
-        # Verificar que al menos una API key está disponible
+        # Check that at least one API key is available
         if not config.has_any_api_key():
             click.echo("❌ No API keys found.", err=True)
             click.echo("💡 Please set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env file")
@@ -340,7 +295,7 @@ def _validate_config() -> bool:
         return False
 
 def _validate_api_config(provider: str) -> bool:
-    """Valida configuración específica de API"""
+    """Validate specific API configuration"""
     try:
         if provider == "anthropic":
             if not config.has_anthropic_key():
@@ -361,29 +316,29 @@ def _validate_api_config(provider: str) -> bool:
         return False
 
 def _display_groups_table(groups: dict):
-    """Muestra tabla formateada de grupos"""
+    """Display formatted table of groups"""
     click.echo()
     click.echo("┌─────────────────────────────┬───────────┐")
     click.echo("│ Group Name                  │ Files     │")
     click.echo("├─────────────────────────────┼───────────┤")
     
     for group_name, files in groups.items():
-        # Truncar nombre si es muy largo
+        # Truncate name if too long
         display_name = group_name[:27] + "..." if len(group_name) > 30 else group_name
         click.echo(f"│ {display_name:<27} │ {len(files):>9} │")
     
     click.echo("└─────────────────────────────┴───────────┘")
 
 def _display_suggestions_preview(suggestions: str):
-    """Muestra preview de las sugerencias generadas"""
+    """Display preview of generated suggestions"""
     lines = suggestions.split('\n')
-    preview_lines = lines[:10]  # Primeras 10 líneas
+    preview_lines = lines[:10]  # First 10 lines
     
     click.echo("\n📋 Suggestions preview:")
     click.echo("─" * 40)
     for line in preview_lines:
         if line.strip():
-            # Truncar líneas muy largas
+            # Truncate very long lines
             display_line = line[:75] + "..." if len(line) > 75 else line
             click.echo(display_line)
     
@@ -392,8 +347,16 @@ def _display_suggestions_preview(suggestions: str):
         click.echo(f"({len(lines) - 10} more lines in full file)")
 
 def _load_available_groups(analysis_path: Path) -> list:
-    """Carga grupos disponibles desde análisis previo"""
-    # Load from main analysis.json file
+    """Load available groups from previous analysis"""
+    # Load from groups.json file (new structure)
+    groups_file = analysis_path / "groups.json"
+    if groups_file.exists():
+        with open(groups_file) as f:
+            data = json.load(f)
+            groups = data.get('groups', {})
+            return list(groups.keys())
+    
+    # Fallback to old analysis.json for backward compatibility
     analysis_file = analysis_path / "analysis.json"
     if analysis_file.exists():
         with open(analysis_file) as f:
@@ -404,15 +367,15 @@ def _load_available_groups(analysis_path: Path) -> list:
     return []
 
 def _sanitize_filename(name: str) -> str:
-    """Convierte nombre de grupo a filename válido"""
+    """Convert group name to valid filename"""
     import re
-    # Reemplazar espacios y caracteres especiales
+    # Replace spaces and special characters
     sanitized = re.sub(r'[^\w\s-]', '', name)
     sanitized = re.sub(r'[-\s]+', '-', sanitized)
     return sanitized.lower().strip('-')
 
 def main():
-    """Entry point principal para CLI"""
+    """Main entry point for CLI"""
     try:
         cli()
     except KeyboardInterrupt:

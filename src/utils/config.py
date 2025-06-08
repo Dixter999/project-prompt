@@ -73,7 +73,7 @@ class Config:
     @property
     def default_output_dir(self) -> str:
         """Directorio por defecto para outputs"""
-        return os.getenv('DEFAULT_OUTPUT_DIR', './project-output')
+        return os.getenv('DEFAULT_OUTPUT_DIR', './project-prompt-output')
     
     @property
     def max_files_to_analyze(self) -> int:

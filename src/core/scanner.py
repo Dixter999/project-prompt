@@ -5,12 +5,14 @@
 Simplified ProjectScanner for the new architecture.
 
 Scans project structure, files and directories without UI dependencies.
+Respects .gitignore patterns.
 """
 
 import os
 import time
+import fnmatch
 from pathlib import Path
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Set
 from collections import Counter
 
 try:
@@ -20,8 +22,168 @@ except ImportError:
     from ..models.project import ProjectStructure, FileInfo, DirectoryInfo, ScanConfig
 
 
+class GitignoreParser:
+    """Parser for .gitignore files that respects Git patterns"""
+    
+    def __init__(self, project_path: str):
+        """
+        Initialize gitignore parser.
+        
+        Args:
+            project_path: Root path of the project
+        """
+        self.project_path = Path(project_path)
+        self.gitignore_patterns = []
+        self.default_patterns = [
+            '__pycache__/',
+            '*.pyc',
+            '*.pyo', 
+            '*.pyd',
+            '.env',
+            '.venv/',
+            'venv/',
+            'node_modules/',
+            '.git/',
+            '.DS_Store',
+            'Thumbs.db',
+            '*.log',
+            '.coverage',
+            '.pytest_cache/',
+            'dist/',
+            'build/',
+            '*.egg-info/',
+            '.idea/',
+            '.vscode/',
+            '*.swp',
+            '*.swo',
+            '*~',
+            '.tmp/',
+            'tmp/',
+        ]
+        self.load_gitignore_files()
+    
+    def load_gitignore_files(self):
+        """Load all .gitignore files in the project"""
+        patterns = []
+        
+        # Add default patterns
+        patterns.extend(self.default_patterns)
+        
+        # Load main .gitignore
+        main_gitignore = self.project_path / '.gitignore'
+        if main_gitignore.exists():
+            try:
+                content = main_gitignore.read_text(encoding='utf-8')
+                patterns.extend(self.parse_gitignore_patterns(content))
+            except Exception:
+                pass
+        
+        # Load .gitignore files in subdirectories
+        for gitignore_file in self.project_path.rglob('.gitignore'):
+            if gitignore_file != main_gitignore:
+                try:
+                    content = gitignore_file.read_text(encoding='utf-8')
+                    relative_dir = gitignore_file.parent.relative_to(self.project_path)
+                    subdir_patterns = self.parse_gitignore_patterns(content)
+                    # Prefix subdirectory patterns with their relative path
+                    for pattern in subdir_patterns:
+                        if not pattern.startswith('/'):
+                            patterns.append(str(relative_dir / pattern))
+                        else:
+                            patterns.append(str(relative_dir / pattern[1:]))
+                except Exception:
+                    pass
+        
+        self.gitignore_patterns = patterns
+    
+    def parse_gitignore_patterns(self, gitignore_content: str) -> List[str]:
+        """
+        Parse patterns from .gitignore content.
+        
+        Args:
+            gitignore_content: Content of .gitignore file
+            
+        Returns:
+            List of patterns to ignore
+        """
+        patterns = []
+        
+        for line in gitignore_content.splitlines():
+            line = line.strip()
+            
+            # Skip empty lines and comments
+            if not line or line.startswith('#'):
+                continue
+            
+            # Handle negation patterns (!)
+            if line.startswith('!'):
+                # TODO: Implement negation support if needed
+                continue
+            
+            patterns.append(line)
+        
+        return patterns
+    
+    def should_ignore(self, file_path: str) -> bool:
+        """
+        Determine if a file should be ignored based on .gitignore patterns.
+        
+        Args:
+            file_path: Relative path from project root
+            
+        Returns:
+            True if file should be ignored
+        """
+        # Normalize path separators
+        normalized_path = file_path.replace('\\', '/')
+        
+        for pattern in self.gitignore_patterns:
+            if self._matches_pattern(normalized_path, pattern):
+                return True
+        
+        return False
+    
+    def _matches_pattern(self, file_path: str, pattern: str) -> bool:
+        """
+        Check if file path matches a gitignore pattern.
+        
+        Args:
+            file_path: File path to check
+            pattern: Gitignore pattern
+            
+        Returns:
+            True if pattern matches
+        """
+        # Remove leading slash
+        if pattern.startswith('/'):
+            pattern = pattern[1:]
+        
+        # Directory patterns
+        if pattern.endswith('/'):
+            pattern = pattern[:-1]
+            # Check if any parent directory matches
+            path_parts = file_path.split('/')
+            for i in range(len(path_parts)):
+                parent_path = '/'.join(path_parts[:i+1])
+                if fnmatch.fnmatch(parent_path, pattern):
+                    return True
+            return False
+        
+        # File patterns
+        if '/' in pattern:
+            # Pattern with directory structure
+            return fnmatch.fnmatch(file_path, pattern)
+        else:
+            # Pattern applies to any directory level
+            file_name = file_path.split('/')[-1]
+            if fnmatch.fnmatch(file_name, pattern):
+                return True
+            # Also check full path for patterns like "*.log"
+            return fnmatch.fnmatch(file_path, pattern)
+
+
 class ProjectScanner:
-    """Simplified scanner for file and directory structure."""
+    """Simplified scanner for file and directory structure with .gitignore support."""
     
     def __init__(self, config: Optional[ScanConfig] = None):
         """
@@ -32,6 +194,7 @@ class ProjectScanner:
         """
         self.config = config or ScanConfig()
         self.max_file_size = self.config.max_file_size_mb * 1024 * 1024  # Convert to bytes
+        self.gitignore_parser = None
         
         # Internal results
         self.reset()
@@ -48,11 +211,12 @@ class ProjectScanner:
             'binary_files': 0,
             'skipped_files': 0,
             'total_size_kb': 0,
+            'gitignore_ignored': 0,
         }
     
     def scan_project(self, project_path: str) -> ProjectStructure:
         """
-        Scan a project and analyze its structure.
+        Scan a project and analyze its structure, respecting .gitignore patterns.
         
         Args:
             project_path: Path to project directory
@@ -65,6 +229,9 @@ class ProjectScanner:
         
         if not os.path.isdir(project_path):
             raise ValueError(f"Path is not a valid directory: {project_path}")
+        
+        # Initialize gitignore parser
+        self.gitignore_parser = GitignoreParser(project_path)
         
         # Scan recursively
         self._scan_directory(project_path, project_path)
@@ -85,12 +252,17 @@ class ProjectScanner:
         )
     
     def _scan_directory(self, dir_path: str, base_path: str, depth: int = 0):
-        """Scan directory recursively."""
+        """Scan directory recursively, respecting .gitignore patterns."""
         if depth > 20:  # Prevent excessive recursion
             return
             
         # Early exit if we've hit file limit
         if self.stats['total_files'] >= self.config.max_files:
+            return
+        
+        # Check if this directory should be ignored by gitignore
+        rel_path = os.path.relpath(dir_path, base_path)
+        if rel_path != '.' and self.gitignore_parser and self.gitignore_parser.should_ignore(rel_path + '/'):
             return
             
         self.stats['total_dirs'] += 1
@@ -109,6 +281,12 @@ class ProjectScanner:
                     break
                 
                 item_path = os.path.join(dir_path, item_name)
+                item_rel_path = os.path.relpath(item_path, base_path)
+                
+                # Check gitignore before processing
+                if self.gitignore_parser and self.gitignore_parser.should_ignore(item_rel_path):
+                    self.stats['gitignore_ignored'] += 1
+                    continue
                 
                 if os.path.isdir(item_path):
                     subdirs_in_dir += 1
@@ -123,7 +301,6 @@ class ProjectScanner:
                             dir_size += file_info.size
             
             # Create directory info
-            rel_path = os.path.relpath(dir_path, base_path)
             if rel_path != '.':  # Don't add root directory
                 dir_info = DirectoryInfo(
                     path=rel_path,
@@ -194,7 +371,7 @@ class ProjectScanner:
             return None
     
     def _is_binary_file(self, file_path: str) -> bool:
-        """Verificar si archivo es binario."""
+        """Check if file is binary."""
         try:
             with open(file_path, 'rb') as f:
                 chunk = f.read(1024)
@@ -203,7 +380,7 @@ class ProjectScanner:
             return True
     
     def _detect_language(self, file_name: str) -> Optional[str]:
-        """Detectar lenguaje por extensión de archivo."""
+        """Detect language by file extension."""
         ext = self._get_extension(file_name).lower()
         
         language_map = {
@@ -251,13 +428,13 @@ class ProjectScanner:
         return language_map.get(ext)
     
     def _get_extension(self, file_name: str) -> str:
-        """Obtener extensión de archivo."""
+        """Get file extension."""
         if '.' not in file_name:
             return ''
         return '.' + file_name.split('.')[-1]
     
     def _should_ignore_dir(self, dir_name: str) -> bool:
-        """Verificar si directorio debe ser ignorado."""
+        """Check if directory should be ignored."""
         return any(
             dir_name == ignore_dir
             or (dir_name.startswith('.') and dir_name not in ['.github'])
@@ -267,7 +444,7 @@ class ProjectScanner:
         )
     
     def _should_ignore_file(self, file_name: str) -> bool:
-        """Verificar si archivo debe ser ignorado."""
+        """Check if file should be ignored."""
         return any(
             file_name == pattern
             or (file_name.startswith('.') and file_name not in ['.gitignore', '.env'])
@@ -277,18 +454,18 @@ class ProjectScanner:
         )
     
     def _analyze_languages(self):
-        """Analizar distribución de lenguajes."""
+        """Analyze language distribution."""
         if not self.languages:
             return
         
         total_files = sum(lang['files'] for lang in self.languages.values())
         
-        # Calcular porcentajes
+        # Calculate percentages
         for lang_data in self.languages.values():
             percentage = (lang_data['files'] / total_files * 100) if total_files else 0
             lang_data['percentage'] = round(percentage, 1)
         
-        # Identificar lenguajes principales
+        # Identify main languages
         main_languages = [
             name for name, data in self.languages.items() 
             if data['percentage'] >= 10
