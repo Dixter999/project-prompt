@@ -33,7 +33,7 @@ def cli(verbose: bool):
       1. projectprompt analyze /path/to/project
       2. projectprompt suggest "Group Name"
     
-    📖 Documentation: https://github.com/your-repo/projectprompt
+    📖 Documentation: https://github.com/Dixter999/project-prompt
     """
     if verbose:
         click.echo("🔧 Verbose mode enabled")
