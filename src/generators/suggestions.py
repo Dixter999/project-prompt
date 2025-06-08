@@ -36,14 +36,14 @@ class SuggestionGenerator:
     def _init_client(self):
         """Initialize the AI client based on provider"""
         if self.api_provider == "anthropic":
-            from ..utils.config import Config
+            from utils.config import Config
             config = Config()
             if config.has_anthropic_key():
                 self.client = anthropic.Anthropic(api_key=config.anthropic_api_key)
             else:
                 self.test_mode = True
         elif self.api_provider == "openai":
-            from ..utils.config import Config
+            from utils.config import Config
             config = Config()
             if config.has_openai_key():
                 self.client = openai.OpenAI(api_key=config.openai_api_key)
