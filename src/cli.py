@@ -277,6 +277,126 @@ def clean(analysis_dir: Optional[str]):
     else:
         click.echo("📭 No analysis directory found to clean.")
 
+@cli.command()
+@click.option('--force', '-f', is_flag=True, help='Force uninstall without confirmation')
+@click.option('--keep-data', is_flag=True, help='Keep analysis data files (only remove the tool)')
+def uninstall(force: bool, keep_data: bool):
+    """
+    Uninstall ProjectPrompt from your system.
+    
+    This command will:
+    - Remove the installed ProjectPrompt package
+    - Optionally clean up analysis data in the current directory
+    - Show manual cleanup steps for remaining files
+    
+    Examples:
+      projectprompt uninstall
+      projectprompt uninstall --force
+      projectprompt uninstall --keep-data
+    """
+    import subprocess
+    import sys
+    
+    click.echo("🗑️  ProjectPrompt Uninstall")
+    click.echo("=" * 40)
+    
+    if not force:
+        click.echo("This will remove ProjectPrompt from your system.")
+        if not keep_data:
+            click.echo("⚠️  This will also clean up analysis data in the current directory.")
+        if not click.confirm('Do you want to continue?'):
+            click.echo("👋 Uninstall cancelled.")
+            return
+    
+    try:
+        # Step 1: Remove analysis data (unless keep-data is specified)
+        if not keep_data:
+            current_dir = Path('.')
+            analysis_dirs = []
+            
+            # Find analysis directories in current path
+            for item in current_dir.rglob('project-prompt-output'):
+                if item.is_dir():
+                    analysis_dirs.append(item)
+            
+            if analysis_dirs:
+                click.echo(f"\n🧹 Found {len(analysis_dirs)} analysis directories to clean:")
+                for dir_path in analysis_dirs:
+                    click.echo(f"   • {dir_path}")
+                
+                if force or click.confirm('\nRemove these analysis directories?'):
+                    for dir_path in analysis_dirs:
+                        try:
+                            shutil.rmtree(dir_path)
+                            click.echo(f"✅ Removed: {dir_path}")
+                        except Exception as e:
+                            click.echo(f"⚠️  Could not remove {dir_path}: {e}")
+            else:
+                click.echo("\n📭 No analysis directories found in current path.")
+        
+        # Step 2: Uninstall the package
+        click.echo("\n📦 Uninstalling ProjectPrompt package...")
+        
+        try:
+            # Try to uninstall using pip
+            result = subprocess.run([
+                sys.executable, '-m', 'pip', 'uninstall', 'projectprompt', '-y'
+            ], capture_output=True, text=True, check=False)
+            
+            if result.returncode == 0:
+                click.echo("✅ ProjectPrompt package uninstalled successfully.")
+            else:
+                # Try alternative package names
+                for pkg_name in ['project-prompt', 'ProjectPrompt']:
+                    result = subprocess.run([
+                        sys.executable, '-m', 'pip', 'uninstall', pkg_name, '-y'
+                    ], capture_output=True, text=True, check=False)
+                    if result.returncode == 0:
+                        click.echo(f"✅ {pkg_name} package uninstalled successfully.")
+                        break
+                else:
+                    click.echo("⚠️  Could not uninstall via pip. Package might be installed differently.")
+                    
+        except Exception as e:
+            click.echo(f"⚠️  Error during pip uninstall: {e}")
+        
+        # Step 3: Show manual cleanup instructions
+        click.echo("\n🧹 Manual Cleanup (if needed):")
+        click.echo("   If ProjectPrompt was installed from source, you may need to:")
+        click.echo("   1. Remove the ProjectPrompt installation directory:")
+        click.echo("      rm -rf /path/to/project-prompt")
+        click.echo("   2. Remove .env files with API keys:")
+        click.echo("      rm /path/to/project-prompt/.env")
+        click.echo("   3. Check for remaining analysis directories:")
+        click.echo("      find ~ -name 'project-prompt-output' -type d")
+        
+        # Step 4: Verify uninstall
+        click.echo("\n🔍 Verifying uninstall...")
+        try:
+            result = subprocess.run([
+                'which', 'projectprompt'
+            ], capture_output=True, text=True, check=False)
+            
+            if result.returncode != 0:
+                click.echo("✅ ProjectPrompt command is no longer available.")
+            else:
+                click.echo(f"⚠️  ProjectPrompt command still found at: {result.stdout.strip()}")
+                click.echo("   You may need to restart your terminal or manually remove it.")
+                
+        except Exception:
+            # 'which' command might not be available on all systems
+            click.echo("   (Could not verify command removal)")
+        
+        click.echo("\n🎉 Uninstall completed!")
+        click.echo("   Thank you for using ProjectPrompt! 👋")
+        
+    except Exception as e:
+        click.echo(f"❌ Error during uninstall: {str(e)}", err=True)
+        click.echo("\n💡 Manual uninstall options:")
+        click.echo("   1. pip uninstall projectprompt")
+        click.echo("   2. rm -rf /path/to/project-prompt (if installed from source)")
+        raise click.ClickException(f"Uninstall failed: {str(e)}")
+
 # Helper functions
 
 def _validate_config() -> bool:
