@@ -38,25 +38,51 @@ cd /path/to/project-prompt && echo "ANTHROPIC_API_KEY=your_key" > .env
 
 ## 📦 Installation
 
-### Method 1: Install from Source (Recommended)
+### Method 1: Enhanced Installation (Recommended) 🆕
 ```bash
 git clone https://github.com/Dixter999/project-prompt.git
 cd project-prompt
 pip install -e .
 ```
+**🔧 Automatic Setup:** The installer now automatically:
+- Creates shell aliases for easy CLI access
+- Configures PATH for `projectprompt` command
+- Provides troubleshooting guidance if issues occur
 
-### Method 2: Local Development
-```bash
-cd /path/to/project-prompt
-pip install -e .
-```
+**✅ Next Step:** Restart your terminal or run `source ~/.zshrc`, then test with `projectprompt --help`
 
-### Method 3: Quick Development Setup
+### Method 2: Enhanced Installation Script
 ```bash
 git clone https://github.com/Dixter999/project-prompt.git
 cd project-prompt
-pip install -r requirements.txt
+chmod +x install.sh
+./install.sh
 ```
+**✅ Next Step:** Follow the on-screen verification steps and restart your terminal.
+
+### Method 3: Manual Installation (if automatic fails)
+```bash
+git clone https://github.com/Dixter999/project-prompt.git
+cd project-prompt
+pip install -e .
+# If projectprompt command not found, add this alias:
+echo 'alias projectprompt="python -m src.cli"' >> ~/.zshrc
+source ~/.zshrc
+```
+**✅ Next Step:** Test CLI access with `projectprompt --help`
+
+### 🚨 Installation Troubleshooting
+If `projectprompt` command is not found after installation:
+
+```bash
+# Quick fix: Use full Python module path
+python -m src.cli --help
+
+# Permanent fix: Add alias to your shell
+echo 'alias projectprompt="python -m src.cli"' >> ~/.zshrc
+source ~/.zshrc
+```
+**✅ Next Step:** Verify with `projectprompt --help` or proceed with `python -m src.cli`
 
 ---
 
