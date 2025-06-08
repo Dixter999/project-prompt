@@ -1,0 +1,17 @@
+{
+  "project_name": "test-small",
+  "project_path": "/mnt/h/Projects/project-prompt/test-small",
+  "project_type": "unknown",
+  "main_language": "markdown",
+  "file_count": 2,
+  "analysis_date": "2025-06-07T16:35:41.876426",
+  "detected_functionalities": [
+    "testing"
+  ],
+  "groups": {
+    "feature_modules": [
+      "README.md"
+    ]
+  },
+  "status": "completed"
+}

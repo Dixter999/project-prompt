@@ -1,0 +1,22 @@
+{
+  "name": "test_modules",
+  "files": [
+    "docs/guides/testing_guide.md",
+    "src/templates/library/src/testlib/calculator.py",
+    "src/templates/tests/class_test.py",
+    "src/templates/tests/class_test.py.new",
+    "src/templates/tests/default.py",
+    "src/templates/tests/module_test.py",
+    "src/templates/tests/module_test.py.new",
+    "test-analysis/analysis.json",
+    "tests/test_core_functionality.py",
+    "tests/test_performance.py",
+    "tests/test_phase3_critical_fixes.py",
+    "tests/test_success_metrics.py",
+    "test_end_to_end.py",
+    "test_main.py",
+    "test_phase3_simple.py",
+    "test_utils.py"
+  ],
+  "file_count": 16
+}

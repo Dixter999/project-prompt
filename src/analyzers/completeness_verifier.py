@@ -13,7 +13,7 @@ import datetime
 from src.utils import logger, config_manager
 from src.analyzers.project_scanner import get_project_scanner
 from src.analyzers.functionality_detector import get_functionality_detector
-from src.analyzers.code_quality_analyzer import get_code_quality_analyzer
+# REMOVED: code_quality_analyzer (eliminated in Fase 1)
 
 
 class CompletenessVerifier:

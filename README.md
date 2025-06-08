@@ -6,6 +6,22 @@
 
 **ProjectPrompt** is an intelligent CLI tool that analyzes code projects and provides AI-powered insights, documentation generation, and improvement suggestions. It helps developers understand their codebase structure, generate contextual prompts, and maintain better project documentation.
 
+## 🆕 Phase 4 - Simple CLI (v2.0)
+
+**New streamlined workflow with just 2 main commands:**
+
+```bash
+projectprompt analyze .          # Analyze project, create functional groups  
+projectprompt suggest "Core"     # Generate AI suggestions for specific group
+```
+
+✨ **What's New:**
+- **Simple Interface**: Only 2 main commands instead of complex menus
+- **No API Keys for Analysis**: Local project analysis works offline
+- **Environment Configuration**: All settings via `.env` file only
+- **Intuitive Workflow**: analyze → status → suggest
+- **Clear Group Names**: Functional groups with descriptive names
+
 ## ✨ Key Features
 
 - **🔍 Smart Project Analysis**: Automatically detects technologies, frameworks, and project structure
@@ -29,20 +45,23 @@ pip install projectprompt
 ### Verify Installation
 
 ```bash
-project-prompt version
+projectprompt --version
 ```
 
 ### Basic Usage
 
 ```bash
-# Analyze your current project
-project-prompt analyze
+# 1. Analyze your project structure (no API keys needed)
+projectprompt analyze .
 
-# Generate a project dashboard
-project-prompt dashboard
+# 2. Check available groups and status
+projectprompt status
 
-# Get help with all commands
-project-prompt help
+# 3. Generate AI suggestions for a specific group (requires API keys)
+projectprompt suggest "Core"
+
+# 4. Get help with all commands
+projectprompt --help
 ```
 
 ## 📖 Installation Guide
@@ -239,20 +258,17 @@ LOG_LEVEL=info
 
 ### API Configuration
 
-1. **Anthropic Claude** (Recommended):
-   ```bash
-   project-prompt set-api anthropic
-   ```
+Configure API keys by creating a `.env` file in your project root:
 
-2. **OpenAI GPT**:
-   ```bash
-   project-prompt set-api openai
-   ```
+```bash
+# For Anthropic Claude (Recommended)
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-3. **Verify Configuration**:
-   ```bash
-   project-prompt verify-api
-   ```
+# For OpenAI GPT  
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+**Note**: API keys are only required for the `suggest` command. Analysis works without any API keys.
 
 ## 📊 Output Examples
 

@@ -18,10 +18,10 @@ import time
 
 from src.utils.logger import get_logger
 from src.integrations.anthropic_advanced import AdvancedAnthropicClient
-from src.analyzers.project_progress_tracker import ProjectProgressTracker
+# REMOVED: ProjectProgressTracker (eliminated in Fase 1)
 from src.analyzers.dependency_graph import DependencyGraph
 from src.utils.config import ConfigManager
-from src.ui.cli import CLI
+# REMOVED: UI CLI (eliminated in Fase 1)
 from src.utils.token_counter import AnthropicTokenCounter
 
 # Configurar logger
