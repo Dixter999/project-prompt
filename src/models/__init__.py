@@ -1,17 +1,38 @@
 """
-Models package for ProjectPrompt
-
-This package contains data models and structures used throughout the application.
+Models module for ProjectPrompt.
+Contains all data models and structures.
 """
 
-from .rule_models import (
-    RuleItem, RuleCategory, RulePriority, RuleContext,
-    RuleGroup, RuleSet, RuleTemplate
+from .project import (
+    ProjectAnalysis,
+    SuggestionReport,
+    Suggestion,
+    ProjectType,
+    AnalysisStatus,
+    ProjectStructure,
+    FileInfo,
+    DirectoryInfo,
+    FunctionalityDetection,
+    AIResponse,
+    ProjectReport,
+    ScanConfig,
+    AnalysisConfig,
+    ExportConfig
 )
-from .suggestion_models import PatternAnalysis, RuleSuggestion, SuggestionContext
 
 __all__ = [
-    'RuleItem', 'RuleCategory', 'RulePriority', 'RuleContext',
-    'RuleGroup', 'RuleSet', 'RuleTemplate',
-    'PatternAnalysis', 'RuleSuggestion', 'SuggestionContext'
+    'ProjectAnalysis',
+    'SuggestionReport', 
+    'Suggestion',
+    'ProjectType',
+    'AnalysisStatus',
+    'ProjectStructure',
+    'FileInfo',
+    'DirectoryInfo',
+    'FunctionalityDetection',
+    'AIResponse',
+    'ProjectReport',
+    'ScanConfig',
+    'AnalysisConfig',
+    'ExportConfig'
 ]

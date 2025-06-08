@@ -1,85 +1,27 @@
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
+*.pyc
+*.pyo
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+build/
+dist/
 
-# Virtual environments
+# Virtual environments  
 venv/
 env/
-test_env/
-ENV/
-
-# VS Code extension specific
-vscode-extension/node_modules/
-vscode-extension/*.vsix
-vscode-extension/dist/
-
-# Poetry
-.poetry/
-poetry.lock
 
 # IDE
-.idea/
 .vscode/
-*.swp
-*.swo
+.idea/
 
-# Logs
-logs/
+# Environment and config
+.env
 *.log
 
-# Local configuration
-.env
-config.yaml
-
-# Testing
-/node_modules/
-.coverage
-htmlcov/
-.pytest_cache/
-test_results/
-
-# OS specific
+# OS
 .DS_Store
 Thumbs.db
-.project-prompt/
 
-# Commit scripts and temporary files
-commit_*.sh
-commit_message.txt
-cleanup_project.sh
-
-# Reorganization and temp files
-DIRECTORY_STRUCTURE.md
-REORGANIZATION_SUMMARY.md
-REORGANIZATION_COMPLETE.md
-README.md.new
-README.md.bak
-README.md.old
-
-# Backup and temp files
-*.bak
-*.original
-*.tmp
-*~
-
-# Environment files that may cause push issues
-.env.example
+# Output
+output/
+analysis.json

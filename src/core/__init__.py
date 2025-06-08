@@ -1,6 +1,18 @@
 """
-Core module for ProjectPrompt.
-Contains essential functionality and base classes used throughout the project.
+Simplified core module for ProjectPrompt.
+
+Contains the main analysis components:
+- ProjectScanner: file and structure scanning
+- FunctionalityDetector: functionality detection
+- ProjectAnalyzer: unified analysis
 """
 
-__version__ = "0.1.0"
+from .scanner import ProjectScanner
+from .detector import FunctionalityDetector
+from .analyzer import ProjectAnalyzer
+
+__all__ = [
+    'ProjectScanner',
+    'FunctionalityDetector', 
+    'ProjectAnalyzer'
+]
