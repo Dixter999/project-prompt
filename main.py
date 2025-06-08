@@ -13,7 +13,7 @@ sys.path.insert(0, src_path)
 def main():
     """Main entry point for CLI"""
     # Import and run CLI directly
-    import cli
+    from src import cli
     cli.main()
 
 if __name__ == '__main__':

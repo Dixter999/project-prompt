@@ -15,9 +15,9 @@ from typing import Optional
 import json
 import shutil
 
-from core.analyzer import ProjectAnalyzer
-from generators.suggestions import SuggestionGenerator
-from utils.config import Config
+from .core.analyzer import ProjectAnalyzer
+from .generators.suggestions import SuggestionGenerator
+from .utils.config import Config
 
 # Configuración global
 config = Config()
@@ -85,7 +85,7 @@ def analyze(path: str, output: Optional[str], max_files: Optional[int], exclude:
             bar.update(30)
             
             # Create scan config with limits
-            from models.project import ScanConfig
+            from .models.project import ScanConfig
             scan_config = ScanConfig(max_files=max_files_limit)
             
             # Analizar proyecto (incluye escaneo, agrupación y validación)

@@ -17,7 +17,7 @@ try:
     from models.project import ProjectStructure, FileInfo, DirectoryInfo, ScanConfig
 except ImportError:
     # Fallback for direct execution
-    from models.project import ProjectStructure, FileInfo, DirectoryInfo, ScanConfig
+    from ..models.project import ProjectStructure, FileInfo, DirectoryInfo, ScanConfig
 
 
 class ProjectScanner:

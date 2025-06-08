@@ -15,7 +15,7 @@ try:
     from models.project import FunctionalityDetection
 except ImportError:
     # Fallback for direct execution
-    from models.project import FunctionalityDetection
+    from ..models.project import FunctionalityDetection
 
 # Simplified patterns for functionality detection
 SIMPLE_PATTERNS = {

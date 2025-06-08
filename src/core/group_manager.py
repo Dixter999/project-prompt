@@ -16,7 +16,7 @@ try:
     from models.project import FileInfo
 except ImportError:
     # Fallback for direct execution
-    from models.project import FileInfo
+    from ..models.project import FileInfo
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,6 @@ from .core.analyzer import ProjectAnalyzer
 from .core.scanner import ProjectScanner
 from .core.detector import FunctionalityDetector
 
-from .ai.client import AIClient
 from .generators.suggestions import SuggestionGenerator
 
 from .models.project import (
