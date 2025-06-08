@@ -1,0 +1,32 @@
+{
+  "groups": {
+    "core_modules": [
+      "src/core/analyzer.py",
+      "src/core/dependency_analyzer.py",
+      "src/core/detector.py",
+      "src/core/file_group_mapping.py",
+      "src/core/group_manager.py",
+      "src/core/group_priority_system.py",
+      "src/core/scanner.py",
+      "src/core/__init__.py"
+    ],
+    "utility_modules": [
+      "src/utils/config.py",
+      "src/utils/__init__.py"
+    ],
+    "feature_modules": [
+      ".gitignore",
+      "pyproject.toml",
+      "README.md",
+      "requirements.txt",
+      "setup.py",
+      "src/cli.py",
+      "src/generators/suggestions.py",
+      "src/generators/__init__.py",
+      "src/models/project.py",
+      "src/models/__init__.py",
+      "src/__init__.py"
+    ]
+  },
+  "total_groups": 3
+}

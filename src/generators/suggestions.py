@@ -329,14 +329,15 @@ class SuggestionGenerator:
         """Generate suggestions using Anthropic Claude"""
         try:
             response = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
+                model="claude-3-5-sonnet-20241022",
                 max_tokens=4000,
                 messages=[
                     {
                         "role": "user", 
                         "content": prompt
                     }
-                ]
+                ],
+                timeout=60.0  # 60 second timeout
             )
             return response.content[0].text
         except Exception as e:
