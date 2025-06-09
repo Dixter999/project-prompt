@@ -687,4 +687,83 @@ projectprompt generate-prompts --help # Implementation prompts help
 
 ---
 
-**Made with ❤️ for developers who want to improve their code with AI assistance**
+## 🔍 API Diagnostics & Monitoring
+
+ProjectPrompt includes a comprehensive diagnostic system to verify and monitor API usage:
+
+### Quick Health Check
+```bash
+# Fast diagnostic (essential checks only)
+projectprompt diagnose-api --quick
+
+# Full diagnostic report
+projectprompt diagnose-api
+
+# Save detailed report to file
+projectprompt diagnose-api --save-report api_health_report.json
+```
+
+### Diagnostic Features
+✅ **API Key Configuration** - Validates ANTHROPIC_API_KEY format and availability
+✅ **API Connectivity** - Tests actual connection to Anthropic API
+✅ **Component Verification** - Checks all FASE 1 & FASE 2 components
+✅ **Performance Metrics** - Monitors response times and success rates
+✅ **Cost Tracking** - Real-time tracking of daily/monthly API costs
+✅ **Cache Status** - Verifies caching system functionality
+✅ **End-to-End Testing** - Complete workflow validation
+
+### Real-Time Monitoring
+```bash
+# Monitor API usage in real-time
+python scripts/api_monitor.py monitor
+
+# Monitor for specific duration (30 minutes)
+python scripts/api_monitor.py monitor --duration 30
+
+# Save monitoring report
+python scripts/api_monitor.py monitor --save-report monitoring_report.json
+
+# Performance testing
+python scripts/api_monitor.py test --requests 10
+```
+
+### Sample Diagnostic Output
+```
+🔍 Iniciando diagnóstico completo del sistema API...
+✅ API Key Configuration: API key configurada correctamente
+✅ API Connectivity: Conectividad con Anthropic API exitosa
+✅ FASE 1 Components: Todos los componentes FASE 1 disponibles y funcionales
+✅ FASE 2 Components: Componentes FASE 2 disponibles y funcionales
+✅ Performance Metrics: Sistema funcionando correctamente
+✅ Cost Tracking: Sistema de seguimiento de costos funcional
+✅ Cache Status: Sistema de cache funcional
+✅ Basic Request Test: Prueba de request completo exitosa
+
+============================================================
+📊 REPORTE FINAL DE SALUD DEL SISTEMA API
+============================================================
+🏥 Estado General: SALUDABLE
+🔑 API Key: PASS
+🌐 Conectividad: PASS
+💰 Análisis de Costos:
+   • daily_cost: $0.0000
+   • monthly_cost: $0.0000
+💡 Recomendaciones:
+   ✅ Sistema API configurado correctamente
+   🚀 Sistema listo para uso en producción
+```
+
+### Troubleshooting Common Issues
+```bash
+# No API key found
+export ANTHROPIC_API_KEY="your-key-here"
+# or create .env file in ProjectPrompt directory
+
+# Component verification failed
+pip install -e . --force-reinstall
+
+# Connectivity issues
+projectprompt diagnose-api  # Check detailed error messages
+```
+
+For detailed diagnostic information, see [API Verification Guide](docs/API_VERIFICATION_GUIDE.md).

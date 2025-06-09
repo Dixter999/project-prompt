@@ -19,6 +19,9 @@ from datetime import datetime
 from .core.analyzer import ProjectAnalyzer
 from .generators.suggestions import SuggestionGenerator
 from .utils.config import Config
+from .api_manager import APIDiagnostics, run_quick_diagnosis
+# Importar módulo de diagnósticos
+from .api_manager.api_diagnostics import APIDiagnostics, run_quick_diagnosis
 
 # Global configuration
 config = Config()
@@ -988,6 +991,31 @@ def _sanitize_filename(name: str) -> str:
     sanitized = re.sub(r'[^\w\s-]', '', name)
     sanitized = re.sub(r'[-\s]+', '-', sanitized)
     return sanitized.lower().strip('-')
+
+@cli.command()
+@click.option('--api-key', help='Clave API de Anthropic')
+@click.option('--save-report', help='Guardar reporte en archivo')
+@click.option('--quick', is_flag=True, help='Ejecutar diagnóstico rápido')
+def diagnose_api(api_key, save_report, quick):
+    """🔍 Diagnosticar el estado del sistema API"""
+    
+    if quick:
+        success = run_quick_diagnosis(api_key=api_key)
+        if success:
+            click.echo("✅ Diagnóstico rápido: Sistema funcionando correctamente")
+        else:
+            click.echo("❌ Diagnóstico rápido: Se encontraron problemas")
+            click.echo("   Ejecuta 'projectprompt diagnose-api' (sin --quick) para más detalles")
+        return
+    
+    # Diagnóstico completo
+    diagnostics = APIDiagnostics(api_key=api_key)
+    report = diagnostics.run_complete_diagnosis(verbose=True)
+    
+    # Guardar reporte si se solicita
+    if save_report:
+        saved_path = diagnostics.save_report_to_file(report, save_report)
+        click.echo(f"\n💾 Reporte guardado en: {saved_path}")
 
 def main():
     """Main entry point for CLI"""

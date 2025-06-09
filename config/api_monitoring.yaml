@@ -1,0 +1,70 @@
+# API Monitoring Configuration
+# Configuración para el monitoreo y diagnóstico de la API
+
+# Límites de costo (en USD)
+cost_limits:
+  daily_limit: 50.0      # Límite diario en dólares
+  monthly_limit: 500.0   # Límite mensual en dólares
+  warning_threshold: 0.8 # Porcentaje para activar advertencias (80%)
+  alert_threshold: 0.9   # Porcentaje para activar alertas (90%)
+
+# Configuración de monitoreo
+monitoring:
+  default_update_interval: 30  # Segundos entre actualizaciones
+  cache_duration: 3600         # Duración del cache en segundos (1 hora)
+  max_request_history: 1000    # Máximo número de requests en historial
+  performance_window: 24       # Ventana de tiempo para métricas en horas
+
+# Configuración de pruebas de rendimiento
+performance_testing:
+  default_test_requests: 5           # Número de requests por defecto en pruebas
+  test_model: "claude-3-haiku-20240307"  # Modelo para pruebas (más económico)
+  test_max_tokens: 10                # Tokens máximos para pruebas
+  test_temperature: 0.0              # Temperatura para pruebas
+
+# Configuración de alertas
+alerts:
+  email_notifications: false  # Activar notificaciones por email
+  slack_notifications: false  # Activar notificaciones por Slack
+  console_warnings: true      # Mostrar advertencias en consola
+  
+# Configuración de reportes
+reporting:
+  auto_save_diagnostics: false     # Guardar automáticamente diagnósticos
+  auto_save_monitoring: false      # Guardar automáticamente monitoreo
+  report_format: "json"            # Formato de reportes (json, csv)
+  include_detailed_metrics: true   # Incluir métricas detalladas
+
+# Modelos y precios (precios aproximados por 1K tokens)
+model_pricing:
+  "claude-3-opus-20240229":
+    input_rate: 0.015   # $15 per 1M tokens
+    output_rate: 0.075  # $75 per 1M tokens
+  "claude-3-sonnet-20240229":
+    input_rate: 0.003   # $3 per 1M tokens  
+    output_rate: 0.015  # $15 per 1M tokens
+  "claude-3-haiku-20240307":
+    input_rate: 0.00025 # $0.25 per 1M tokens
+    output_rate: 0.00125 # $1.25 per 1M tokens
+
+# Configuración de diagnósticos
+diagnostics:
+  include_connectivity_test: true    # Incluir prueba de conectividad
+  include_performance_test: true     # Incluir prueba de rendimiento básica
+  include_cost_analysis: true        # Incluir análisis de costos
+  include_cache_analysis: true       # Incluir análisis de cache
+  test_timeout: 30                   # Timeout para pruebas en segundos
+
+# Configuración de optimización
+optimization:
+  enable_request_combining: true     # Habilitar combinación de requests
+  enable_smart_caching: true         # Habilitar cache inteligente
+  enable_cost_optimization: true     # Habilitar optimización de costos
+  enable_performance_tracking: true  # Habilitar seguimiento de rendimiento
+
+# Configuración de logs
+logging:
+  level: "INFO"                      # Nivel de logging (DEBUG, INFO, WARNING, ERROR)
+  include_request_details: false     # Incluir detalles de requests en logs
+  include_response_preview: true     # Incluir preview de respuestas en logs
+  max_log_file_size: "10MB"         # Tamaño máximo de archivos de log

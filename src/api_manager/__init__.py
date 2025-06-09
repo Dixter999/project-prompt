@@ -21,6 +21,7 @@ from .request_optimizer import RequestOptimizer
 from .conversation_manager import ConversationManager
 from .response_processor import ResponseProcessor
 from .implementation_coordinator import ImplementationCoordinator
+from .api_diagnostics import APIDiagnostics, run_quick_diagnosis
 
 __all__ = [
     # FASE 1 Components
@@ -31,5 +32,8 @@ __all__ = [
     # FASE 2 Components
     'ConversationManager',
     'ResponseProcessor',
-    'ImplementationCoordinator'
+    'ImplementationCoordinator',
+    # Diagnostics
+    'APIDiagnostics',
+    'run_quick_diagnosis'
 ]
