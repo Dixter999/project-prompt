@@ -1,5 +1,5 @@
-# Core dependencies for ProjectPrompt v2.0
-# Reduced from 15+ to 6 core dependencies
+# Core dependencies for ProjectPrompt v2.0 with Sistema de Implementación Adaptativa
+# Enhanced with API-driven intelligent implementation system
 
 anthropic>=0.7.0
 openai>=1.0.0
@@ -7,3 +7,4 @@ click>=8.0.0
 python-dotenv>=0.19.0
 pathspec>=0.10.0
 typing-extensions>=4.0.0
+pyyaml>=6.0.0

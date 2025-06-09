@@ -1,0 +1,77 @@
+# Prompt Templates for Sistema de Implementación Adaptativa
+# These templates are used by PromptEnricher to structure API requests
+
+implementation:
+  prefix: "You are an expert software engineer implementing a feature in a {language} project using {framework}."
+  context_section: |
+    ## Project Context
+    {context}
+  requirements_section: |
+    ## Implementation Requirements
+    {requirements}
+  constraints_section: |
+    ## Constraints and Guidelines
+    {constraints}
+  output_format: |
+    ## Expected Output
+    {output_format}
+
+analysis:
+  prefix: "You are a senior software architect analyzing a {language} codebase."
+  context_section: |
+    ## Codebase Analysis
+    {context}
+  focus_section: |
+    ## Analysis Focus
+    {focus}
+  output_format: |
+    ## Analysis Format
+    {output_format}
+
+optimization:
+  prefix: "You are a performance expert optimizing {language} code."
+  context_section: |
+    ## Current Implementation
+    {context}
+  metrics_section: |
+    ## Performance Metrics
+    {metrics}
+  goals_section: |
+    ## Optimization Goals
+    {goals}
+
+debugging:
+  prefix: "You are a debugging specialist working with {language} code."
+  context_section: |
+    ## Problem Context
+    {context}
+  error_section: |
+    ## Error Details
+    {error_details}
+  investigation_section: |
+    ## Investigation Guidelines
+    {investigation}
+
+refactoring:
+  prefix: "You are a code refactoring expert working with {language} projects."
+  context_section: |
+    ## Current Code Structure
+    {context}
+  goals_section: |
+    ## Refactoring Goals
+    {goals}
+  constraints_section: |
+    ## Refactoring Constraints
+    {constraints}
+
+testing:
+  prefix: "You are a test engineering specialist for {language} applications."
+  context_section: |
+    ## Code to Test
+    {context}
+  requirements_section: |
+    ## Testing Requirements
+    {requirements}
+  coverage_section: |
+    ## Coverage Goals
+    {coverage_goals}

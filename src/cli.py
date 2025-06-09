@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 import json
 import shutil
+from datetime import datetime
 
 from .core.analyzer import ProjectAnalyzer
 from .generators.suggestions import SuggestionGenerator
@@ -468,6 +469,428 @@ def uninstall(force: bool, keep_data: bool):
         click.echo("   1. pip uninstall projectprompt")
         click.echo("   2. rm -rf /path/to/project-prompt (if installed from source)")
         raise click.ClickException(f"Uninstall failed: {str(e)}")
+
+@cli.command()
+@click.argument('task_description')
+@click.option('--project-path', '-p', default='.',
+              help='Path to project directory (default: current directory)')
+@click.option('--target', '-t', 
+              type=click.Choice(['speed', 'cost', 'quality', 'balanced']),
+              default='balanced',
+              help='Optimization target (default: balanced)')
+@click.option('--task-type', 
+              type=click.Choice(['implementation', 'analysis', 'debugging', 'optimization', 'testing']),
+              default='implementation',
+              help='Type of task (default: implementation)')
+@click.option('--complexity', 
+              type=click.Choice(['simple', 'medium', 'complex', 'very_complex']),
+              default='medium',
+              help='Task complexity level (default: medium)')
+@click.option('--dry-run', is_flag=True,
+              help='Show what would be done without making API calls')
+@click.option('--api-key', 
+              help='Anthropic API key (or set ANTHROPIC_API_KEY env var)')
+@click.option('--use-workflow', is_flag=True,
+              help='Use advanced workflow management (FASE 2)')
+@click.option('--max-requests', default=5, type=int,
+              help='Maximum number of API requests for complex tasks')
+@click.option('--conversation-mode', is_flag=True,
+              help='Enable multi-turn conversation mode')
+def adaptive_implement(task_description: str,
+                      project_path: str,
+                      target: str,
+                      task_type: str,
+                      complexity: str,
+                      dry_run: bool,
+                      api_key: Optional[str],
+                      use_workflow: bool,
+                      max_requests: int,
+                      conversation_mode: bool):
+    """
+    🤖 ADAPTIVE IMPLEMENTATION - Sistema de Implementación Adaptativa
+    
+    Uses AI-driven intelligent implementation with context-aware optimization.
+    
+    📚 FASE 1 (Standard): Single-request implementation with:
+    • Intelligent project context analysis
+    • Advanced prompt enhancement and optimization
+    • Multi-target request optimization (speed/cost/quality)
+    • Caching and performance tracking
+    
+    🚀 FASE 2 (Advanced Workflow): Multi-request intelligent orchestration with:
+    • Advanced workflow management and coordination
+    • Multi-turn conversation handling with context tracking
+    • Parallel request processing and dependency resolution
+    • Response processing and implementation plan generation
+    • Comprehensive analytics and performance optimization
+    
+    Examples:
+      # Standard FASE 1 implementation
+      projectprompt adaptive-implement "Add user authentication system"
+      projectprompt adaptive-implement "Optimize database queries" --target cost
+      projectprompt adaptive-implement "Fix login bug" --task-type debugging
+      
+      # Advanced FASE 2 workflow implementation  
+      projectprompt adaptive-implement "Refactor API" --use-workflow
+      projectprompt adaptive-implement "Complex feature" --use-workflow --conversation-mode
+      projectprompt adaptive-implement "Large refactor" --use-workflow --max-requests 10
+    """
+    try:
+        from .api_manager.context_builder import ContextBuilder
+        from .api_manager.prompt_enricher import PromptEnricher
+        from .api_manager.anthropic_client import AnthropicClient
+        from .api_manager.request_optimizer import RequestOptimizer
+        from .api_manager.conversation_manager import ConversationManager
+        from .api_manager.response_processor import ResponseProcessor
+        from .api_manager.implementation_coordinator import ImplementationCoordinator
+        from datetime import datetime
+    except ImportError as e:
+        click.echo(f"❌ Missing API manager components: {str(e)}", err=True)
+        click.echo("💡 Run: pip install pyyaml anthropic")
+        return
+    
+    # Validate project path
+    project_path = Path(project_path).resolve()
+    if not project_path.exists() or not project_path.is_dir():
+        click.echo(f"❌ Project path does not exist: {project_path}", err=True)
+        return
+    
+    click.echo(f"🎯 Sistema de Implementación Adaptativa")
+    click.echo(f"   Task: {task_description}")
+    click.echo(f"   Project: {project_path}")
+    click.echo(f"   Target: {target} | Type: {task_type} | Complexity: {complexity}")
+    
+    if use_workflow:
+        click.echo(f"🚀 FASE 2: Advanced Workflow Mode")
+        click.echo(f"   Max Requests: {max_requests}")
+        if conversation_mode:
+            click.echo(f"   Conversation Mode: Enabled")
+    else:
+        click.echo(f"📋 FASE 1: Standard Implementation Mode")
+    
+    if dry_run:
+        click.echo("🔍 DRY RUN - No API calls will be made")
+    
+    try:
+        # FASE 1: Build project context
+        with click.progressbar(length=4, label="📊 Building project context") as bar:
+            context_builder = ContextBuilder(str(project_path))
+            bar.update(1)
+            
+            context = context_builder.build_complete_context()
+            bar.update(1)
+            
+            # Display context summary
+            summary = context_builder.get_context_summary(context)
+            bar.update(2)
+        
+        click.echo("\n📋 Project Context Summary:")
+        click.echo(summary)
+        
+        # FASE 1: Enrich prompt
+        with click.progressbar(length=3, label="🎨 Enriching prompt") as bar:
+            prompt_enricher = PromptEnricher()
+            bar.update(1)
+            
+            enriched_config = prompt_enricher.enrich_prompt(
+                base_prompt=task_description,
+                context=context,
+                task_type=task_type,
+                complexity_level=complexity
+            )
+            bar.update(1)
+            
+            # Validate enriched prompt
+            validation = prompt_enricher.validate_enriched_prompt(enriched_config)
+            bar.update(1)
+        
+        # Display validation results
+        if validation['warnings']:
+            click.echo("\n⚠️  Prompt Warnings:")
+            for warning in validation['warnings']:
+                click.echo(f"   • {warning}")
+        
+        if validation['suggestions']:
+            click.echo("\n💡 Suggestions:")
+            for suggestion in validation['suggestions']:
+                click.echo(f"   • {suggestion}")
+        
+        click.echo(f"\n💰 Estimated Cost: ${validation['estimated_cost']['estimated_total_cost']:.4f}")
+        
+        # FASE 1: Optimize request
+        with click.progressbar(length=2, label="⚡ Optimizing request") as bar:
+            request_optimizer = RequestOptimizer()
+            bar.update(1)
+            
+            optimized_config = request_optimizer.optimize_request_strategy(
+                enriched_config=enriched_config,
+                context=context,
+                performance_target=target
+            )
+            bar.update(1)
+        
+        click.echo(f"\n🔧 Optimization Applied:")
+        click.echo(f"   Model: {optimized_config.get('model', 'N/A')}")
+        click.echo(f"   Temperature: {optimized_config.get('temperature', 'N/A')}")
+        click.echo(f"   Max Tokens: {optimized_config.get('max_tokens', 'N/A')}")
+        
+        if dry_run:
+            click.echo("\n📝 Generated Prompt Preview:")
+            click.echo("-" * 50)
+            preview = optimized_config['prompt'][:500]
+            click.echo(preview + "..." if len(optimized_config['prompt']) > 500 else preview)
+            click.echo("-" * 50)
+            if use_workflow:
+                click.echo("🔀 Would use advanced workflow management")
+            if conversation_mode:
+                click.echo("💬 Would use multi-turn conversation mode")
+            click.echo("✅ Dry run completed - no API calls made")
+            return
+        
+        # Check for API key
+        if not api_key and not os.getenv('ANTHROPIC_API_KEY'):
+            click.echo("\n❌ No API key provided. Set ANTHROPIC_API_KEY environment variable or use --api-key option.")
+            return
+        
+        # FASE 2: Advanced Workflow Execution (if enabled)
+        if use_workflow:
+            click.echo("\n🔀 FASE 2: Advanced Workflow Management Enabled")
+            
+            # Initialize FASE 2 components
+            client = AnthropicClient(api_key=api_key)
+            coordinator = ImplementationCoordinator(client, max_concurrent_requests=3)
+            response_processor = ResponseProcessor()
+            
+            # Initialize conversation manager if enabled
+            conversation_manager = None
+            if conversation_mode:
+                conversation_manager = ConversationManager()
+                session_id = conversation_manager.create_session(
+                    initial_task=task_description,
+                    project_context=context,
+                    metadata={
+                        'task_type': task_type,
+                        'complexity': complexity,
+                        'target': target,
+                        'project_path': str(project_path)
+                    }
+                )
+                click.echo(f"💬 Conversation session created: {session_id}")
+            
+            # Create workflow with optimized configuration
+            workflow_metadata = {
+                'task_description': task_description,
+                'task_type': task_type,
+                'complexity': complexity,
+                'target': target,
+                'max_requests': max_requests,
+                'conversation_mode': conversation_mode
+            }
+            
+            with click.progressbar(length=5, label="🚀 Creating workflow") as bar:
+                workflow_id = coordinator.create_workflow(
+                    initial_request=optimized_config,
+                    metadata=workflow_metadata
+                )
+                bar.update(2)
+                
+                click.echo(f"\n🔧 Workflow created: {workflow_id}")
+                
+                # Execute workflow with progress tracking
+                results = coordinator.execute_workflow(workflow_id)
+                bar.update(3)
+            
+            # Process results with ResponseProcessor
+            click.echo("\n📊 Processing workflow results...")
+            processed_results = []
+            
+            for i, result in enumerate(results):
+                with click.progressbar(length=3, label=f"Processing response {i+1}/{len(results)}") as bar:
+                    # Extract content and implementation steps
+                    extracted_content = response_processor.extract_content(result['response'])
+                    bar.update(1)
+                    
+                    # Generate implementation plan
+                    implementation_plan = response_processor.generate_implementation_plan(
+                        response=result['response'],
+                        context=context
+                    )
+                    bar.update(1)
+                    
+                    # Detect file modifications
+                    file_modifications = response_processor.detect_file_modifications(result['response'])
+                    bar.update(1)
+                    
+                    processed_result = {
+                        'request_id': result['request_id'],
+                        'content': extracted_content,
+                        'implementation_plan': implementation_plan,
+                        'file_modifications': file_modifications,
+                        'performance_metrics': result.get('performance_metrics', {}),
+                        'timestamp': result.get('timestamp')
+                    }
+                    processed_results.append(processed_result)
+            
+            # Handle conversation mode updates
+            if conversation_mode and conversation_manager:
+                for result in processed_results:
+                    conversation_manager.add_turn(
+                        session_id=session_id,
+                        user_message=f"Processing result for {result['request_id']}",
+                        assistant_response=result['content']['extracted_text'],
+                        metadata={
+                            'implementation_plan': result['implementation_plan'],
+                            'file_modifications': result['file_modifications']
+                        }
+                    )
+            
+            # Save comprehensive results
+            output_dir = project_path / 'project-prompt-output' / 'adaptive-implementation'
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            
+            # Save workflow results
+            workflow_file = output_dir / f"workflow_{timestamp}.json"
+            workflow_results = {
+                'workflow_id': workflow_id,
+                'task_description': task_description,
+                'metadata': workflow_metadata,
+                'processed_results': processed_results,
+                'workflow_analytics': coordinator.get_workflow_analytics(workflow_id),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            with open(workflow_file, 'w', encoding='utf-8') as f:
+                json.dump(workflow_results, f, indent=2, ensure_ascii=False)
+            
+            # Save markdown summary
+            markdown_file = output_dir / f"workflow_summary_{timestamp}.md"
+            with open(markdown_file, 'w', encoding='utf-8') as f:
+                f.write(f"# Advanced Workflow Implementation Result\n\n")
+                f.write(f"**Task**: {task_description}\n")
+                f.write(f"**Type**: {task_type}\n")
+                f.write(f"**Complexity**: {complexity}\n")
+                f.write(f"**Target**: {target}\n")
+                f.write(f"**Workflow ID**: {workflow_id}\n")
+                f.write(f"**Timestamp**: {datetime.now().isoformat()}\n\n")
+                
+                if conversation_mode:
+                    f.write(f"**Conversation Session**: {session_id}\n\n")
+                
+                f.write(f"## Workflow Summary\n\n")
+                f.write(f"- **Total Requests**: {len(processed_results)}\n")
+                f.write(f"- **File Modifications Detected**: {sum(len(r['file_modifications']) for r in processed_results)}\n")
+                f.write(f"- **Implementation Steps**: {sum(len(r['implementation_plan']['steps']) for r in processed_results)}\n\n")
+                
+                f.write(f"## Project Context\n\n```\n{summary}\n```\n\n")
+                
+                for i, result in enumerate(processed_results, 1):
+                    f.write(f"## Response {i} - {result['request_id']}\n\n")
+                    f.write(f"### Implementation Plan\n\n")
+                    for step in result['implementation_plan']['steps']:
+                        f.write(f"- {step}\n")
+                    f.write(f"\n### File Modifications\n\n")
+                    for mod in result['file_modifications']:
+                        f.write(f"- **{mod['file_path']}**: {mod['modification_type']}\n")
+                    f.write(f"\n### Content\n\n{result['content']['extracted_text']}\n\n")
+            
+            # Save conversation session if enabled
+            if conversation_mode and conversation_manager:
+                conversation_file = output_dir / f"conversation_{session_id}_{timestamp}.json"
+                conversation_data = conversation_manager.get_session(session_id)
+                with open(conversation_file, 'w', encoding='utf-8') as f:
+                    json.dump(conversation_data, f, indent=2, ensure_ascii=False, default=str)
+            
+            # Display workflow results
+            click.echo(f"\n✅ Advanced Workflow Completed:")
+            click.echo(f"   Workflow ID: {workflow_id}")
+            click.echo(f"   Requests Processed: {len(processed_results)}")
+            click.echo(f"   Total File Modifications: {sum(len(r['file_modifications']) for r in processed_results)}")
+            click.echo(f"   Implementation Steps: {sum(len(r['implementation_plan']['steps']) for r in processed_results)}")
+            
+            if conversation_mode:
+                click.echo(f"   Conversation Session: {session_id}")
+            
+            # Display workflow analytics
+            analytics = coordinator.get_workflow_analytics(workflow_id)
+            if analytics:
+                click.echo(f"\n📊 Workflow Analytics:")
+                click.echo(f"   Total Execution Time: {analytics.get('total_execution_time', 0):.2f}s")
+                click.echo(f"   Average Response Time: {analytics.get('average_response_time', 0):.2f}s")
+                click.echo(f"   Success Rate: {analytics.get('success_rate', 0):.1%}")
+                click.echo(f"   Total Cost: ${analytics.get('total_cost', 0):.4f}")
+            
+            click.echo(f"\n📁 Results saved to:")
+            click.echo(f"   Workflow Data: {workflow_file}")
+            click.echo(f"   Summary: {markdown_file}")
+            if conversation_mode:
+                click.echo(f"   Conversation: {conversation_file}")
+            
+        else:
+            # FASE 1: Standard single-request execution
+            with click.progressbar(length=3, label="🚀 Sending API request") as bar:
+                client = AnthropicClient(api_key=api_key)
+                bar.update(1)
+                
+                response = client.send_enriched_request(optimized_config)
+                bar.update(2)
+        
+            # Display standard results
+            click.echo(f"\n✅ API Response Received:")
+            click.echo(f"   Model: {response.get('model', 'N/A')}")
+            click.echo(f"   Input Tokens: {response.get('usage', {}).get('input_tokens', 'N/A')}")
+            click.echo(f"   Output Tokens: {response.get('usage', {}).get('output_tokens', 'N/A')}")
+            click.echo(f"   Response Time: {response.get('request_time', 0):.2f}s")
+            
+            if response.get('from_cache'):
+                click.echo("   📦 Response served from cache")
+            
+            # Save standard response to file
+            output_dir = project_path / 'project-prompt-output' / 'adaptive-implementation'
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_file = output_dir / f"implementation_{timestamp}.md"
+            
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write(f"# Adaptive Implementation Result\n\n")
+                f.write(f"**Task**: {task_description}\n")
+                f.write(f"**Type**: {task_type}\n")
+                f.write(f"**Complexity**: {complexity}\n")
+                f.write(f"**Target**: {target}\n")
+                f.write(f"**Timestamp**: {datetime.now().isoformat()}\n\n")
+                f.write(f"## Project Context\n\n")
+                f.write(f"```\n{summary}\n```\n\n")
+                f.write(f"## Implementation Response\n\n")
+                f.write(response['content'])
+            
+            click.echo(f"\n📁 Result saved to: {output_file}")
+            
+            # Display performance metrics if available
+            metrics = client.get_performance_metrics()
+            if 'total_requests' in metrics:
+                click.echo(f"\n📊 API Performance (24h):")
+                click.echo(f"   Requests: {metrics['total_requests']}")
+                click.echo(f"   Cache Hit Rate: {metrics['cache_hit_rate']:.1%}")
+                click.echo(f"   Avg Response Time: {metrics['average_response_time']:.2f}s")
+                click.echo(f"   Daily Cost: ${metrics['daily_cost']:.4f}")
+            
+            # Display optimization metrics
+            opt_metrics = request_optimizer.get_optimization_metrics()
+            if 'total_optimizations' in opt_metrics:
+                click.echo(f"\n⚡ Optimization Performance (24h):")
+                click.echo(f"   Optimizations: {opt_metrics['total_optimizations']}")
+                click.echo(f"   Cost Savings: ${opt_metrics['total_cost_savings']:.4f}")
+                click.echo(f"   Reduction: {opt_metrics['cost_reduction_percentage']:.1f}%")
+        
+        click.echo(f"\n🎉 Adaptive implementation completed successfully!")
+        
+    except Exception as e:
+        click.echo(f"\n💥 Error during adaptive implementation: {str(e)}", err=True)
+        if '--verbose' in click.get_current_context().params:
+            import traceback
+            click.echo(traceback.format_exc(), err=True)
 
 # Helper functions
 
