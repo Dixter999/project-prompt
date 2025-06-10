@@ -336,21 +336,6 @@ INTEGRATION READY:
 - Comprehensive documentation included
 - Unit test compatible design
         """
-                    self.logger.error(f"Agent {decision.agent_configurations[i].agent_id} failed: {response}")
-                    continue
-                
-                processed = self.response_processor.process_response(
-                    decision.agent_configurations[i].agent_id,
-                    decision.agent_configurations[i].agent_type,
-                    response
-                )
-                responses.append(processed)
-            
-            return responses
-            
-        except Exception as e:
-            self.logger.error(f"Parallel processing failed: {e}")
-            return responses
     
     async def _process_agent(self, config: AgentConfiguration, 
                            context: ExecutionContext) -> str:
